@@ -11,7 +11,7 @@ test_data <- function(){
   filename2 <- "C:/Users/simon/Desktop/WS_20_21/DS_12/test_senti.feather"
 
   #test_data2 <- arrow::read_parquet(filename1)
-  test_data2 <- arrow::read_feather(filename2)
+  test_data <- arrow::read_feather(filename2)
 
 
 }
