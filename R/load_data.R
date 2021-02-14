@@ -1,7 +1,7 @@
 #' @export
 test_data <- function(){
-  filename <- system.file("data", "beerSalesSubset.csv", package = "ecomAnalytics")
-  filename <- "data/beerSalesSubset.csv"
+  filename <- system.file("data", "beerSalesSubset.csv", package = "SentimentApp")
+  #filename <- "data/beerSalesSubset.csv"
   test_data1 <- read.csv(filename)
   #test_data1 <- get("iris", "package:datasets")
 

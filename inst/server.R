@@ -1,4 +1,6 @@
-server <- function(input, output, session) {
+library(ggplot2)
+
+function(input, output, session) {
   output$summary <- renderPrint({
     dataset <- get(input$dataset, "package:datasets")
     #summary(dataset)
