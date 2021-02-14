@@ -1,4 +1,4 @@
-library(ggplot2)
+
 
 function(input, output, session) {
   output$summary <- renderPrint({
