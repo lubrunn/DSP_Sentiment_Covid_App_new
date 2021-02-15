@@ -1,7 +1,4 @@
-stocks <- c("1COV","ALV","BAS")
 
-
-do.call(paste0(stocks[1]),list())
 
 
 
