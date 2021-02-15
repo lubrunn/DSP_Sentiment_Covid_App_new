@@ -3,7 +3,7 @@
 
 
 
-myApp <- function() {
+Simon_app <- function() {
   # Plus other stuff that was previously in app.R or globals.R
   # Hopefully refactored in a few function calls
 
