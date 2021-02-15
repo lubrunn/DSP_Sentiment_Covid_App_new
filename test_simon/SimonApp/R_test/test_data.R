@@ -5,7 +5,8 @@
 
 test_data <- function(){
 
-  #filename <- "https://unitc-my.sharepoint.com/:u:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/EddRSVcW2u5KmuoIE57PH8gBC27WbOQlkq1fg0owoNf6ZQ?download=1"
+  filename <- "https://unitc-my.sharepoint.com/:u:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/EddRSVcW2u5KmuoIE57PH8gBC27WbOQlkq1fg0owoNf6ZQ?download=1"
+
   #tmpFile <- tempfile()
 
   #download.file(filename, destfile = tmpFile)

@@ -1,9 +1,10 @@
 fluidPage(
   sidebarLayout(
     sidebarPanel(
-      selectInput("plotType", "Plot", choices = c("Time Series","Density")), # here choices of models
+      selectInput("plotType", "Plot", choices = c("Time Series","Density"),
+                  selected = "Time Series"),
 
-      selectInput("tweetType", "Type", choices = ""),
+      selectizeInput("tweetType", "Type", choices = "",multiple = T,selected  = "Allianz"),
 
       dateRangeInput("timeWindow", label = "Time Span",
                  start = "2018-11-30", end = "2018-12-07"),

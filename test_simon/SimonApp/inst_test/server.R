@@ -3,7 +3,9 @@
 function(input, output, session) {
 
     filtered_df <- reactive({
-     res <- test_data()  %>% filter(folder == input$tweetType)
+     res <- test_data()
+     #res <- res[res$folder %in% input$tweetType, ]
+
      res <- res %>% filter( (date > input$timeWindow[1]) &
                              (date < input$timeWindow[2]))
     })
@@ -34,10 +36,10 @@ function(input, output, session) {
     updateSliderInput(session, "minRetweet", max = max_retweet())
     })
 
-    output$plot1 <- renderPlot({
+   output$plot1 <- renderPlot({
       TS_plot(filtered_df_min_retweet(), aggregation = input$aggregation)})
 
-    output$plot2 <- renderPlot({
+   output$plot2 <- renderPlot({
       density_plot(filtered_df_min_retweet(), aggregation = input$aggregation)})
 
 
