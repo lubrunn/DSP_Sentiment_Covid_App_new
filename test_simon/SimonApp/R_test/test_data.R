@@ -20,14 +20,3 @@ test_data <- function(){
 
 
 
-# getData <- function(test_data1){
-#   head(test_data1)
-# }
-#
-# plotdata <- function(test_data1){
-#   ggplot(test_data1, aes(price_ounce, move_ounce)) +
-#     geom_point()
-# }
-#
-
-
