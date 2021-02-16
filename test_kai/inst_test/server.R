@@ -1,4 +1,4 @@
-function(input, output, session) {
+server <- function(input, output, session) {
   all <- reactive({
     req(input$Stock)
     symbols <- COMPONENTS_DE()[["Symbol"]][COMPONENTS_DE()[["Company.Name"]] %in% input$Stock]
