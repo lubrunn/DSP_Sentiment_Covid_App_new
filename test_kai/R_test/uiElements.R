@@ -8,9 +8,9 @@
 # selectize input for companies
 #' @export
 #' @rdname uiElements
-selectize_Stocks <- function() {
+selectize_Stocks <- function(components) {
   selectizeInput("Stock","Chose Company",
-                 c(COMPONENTS_DE()[["Company.Name"]]),
+                 c(components[["Company.Name"]]),
                  multiple=TRUE,
                  selected = "")
 }
