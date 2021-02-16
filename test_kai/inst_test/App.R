@@ -1,14 +1,10 @@
-library(shiny)
-library(shinyjs)
-library(ggplot2)
-
 ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       selectizeInput("Stock","Chose Company",
                      c(COMPONENTS_DE()[["Company.Name"]]),
                      multiple=TRUE,
-                     selected = "Bayer "),
+                     selected = ""),
       actionButton("reset","clear selected"),
       sliderInput("dates",label="Timeseries",
                   value = c(median(as.Date(ADS()[["Date"]], "%b %d, %Y")),max(as.Date(ADS()[["Date"]], "%b %d, %Y"))),
@@ -16,20 +12,23 @@ ui <- fluidPage(
                   max = max(as.Date(ADS()[["Date"]], "%b %d, %Y")),
                   step = 1,timeFormat = "%F")
     ),
-    mainPanel(plotOutput("plot",hover = hoverOpts("plot_hover", delay = 10, delayType = "debounce")),
-              uiOutput("hover_info"))
+    mainPanel(plotOutput("plot_DE",hover = hoverOpts("plot_hover_DE", delay = 10, delayType = "debounce")),
+              uiOutput("hover_info_DE"),
+              plotOutput("plot_US",hover = hoverOpts("plot_hover_US", delay = 10, delayType = "debounce")),
+              uiOutput("hover_info_US"))
   ))
 
 server <- function(input, output, session) {
   all <- reactive({
+    req(input$Stock)
     symbols <- COMPONENTS_DE()[["Symbol"]][COMPONENTS_DE()[["Company.Name"]] %in% input$Stock]
     all <- NULL
     for (s in symbols) {
       plotting <- do.call(paste0(sub("\\..*", "", s)), list())
       plotting <- plotting[plotting$Close. != "-",]
       plotting[c("Open","High","Low","Close.","Adj.Close..")] <- sapply(plotting[c("Open","High","Low","Close.","Adj.Close..")],as.numeric)
-      plotting["Volume"] <- as.numeric(gsub(",","",plotting$Volume))
       plotting$Date <- as.Date(plotting$Date, "%b %d, %Y")
+      plotting["Volume"] <- as.numeric(gsub(",","",plotting$Volume))
       plotting$name <- s
       all <- rbind(all,plotting)
       plotting <- NULL
@@ -39,17 +38,18 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$reset,{
-    updateSelectizeInput(session,"Stock",selected = "Bayer ")
+    updateSelectizeInput(session,"Stock",selected = "")
   })
 
-  output$plot <- renderPlot({
+  output$plot_DE <- renderPlot({
+    req(input$Stock)
     ggplot(all(),aes(Date,Close.,color = name))+
       geom_line()+
       theme_classic()
   })
 
   output$hover_info <- renderUI({
-    hover <- input$plot_hover
+    hover <- input$plot_hover_DE
     point <- nearPoints(all(), hover, threshold = 100, maxpoints = 1, addDist = TRUE)
     if (nrow(point) == 0) return(NULL)
 
