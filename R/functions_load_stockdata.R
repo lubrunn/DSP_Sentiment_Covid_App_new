@@ -223,15 +223,3 @@ VOW3 <- function(){
   filename <- "https://unitc-my.sharepoint.com/:x:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/Efut0CAhYUJOkR7ifEcUX94Bp2HglbiDSfMhzLrES7GkYA?download=1"
   read.csv(filename)
 }
-
-
-
-
-
-
-
-
-
-
-
-
