@@ -1,8 +1,7 @@
 #' UI Elements
 #'
 #'
-#' @export
-#' @rdname uiElements
+
 
 #####################################################   Stocks
 # selectize input for companies
