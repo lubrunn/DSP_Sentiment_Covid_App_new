@@ -9,7 +9,7 @@
 \alias{hover_info_US}
 \title{UI Elements}
 \usage{
-selectize_Stocks()
+selectize_Stocks(components)
 
 sliderinput_dates()
 
