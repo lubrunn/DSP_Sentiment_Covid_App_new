@@ -1,3 +1,4 @@
+Sys.setlocale("LC_TIME", "English")
 fluidPage(
   sidebarLayout(
     sidebarPanel(

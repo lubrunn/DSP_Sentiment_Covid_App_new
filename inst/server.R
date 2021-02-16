@@ -1,5 +1,3 @@
-
-
 function(input, output, session) {
   all <- reactive({
     req(input$Stock)
