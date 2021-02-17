@@ -17,9 +17,7 @@ ui <- fluidPage(
                tabsetPanel(
                  tabPanel("Germany",
                           plot_stocks_DE(),
-                          hover_info_DE(),
-                          plot_stocks_US(),
-                          hover_info_US()
+                          hover_info_DE()
                  ),#close tabPanel Germany
                  tabPanel("USA")
                )#close tabsetPanel

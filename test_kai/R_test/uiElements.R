@@ -38,19 +38,6 @@ plot_stocks_DE <- function() {
 hover_info_DE <- function() {
   uiOutput("hover_info_DE",style = "pointer-events: none")
 }
-#plotoutput for us commpanies
-#' @export
-#' @rdname uiElements
-plot_stocks_US <- function() {
-  plotOutput("plot_US",hover = hoverOpts("plot_hover_US", delay = 10, delayType = "debounce"))
-}
-#hoverbox in us plot
-#' @export
-#' @rdname uiElements
-hover_info_US <- function() {
-  uiOutput("hover_info_US")
-}
-
 
 
 
