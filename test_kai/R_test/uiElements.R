@@ -28,13 +28,15 @@ sliderinput_dates <- function(){
 #' @export
 #' @rdname uiElements
 plot_stocks_DE <- function() {
-  plotOutput("plot_DE",hover = hoverOpts("plot_hover_DE", delay = 10, delayType = "debounce"))
+  plotOutput("plot_DE",hover = hoverOpts("plot_hover_DE", delay = 10, delayType = "debounce"),
+             dblclick = "plot1_dblclick",
+             brush = brushOpts(id = "plot1_brush",resetOnNew = TRUE))
 }
 #hoverbox in german plot
 #' @export
 #' @rdname uiElements
 hover_info_DE <- function() {
-  uiOutput("hover_info_DE")
+  uiOutput("hover_info_DE",style = "pointer-events: none")
 }
 #plotoutput for us commpanies
 #' @export
@@ -48,5 +50,8 @@ plot_stocks_US <- function() {
 hover_info_US <- function() {
   uiOutput("hover_info_US")
 }
+
+
+
 
 
