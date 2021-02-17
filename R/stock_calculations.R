@@ -25,7 +25,7 @@ stock_dataset_DE <- function(stock,date1,date2){
 #' @rdname stock_calculations
 create_hover_info_DE <- function(hoverinput,stockdata){
   hover <- hoverinput
-  point <- nearPoints(stockdata, hover, threshold = 500, maxpoints = 1, addDist = TRUE)
+  point <- nearPoints(stockdata, hover, threshold = 10, maxpoints = 1, addDist = TRUE)
   if (nrow(point) == 0) return(NULL)
 
   # calculate point position INSIDE the image as percent of total dimensions
@@ -51,6 +51,3 @@ create_hover_info_DE <- function(hoverinput,stockdata){
                   "<b> Price: </b>", point$Close., "<br/>")))
   )
 }
-
-
-
