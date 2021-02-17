@@ -1,21 +1,44 @@
-fluidPage(
+parameter_tabs <- tabsetPanel(
+  id = "params",
+  type = "hidden",
+  tabPanel("NoFilter",
+           selectInput("aggregation", "Aggregation", choices = c("Mean","Mean weighted by retweets",
+                                                                 "Mean weighted by likes",
+                                                                 "Mean weighted by length")),
+           sliderInput("minRetweet", "Select minimum number of retweets", min = 0,value = 1,
+                       max = 300,step = 1),
+           sliderInput("minLikes", "Select minimum number of likes", min = 0,value = 1,
+                       max = 300,step = 1),
+           radioButtons("tweet_length","Tweet larger than median length:",
+                        choices = c("yes","no"),selected = "no")
+
+  ),
+  tabPanel("Stocks",
+           selectizeInput("stock", "Choose a stock", choices = "",multiple = T,selected  = "Allianz"),
+           selectInput("aggregation", "Aggregation", choices = c("Mean","Mean weighted by retweets",
+                                                                 "Mean weighted by likes",
+                                                                 "Mean weighted by length")),
+           sliderInput("minRetweet_stocks", "Select minimum number of retweets", min = 0,value = 1,
+                       max = 1,step = 1),
+           radioButtons("tweet_length","Tweet larger than median length:",
+                        choices = c("yes","no"))
+  )
+
+)
+
+
+
+ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
+      selectInput("Sentiment_type", "Type of Sentiment:", choices = c("NoFilter","Stocks"),
+                  selected = "NoFilter"),
+
       selectInput("plotType", "Plot", choices = c("Time Series","Density"),
                   selected = "Time Series"),
+      radioButtons("language","Choose Langugage of Tweets:",choices = c("En","De")),
 
-      selectizeInput("tweetType", "Type", choices = "",multiple = T,selected  = "Allianz"),
-
-      dateRangeInput("timeWindow", label = "Time Span",
-                 start = "2018-11-30", end = "2018-12-07"),
-                        #as.character(format(Sys.time(),'%Y-%m-%d'))
-      selectInput("aggregation", "Aggregation", choices = c("Mean","Mean weighted by retweets",
-                                                        "Mean weighted by likes",
-                                                        "Mean weighted by length")),
-
-      sliderInput("minRetweet", "Select minimum number of retweets", min = 0,value = 1,
-                                                               max = 1,step = 1),
-
+      parameter_tabs
     ),
     mainPanel(
       conditionalPanel(
