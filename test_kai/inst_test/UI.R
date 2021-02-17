@@ -22,6 +22,18 @@ ui <- fluidPage(
                  tabPanel("USA")
                )#close tabsetPanel
              )#close mainpanel
-    )#close tabPanel stock
+    ),#close tabPanel stock
+    tabPanel("Corona",
+             sidebarPanel(
+               selectize_corona(),
+               checkboxGroupInput("CoronaCountry","Country",c("Germany","United States"),selected = "Germany"),
+               sliderinput_dates_corona(),
+               checkboxInput("hovering_corona","Enable hover",value = FALSE)
+             ),
+             mainPanel(
+               plot_corona(),
+               hover_info_corona()
+             )
+             )#close tabPanel Corona
   )#close tabsetPanel
 )#close fluidpage
