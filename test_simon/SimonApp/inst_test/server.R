@@ -6,6 +6,10 @@ function(input, output, session) {
     updateTabsetPanel(session, "params", selected = input$Sentiment_type)
     })
 
+    #observeEvent(input$reset,{
+    #updateSelectizeInput(session,"Stock",selected = "")
+    #})
+
     dataset <- reactive({
       if (input$Sentiment_type == "NoFilter"){
         fil <- Range_input(input$minRetweet)
@@ -22,8 +26,8 @@ function(input, output, session) {
      if (input$Sentiment_type == "NoFilter"){
         res <- dataset()
         res <- res %>% filter((retweet_filter == input$minRetweet) &
-                              (likes_filter == input$minLikes) &
-                              (long_tweet == input$tweet_length))
+                               (likes_filter == input$minLikes) &
+                               ((long_tweet == "yes")|(long_tweet == "no")))
      }else{ # live filtering
         res <- dataset()
         res %>% filter((retweets_count > input$minRetweet)
@@ -55,11 +59,15 @@ function(input, output, session) {
 
 
    output$plot1 <- renderPlot({
-      TS_plot(filtered_df(), aggregation = input$aggregation,input$Sentiment_type)})
+      TS_plot(filtered_df(), aggregation = input$aggregation,input$Sentiment_type,
+              input$facet,input$tweet_length)})
 
    output$plot2 <- renderPlot({
-      density_plot(filtered_df(), aggregation = input$aggregation,input$Sentiment_type)})
+      density_plot(filtered_df(), aggregation = input$aggregation,input$Sentiment_type,
+                   input$facet,input$tweet_length)})
 
-
+   output$plot3 <- renderPlot({
+     box_plot(filtered_df(), aggregation = input$aggregation,input$Sentiment_type,
+              input$facet,input$tweet_length)})
 
 }
