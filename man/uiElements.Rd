@@ -2,9 +2,24 @@
 % Please edit documentation in R/uiElements.R
 \name{selectize_Stocks}
 \alias{selectize_Stocks}
+<<<<<<< HEAD
 \title{UI Elements}
 \usage{
 selectize_Stocks()
+=======
+\alias{sliderinput_dates}
+\alias{plot_stocks_DE}
+\alias{hover_info_DE}
+\title{UI Elements}
+\usage{
+selectize_Stocks(components)
+
+sliderinput_dates()
+
+plot_stocks_DE()
+
+hover_info_DE()
+>>>>>>> dd30aedcd870851715de320a0393063fbb4dc3f7
 }
 \description{
 UI Elements
