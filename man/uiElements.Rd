@@ -5,8 +5,6 @@
 \alias{sliderinput_dates}
 \alias{plot_stocks_DE}
 \alias{hover_info_DE}
-\alias{plot_stocks_US}
-\alias{hover_info_US}
 \title{UI Elements}
 \usage{
 selectize_Stocks(components)
@@ -16,10 +14,6 @@ sliderinput_dates()
 plot_stocks_DE()
 
 hover_info_DE()
-
-plot_stocks_US()
-
-hover_info_US()
 }
 \description{
 UI Elements

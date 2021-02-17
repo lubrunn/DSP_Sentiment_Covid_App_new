@@ -25,7 +25,7 @@ stock_dataset_DE <- function(stock,date1,date2){
 #' @rdname stock_calculations
 create_hover_info_DE <- function(hoverinput,stockdata){
   hover <- hoverinput
-  point <- nearPoints(stockdata, hover, threshold = 100, maxpoints = 1, addDist = TRUE)
+  point <- nearPoints(stockdata, hover, threshold = 500, maxpoints = 1, addDist = TRUE)
   if (nrow(point) == 0) return(NULL)
 
   # calculate point position INSIDE the image as percent of total dimensions
@@ -40,8 +40,8 @@ create_hover_info_DE <- function(hoverinput,stockdata){
   # create style property fot tooltip
   # background color is set so tooltip is a bit transparent
   # z-index is set so we are sure are tooltip will be on top
-  style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
-                  "left:", left_px + 2, "px; top:", top_px + 2, "px;")
+  style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.6); ",
+                  "left:", left_px + 2, "px; top:", top_px + 60, "px;")
 
   # actual tooltip created as wellPanel
   wellPanel(
@@ -51,3 +51,6 @@ create_hover_info_DE <- function(hoverinput,stockdata){
                   "<b> Price: </b>", point$Close., "<br/>")))
   )
 }
+
+
+
