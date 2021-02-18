@@ -36,3 +36,33 @@ Range_input <- function(minRetweet){
                   ifelse(minRetweet >= 280 & minRetweet < 290,"290",
                   ifelse(minRetweet >= 290,"300",NA))))))))))))))))))))))))))))))
 }
+
+
+
+
+#' @export
+#' @rdname multiple_plotting
+Multiple_input <- function(filtered_df,aggregation,listi,key){
+
+  if(length(aggregation) == 1){
+    aggregation <- key[[aggregation]]
+    filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation)
+
+  }else if(length(aggregation) == 2){
+    aggregation <- key[listi]
+    filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation[[1]],aggregation[[2]])
+
+  }else if(length(aggregation) == 3){
+    aggregation <- key[listi]
+    filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation[[1]],aggregation[[2]],
+                                                 aggregation[[3]])
+  }else{
+    aggregation <- key[listi]
+    filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation[[1]],aggregation[[2]],
+                                                 aggregation[[3]],aggregation[[4]])}
+
+
+
+
+
+}

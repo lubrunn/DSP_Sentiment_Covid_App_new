@@ -15,25 +15,12 @@ TS_plot <- function(filtered_df,aggregation,type,facet,tweet_length){
 
     listi = listi[which(listi %in% aggregation)]
 
-    if(length(aggregation) == 1){
-      aggregation <- key[[aggregation]]
-      filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation)
-
-      }else if(length(aggregation) == 2){
-      aggregation <- key[listi]
-      filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation[[1]],aggregation[[2]])
-
-      }else if(length(aggregation) == 3){
-      aggregation <- key[listi]
-      filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation[[1]],aggregation[[2]],
-                                          aggregation[[3]])
-      }else{
-      aggregation <- key[listi]
-      filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation[[1]],aggregation[[2]],
-                                          aggregation[[3]],aggregation[[4]])}
+    filtered_df <- Multiple_input(filtered_df,aggregation,listi,key)
 
     if(facet != "Long-Short tweet"){
       filtered_df <- filtered_df %>% filter(long_tweet == tweet_length)}
+
+    filtered_df$date <- as.Date(filtered_df$date)
 
     p <-  ggplot(filtered_df, aes_string(x = "date", y = "value", color = "id",group = "id")) +
         geom_line() + labs(x = "Period")+
@@ -44,7 +31,7 @@ TS_plot <- function(filtered_df,aggregation,type,facet,tweet_length){
               axis.line = element_line(colour = "black"),
               legend.key = element_rect(fill = "white", color = NA),
               legend.title = element_blank()) +
-        ylim(-1,1)
+        ylim(-1,1) +scale_x_date(date_labels = "%m-%Y")
 
    if(facet != "Long-Short tweet"){
        p
@@ -85,33 +72,19 @@ density_plot <- function(filtered_df,aggregation,type,facet,tweet_length) {
 
     listi = listi[which(listi %in% aggregation)]
 
-    if(length(aggregation) == 1){
-      aggregation <- key[[aggregation]]
-      filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation)
-
-    }else if(length(aggregation) == 2){
-      aggregation <- key[listi]
-      filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation[[1]],aggregation[[2]])
-
-    }else if(length(aggregation) == 3){
-      aggregation <- key[listi]
-      filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation[[1]],aggregation[[2]],
-                                                   aggregation[[3]])
-    }else{
-      aggregation <- key[listi]
-      filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation[[1]],aggregation[[2]],
-                                                   aggregation[[3]],aggregation[[4]])}
+    filtered_df <- Multiple_input(filtered_df,aggregation,listi,key)
 
     if(facet != "Long-Short tweet"){
       filtered_df <- filtered_df %>% filter(long_tweet == tweet_length)}
 
-     p <- ggplot(filtered_df, aes_string("value", color = "id",group = "id")) +
-      geom_density(color="black",fill="lightblue",size=1) + labs(x = aggregation, y = "density") +
+     p <- ggplot(filtered_df, aes_string("value", fill = "id",group = "id")) +
+      geom_density(color="black",size=1) + labs(x = aggregation, y = "density") +
       theme(
             panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
             panel.background = element_blank(),
-            axis.line = element_line(colour = "black")) +
+            axis.line = element_line(colour = "black"),
+            legend.title = element_blank()) +
     xlim(-1,1)
 
      if(facet != "Long-Short tweet"){
@@ -155,28 +128,13 @@ box_plot <- function(filtered_df,aggregation,type,facet,tweet_length) {
 
     listi = listi[which(listi %in% aggregation)]
 
-    if(length(aggregation) == 1){
-      aggregation <- key[[aggregation]]
-      filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation)
-
-    }else if(length(aggregation) == 2){
-      aggregation <- key[listi]
-      filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation[[1]],aggregation[[2]])
-
-    }else if(length(aggregation) == 3){
-      aggregation <- key[listi]
-      filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation[[1]],aggregation[[2]],
-                                                   aggregation[[3]])
-    }else{
-      aggregation <- key[listi]
-      filtered_df <- filtered_df %>% tidyr::gather("id", "value", aggregation[[1]],aggregation[[2]],
-                                                   aggregation[[3]],aggregation[[4]])}
+    filtered_df <- Multiple_input(filtered_df,aggregation,listi,key)
 
     if(facet != "Long-Short tweet"){
       filtered_df <- filtered_df %>% filter(long_tweet == tweet_length)}
 
-    p <- ggplot(filtered_df, aes_string("value", color = "id",group = "id")) +
-      geom_boxplot(color="black",fill="lightblue",size=1) +
+    p <- ggplot(filtered_df, aes_string("value", fill = "id",group = "id")) +
+      geom_boxplot(color="black",size=1) +
       labs(x = aggregation) +
       coord_flip() +
       theme(axis.title.x=element_blank(),
@@ -185,7 +143,8 @@ box_plot <- function(filtered_df,aggregation,type,facet,tweet_length) {
             panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
             panel.background = element_blank(),
-            axis.line = element_line(colour = "black"))
+            axis.line = element_line(colour = "black"),
+            legend.title = element_blank())
     if(facet != "Long-Short tweet"){
       p
     }else{

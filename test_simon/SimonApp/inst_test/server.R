@@ -3,27 +3,34 @@
 function(input, output, session) {
 
     observeEvent(input$Sentiment_type, {                         #Observe event from input (model choices)
+    req(input$Sentiment_type)
     updateTabsetPanel(session, "params", selected = input$Sentiment_type)
     })
 
-    #observeEvent(input$reset,{
-    #updateSelectizeInput(session,"Stock",selected = "")
-    #})
+    observeEvent(input$reset,{
+    updateSelectizeInput(session,"aggregation",selected = "")
+    })
 
     dataset <- reactive({
+      req(input$Sentiment_type)
       if (input$Sentiment_type == "NoFilter"){
+        req(input$minRetweet)
         fil <- Range_input(input$minRetweet)
         res <- eval(parse(text = paste('En', '_NoFilter_',fil,'()', sep='')))
-
+                                  #input$language
       }else{
         filename <- paste0(input$stock,"_",input$language,"()")
         res <- write(filename, stdout())
       }
     })
-#input$language
+
 
     filtered_df <- reactive({ # subset pre-filtered dataset
-     if (input$Sentiment_type == "NoFilter"){
+      req(input$Sentiment_type)
+
+      if (input$Sentiment_type == "NoFilter"){
+        req(input$minRetweet)
+        req(input$minLikes)
         res <- dataset()
         res <- res %>% filter((retweet_filter == input$minRetweet) &
                                (likes_filter == input$minLikes) &
@@ -59,14 +66,20 @@ function(input, output, session) {
 
 
    output$plot1 <- renderPlot({
+     req(input$aggregation)
+     req(input$Sentiment_type)
       TS_plot(filtered_df(), aggregation = input$aggregation,input$Sentiment_type,
               input$facet,input$tweet_length)})
 
    output$plot2 <- renderPlot({
+     req(input$aggregation)
+     req(input$Sentiment_type)
       density_plot(filtered_df(), aggregation = input$aggregation,input$Sentiment_type,
                    input$facet,input$tweet_length)})
 
    output$plot3 <- renderPlot({
+     req(input$aggregation)
+     req(input$Sentiment_type)
      box_plot(filtered_df(), aggregation = input$aggregation,input$Sentiment_type,
               input$facet,input$tweet_length)})
 

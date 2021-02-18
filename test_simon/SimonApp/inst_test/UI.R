@@ -5,6 +5,7 @@ parameter_tabs <- tabsetPanel(
            selectizeInput("aggregation", "Aggregation", choices = c("Mean","Mean weighted by retweets",
                           "Mean weighted by likes", "Mean weighted by length"),
                            multiple = T, select = "Mean"),
+           actionButton("reset", "clear selected"),
            sliderInput("minRetweet", "Select minimum number of retweets", min = 0,value = 1,
                        max = 300,step = 1),
            sliderInput("minLikes", "Select minimum number of likes", min = 0,value = 1,
@@ -19,6 +20,7 @@ parameter_tabs <- tabsetPanel(
   tabPanel("Stocks",
            selectizeInput("stock", "Choose a stock", choices = "",multiple = T,selected  = "Allianz",
                           options = list(placeholder = 'select a stock')),
+           #actionButton("reset", "clear selected"),
            # for stock only faceting
            selectInput("aggregation", "Aggregation", choices = c("Mean","Mean weighted by retweets",
                                                                  "Mean weighted by likes",
