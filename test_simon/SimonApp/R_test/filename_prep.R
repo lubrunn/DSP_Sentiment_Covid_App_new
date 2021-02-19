@@ -66,3 +66,28 @@ Multiple_input <- function(filtered_df,aggregation,listi,key){
 
 
 }
+
+#' @export
+#' @rdname multiple_plotting
+ticker_dict <- function(stock){
+
+  listi <- list("adidas " = "ADS.DE","Allianz " = "ALV.DE",
+                "Deutsche Bank " = "DBK.DE","Delivery Hero " = "DHER.DE")
+
+  res <- listi[[stock]]
+
+}
+
+#' @export
+#' @rdname multiple_plotting
+key <- function(){
+
+key <- list("Mean weighted by likes" = "sentiment_weight_likes",
+            "Mean weighted by length" = "sentiment_weight_length",
+            "Mean weighted by retweets" = "sentiment_weight_retweet",
+            "Mean" = "sentiment_mean")
+
+
+}
+
+
