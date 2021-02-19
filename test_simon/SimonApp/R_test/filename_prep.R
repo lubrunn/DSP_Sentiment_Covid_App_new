@@ -66,3 +66,21 @@ Multiple_input <- function(filtered_df,aggregation,listi,key){
 
 
 }
+
+#' @export
+#' @rdname multiple_plotting
+ticker_dict <- function(stock){
+
+  listi <- list("adidas " = "ADS.DE","Allianz " = "ALV.DE",
+                "Deutsche Bank " = "DBK.DE","Delivery Hero " = "DHER.DE")
+
+  res <- listi[[stock]]
+
+}
+
+
+
+
+
+
+

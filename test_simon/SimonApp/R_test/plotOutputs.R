@@ -1,19 +1,21 @@
 #' Plot Output Functions
-
+aggregation = "Mean"
 #' @export
 #' @rdname timeseries
-
-TS_plot <- function(filtered_df,aggregation,type,facet,tweet_length){
+TS_plot <- function(filtered_df,aggregation,aggregation1,type,facet,tweet_length,industry_sentiment,language1){
 
   key <- list("Mean weighted by likes" = "sentiment_weight_likes",
               "Mean weighted by length" = "sentiment_weight_length",
               "Mean weighted by retweets" = "sentiment_weight_retweet",
               "Mean" = "sentiment_mean")
 
-  if (type == "NoFilter"){
-    listi = c("Mean weighted by likes","Mean weighted by length","Mean weighted by retweets","Mean")
+  listi = c("Mean weighted by likes","Mean weighted by length","Mean weighted by retweets","Mean")
 
-    listi = listi[which(listi %in% aggregation)]
+  listi1 = listi[which(listi %in% aggregation1)]
+  listi = listi[which(listi %in% aggregation)]
+
+  if (type == "NoFilter"){
+
 
     filtered_df <- Multiple_input(filtered_df,aggregation,listi,key)
 
@@ -40,19 +42,26 @@ TS_plot <- function(filtered_df,aggregation,type,facet,tweet_length){
      }
 
   }else{
-    aggregation <- key[[aggregation]]
 
-    TS_Data <- filtered_df
-    TS_Data <- aggregate_sentiment(TS_Data)
+  if(industry_sentiment == "no"){
+     filtered_df <- aggregate_sentiment(filtered_df)}
 
-    ggplot(TS_Data, aes_string(x = "date", y = aggregation , group = 1)) +
-      geom_line(color = "#b3d0ec") + labs(x = "Period") +
+    filtered_df <- filtered_df %>% filter(language == language1)
+
+    filtered_df <- Multiple_input(filtered_df,aggregation1,listi1,key)
+
+    filtered_df$date <- as.Date(filtered_df$date)
+
+    ggplot(filtered_df, aes_string(x = "date", y = "value", color = "id",group = "id")) +
+      geom_line() + labs(x = "Period") +
       theme(
-            panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank(),
-            panel.background = element_blank(),
-            axis.line = element_line(colour = "black")) +
-      ylim(-1,1)
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        legend.key = element_rect(fill = "white", color = NA),
+        legend.title = element_blank()) +
+      ylim(-1,1) +scale_x_date(date_labels = "%m-%Y")
     }
 }
 
