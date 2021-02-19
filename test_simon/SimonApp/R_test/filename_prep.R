@@ -78,9 +78,16 @@ ticker_dict <- function(stock){
 
 }
 
+#' @export
+#' @rdname multiple_plotting
+key <- function(){
+
+key <- list("Mean weighted by likes" = "sentiment_weight_likes",
+            "Mean weighted by length" = "sentiment_weight_length",
+            "Mean weighted by retweets" = "sentiment_weight_retweet",
+            "Mean" = "sentiment_mean")
 
 
-
-
+}
 
 

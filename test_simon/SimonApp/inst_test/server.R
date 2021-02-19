@@ -29,6 +29,12 @@ function(input, output, session) {
 
   })
 
+   components_de <- reactive({
+     res <- COMPONENTS_DE()
+   })
+   components_en <- reactive({
+     res <- COMPONENTS_EN()
+   })
 
   filtered_df <- reactive({ # subset pre-filtered dataset
     req(input$Sentiment_type)
@@ -45,6 +51,7 @@ function(input, output, session) {
                               (likes_filter == input$minLikes) &
                               ((long_tweet == "yes")|(long_tweet == "no")))
     }else{ # live filtering
+        req(input$industry)
 
         res <- dataset()
          if (input$tweet_length_stock == "yes"){
@@ -52,17 +59,24 @@ function(input, output, session) {
            res <- res %>% filter((retweets_count > input$minRetweet_stocks) &
                        #(likes_count > input$minLikes) &
                        (tweet_length > median(tweet_length)))
+
+          # if(input$industry == "Financial Services") {
+          #   play <- get_industry_sentiment(components_en,components_de,input$industry,
+          #                                  input$minRetweet_stocks)
+          # }
+
         }else{
 
           res <- res %>% filter(retweets_count > input$minRetweet_stocks)
                                 #(likes_count > input$minLikes) &
-          }
 
-    #req(input$industry)
+          #if(input$industry == "Financial Services") {
+          #  play <- get_industry_sentiment(components_en,components_de,input$industry,
+          #                                 input$minRetweet_stocks)
+          #}
+        }
 
-    #if(input$industry == "Himmel hilf") {
-     #  res <- get_industry_sentiment(COMPONENTS_EN(),COMPONENTS_DE(),input$industry)
-      #  }
+
     }
 
 
@@ -101,14 +115,22 @@ function(input, output, session) {
   output$plot2 <- renderPlot({
     req(input$aggregation)
     req(input$Sentiment_type)
-    density_plot(filtered_df(), aggregation = input$aggregation,input$Sentiment_type,
-                 input$facet,input$tweet_length)})
+    req(input$industry_sentiment)
+    req(input$language)
+    req(input$aggregation1)
+
+    density_plot(filtered_df(),input$aggregation,input$aggregation1,input$Sentiment_type,
+                 input$facet,input$tweet_length,input$industry_sentiment,input$language)})
 
   output$plot3 <- renderPlot({
     req(input$aggregation)
     req(input$Sentiment_type)
-    box_plot(filtered_df(), aggregation = input$aggregation,input$Sentiment_type,
-             input$facet,input$tweet_length)})
+    req(input$industry_sentiment)
+    req(input$language)
+    req(input$aggregation1)
+
+    box_plot(filtered_df(),input$aggregation,input$aggregation1,input$Sentiment_type,
+             input$facet,input$tweet_length,input$industry_sentiment,input$language)})
 
 }
 
