@@ -2,8 +2,8 @@ Sys.setlocale("LC_TIME", "English")
 ui <- fluidPage(
   #theme = shinythemes::shinytheme("cosmo"),
   shinythemes::themeSelector(),
-  titlePanel("Sentiment_Covid_App"),
-  tabsetPanel(
+  #titlePanel("Sentiment_Covid_App"),
+  navbarPage("APP",
     tabPanel("Twitter"),
     tabPanel("Sentiment"),
     tabPanel("Stocks",
@@ -34,6 +34,15 @@ ui <- fluidPage(
                plot_corona(),
                hover_info_corona()
              )
-             )#close tabPanel Corona
+             ),#close tabPanel Corona
+    navbarMenu("Model",
+               tabPanel("Granger",
+                        sidebarPanel(),
+                        mainPanel(
+                          tabsetPanel(
+                            tabPanel("Visualize"),
+                            tabPanel("Background-steps"),
+                            tabPanel("Results")))),
+               tabPanel("Quantile Regression"))
   )#close tabsetPanel
 )#close fluidpage
