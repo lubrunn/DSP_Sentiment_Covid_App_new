@@ -33,7 +33,7 @@ ui <- fluidPage(
 
 server <- function(session, output, input){
   output$plot <- renderForceNetwork({
-    browser()
+    #browser()
     df <- readr::read_csv(input$dataset_load)
     
     tomatch <- input$search_term
