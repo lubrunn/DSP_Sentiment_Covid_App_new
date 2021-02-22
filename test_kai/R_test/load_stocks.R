@@ -224,7 +224,14 @@ VOW3 <- function(){
   read.csv(filename)
 }
 
-
+#' @export
+#' @rdname load_stocks
+load_all_stocks_DE <- function(){
+  filename <- "https://unitc-my.sharepoint.com/:x:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/EagyRFS8KStClVOHtP9Nkj0BUbAwefPendK6to-1BQIZSQ?download=1"
+  help <- read.csv(filename)
+  help$Dates <- as.Date(help$Dates)
+  return(help)
+}
 
 
 
