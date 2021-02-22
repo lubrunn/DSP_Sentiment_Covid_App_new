@@ -86,17 +86,19 @@ server <- function(session, output, input){
     
     
     # Store the degree.
-    V(network)$degree <- strength(graph = network)
+    # strength function sums up the edge weight of adjacent edges of each node
+    # V(network)$degree <- strength(graph = network)
     
     
     # Create networkD3 object.
     network.D3 <- igraph_to_networkD3(g = network)
     # Define node size.
-    network.D3$nodes <- network.D3$nodes %>% mutate(Degree = (1E-2)*V(network)$degree)
+    # network.D3$nodes <- network.D3$nodes %>% mutate(Degree = (1E-2)*V(network)$degree)
     # Degine color group (I will explore this feature later).
     network.D3$nodes <- network.D3$nodes %>% mutate(Group = 1)
     
-    
+    # degree is number of adjacent edges --> here we set the size of nodes proportional to the degree
+    # i.e. the more adjacent words a node has the bigger it will appear
     deg <- degree(network, mode="all")
     network.D3$nodes$size <- deg * 3
     
