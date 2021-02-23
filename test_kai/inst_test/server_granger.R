@@ -144,5 +144,37 @@ server <- function(input, output, session) {
     HTML(paste(str1,str2,str3, sep = '<br/>'))
   })
   
+  output$granger_satz <- renderUI({
+    if(input$direction_granger == TRUE){
+      if (granger_result()["p.value"] < 0.1){
+        str1 <- paste("Zweitevariable granger causes ",input$Granger_outcome,"of",input$Stock_Granger)
+        } else {
+          str1 <- paste("Zweitevariable does not granger cause ",input$Granger_outcome,"of",input$Stock_Granger)
+        }
+    } else {
+      if (granger_result()["p.value"] < 0.1){
+        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "granger causes Zweitevariable")
+        } else {
+          str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "does not granger cause Zweitevariable")
+        }
+      }
+    HTML(paste(str1))
+  })
+  
+  output$info_granger <- renderUI({
+    str1 <- paste("In this section, the user is able to perform a Granger causality test, which is a statistical hypothesis test for determining whether one time series is useful in forecasting another.
+                  The term 'causality' in this context means nothing more than predictive causality and should not be mistaken for 
+                  'true causality'. It rather measures the ability of past values of one time series to predict future values of another time series.
+                  ","<br/>")
+    str2 <- paste("The following steps are automatically performed after the user selects two time series : ","<br/>",
+                  "1. The optimal number of lags is calculated","<br/>",
+                  "2. Stationarity is repeatedly tested and the series are differenced until sationarity is achieved","<br/>",
+                  "3. A VAR model is estimated with the optimal number of lags and the (if necessary) transformed series","<br/>",
+                  "4. A granger causality test is performed.")
+    HTML(paste(str1,str2,sep = '<br/>'))
+  })
+  
+  
+  
   
 }
