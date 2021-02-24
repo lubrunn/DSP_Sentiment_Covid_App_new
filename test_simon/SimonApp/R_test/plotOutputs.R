@@ -1,19 +1,20 @@
 #' Plot Output Functions
-aggregation = "Mean"
 #' @export
 #' @rdname timeseries
-TS_plot <- function(filtered_df,aggregation,aggregation1,type,facet,tweet_length,industry_sentiment,language1){
+TS_plot <- function(filtered_df,aggregation,aggregation1,aggregation2,type,facet,tweet_length,industry_sentiment,language1,
+                    language2,components_de,industry,retweets_min){
 
 
   listi = c("Mean weighted by likes","Mean weighted by length","Mean weighted by retweets","Mean")
 
+  listio = listi[which(listi %in% aggregation)]
   listi1 = listi[which(listi %in% aggregation1)]
-  listi = listi[which(listi %in% aggregation)]
+  listi2 = listi[which(listi %in% aggregation2)]
 
   if (type == "NoFilter"){
 
 
-    filtered_df <- Multiple_input(filtered_df,aggregation,listi,key())
+    filtered_df <- Multiple_input(filtered_df,aggregation,listio,key())
 
     if(facet != "Long-Short tweet"){
       filtered_df <- filtered_df %>% filter(long_tweet == tweet_length)}
@@ -40,11 +41,15 @@ TS_plot <- function(filtered_df,aggregation,aggregation1,type,facet,tweet_length
   }else{
 
   if(industry_sentiment == "no"){
-     filtered_df <- aggregate_sentiment(filtered_df)}
+     filtered_df <- aggregate_sentiment(filtered_df)
+     filtered_df <- filtered_df %>% filter(language == language1)
+     filtered_df <- Multiple_input(filtered_df,aggregation1,listi1,key())}
 
-    filtered_df <- filtered_df %>% filter(language == language1)
-
-    filtered_df <- Multiple_input(filtered_df,aggregation1,listi1,key())
+  else{
+    filtered_df <- get_industry_sentiment(components_de,industry,retweets_min)
+    filtered_df <- filtered_df %>% filter(language == language2)
+    filtered_df <- Multiple_input(filtered_df,aggregation2,listi2,key())
+  }
 
     filtered_df$date <- as.Date(filtered_df$date)
 
