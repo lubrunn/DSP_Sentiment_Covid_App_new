@@ -1,5 +1,5 @@
 server <- function(input, output, session) {
-  
+
   ############################################################# Stocks
   # load stock dataset
   stockdata_DE <- reactive({
@@ -7,6 +7,14 @@ server <- function(input, output, session) {
     #stock_dataset_DE(input$Stock,input$dates[1],input$dates[2])
     load_all_stocks_DE()
   })
+
+  stockdata_US <- reactive({
+    #req(input$Stock)
+    #stock_dataset_DE(input$Stock,input$dates[1],input$dates[2])
+    load_all_stocks_US()
+  })
+
+
   # reset button for stock selection
   observeEvent(input$reset,{
     updateSelectizeInput(session,"Stock",selected = "")
@@ -37,37 +45,37 @@ server <- function(input, output, session) {
     if (!is.null(brush)) {
       ranges$x <- c(brush$xmin, brush$xmax)
       ranges$y <- c(brush$ymin, brush$ymax)
-      
+
     } else {
       ranges$x <- NULL
       ranges$y <- NULL
     }
   })
   #####################################################################
-  
+
   ##################################################################### Corona
-  
+
   corona_data <- reactive({
     CORONA(input$CoronaCountry,input$dates_corona[1],input$dates_corona[2])
   })
-  
+
   output$corona_plot <- renderPlot({
     if (!is.null(ranges2$x)) {
       ranges2$x <- as.Date(ranges2$x, origin = "1970-01-01")
     }
-    
+
     ggplot(corona_data(), aes_string("date",input$corona_measurement,color = "location"))+
       geom_line() +
       theme_classic() +
       coord_cartesian(xlim = ranges2$x, ylim = ranges2$y, expand = FALSE)
   })
-  
+
   # hover info box
   output$hover_info_corona <- renderUI({
     req(input$hovering_corona)
     create_hover_info_corona(input$plot_hover_corona, corona_data(),input$corona_measurement)
   })
-  
+
   # zoom functionality
   ranges2 <- reactiveValues(x = NULL, y = NULL)
   observeEvent(input$plot_corona_dblclick, {
@@ -75,15 +83,15 @@ server <- function(input, output, session) {
     if (!is.null(brush)) {
       ranges2$x <- c(brush$xmin, brush$xmax)
       ranges2$y <- c(brush$ymin, brush$ymax)
-      
+
     } else {
       ranges2$x <- NULL
       ranges2$y <- NULL
     }
   })
-  
+
   ##################################################################################### Granger
-  
+
   # both <- reactive({
   #   req(input$Stock_Granger)
   #   granger_data1 <-  stock_dataset_DE(input$Stock_Granger,input$date_granger[1],input$date_granger[2])[c("Dates",input$Granger_outcome)]
@@ -91,7 +99,7 @@ server <- function(input, output, session) {
   #   granger_data1
   #   #cbind(granger_data1[input$Granger_outcome],granger_data2["Open"])
   # })
-  
+
   granger_data <- reactive({
     granger1 <- filter(stockdata_DE(),
                        .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Granger]) &
@@ -101,12 +109,12 @@ server <- function(input, output, session) {
                                            .data$Dates >= .env$input$date_granger[1] & .data$Dates <= .env$input$date_granger[2])[["Open"]]
     granger1
   })
-  
+
   optlags <- reactive({
     #library(vars)
     VARselect(granger_data()[-1],lag.max = 10, type = "const")$selection[["AIC(n)"]]
   })
-  
+
   dickey_fuller <- reactive({
     data <- granger_data()
     while (adf.test(data[[2]],k=optlags())$p.value > 0.1 | adf.test(data[[3]],k=optlags())$p.value > 0.1){
@@ -116,7 +124,7 @@ server <- function(input, output, session) {
     }
     data
   })
-  
+
   granger_result <- reactive({
     varobject <- VAR(dickey_fuller()[-1], p = optlags(), type = "const")
     cause <- NULL
@@ -124,10 +132,10 @@ server <- function(input, output, session) {
     granger <- causality(varobject, cause = cause)
     granger$Granger
   })
-  
+
   output$granger_result <- renderPrint({
     granger_result()})
-  
+
   output$stocks_granger <- renderPlot({
     ggplot(granger_data(),aes_string("Dates",input$Granger_outcome))+
       geom_line()
@@ -143,7 +151,7 @@ server <- function(input, output, session) {
     }
     HTML(paste(str1,str2,str3, sep = '<br/>'))
   })
-  
+
   output$granger_satz <- renderUI({
     if(input$direction_granger == TRUE){
       if (granger_result()["p.value"] < 0.1){
@@ -160,10 +168,10 @@ server <- function(input, output, session) {
       }
     HTML(paste(str1))
   })
-  
+
   output$info_granger <- renderUI({
     str1 <- paste("In this section, the user is able to perform a Granger causality test, which is a statistical hypothesis test for determining whether one time series is useful in forecasting another.
-                  The term 'causality' in this context means nothing more than predictive causality and should not be mistaken for 
+                  The term 'causality' in this context means nothing more than predictive causality and should not be mistaken for
                   'true causality'. It rather measures the ability of past values of one time series to predict future values of another time series.
                   ","<br/>")
     str2 <- paste("The following steps are automatically performed after the user selects two time series : ","<br/>",
@@ -173,8 +181,57 @@ server <- function(input, output, session) {
                   "4. A granger causality test is performed.")
     HTML(paste(str1,str2,sep = '<br/>'))
   })
-  
-  
-  
-  
+
+  ################################################################################################### Regression
+
+  ###flexible input for stocks: show either german or us companies
+  output$stock_regression <- renderUI({
+    if (input$country_regression == "Germany"){
+           input <- selectizeInput("Stock_Regression","Choose dependent variable:",
+                                 c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
+                                 selected = "Bayer ",multiple = FALSE)
+    } else {
+      input <- selectizeInput("Stock_Regression","Choose dependent variable:",
+                              c(COMPONENTS_US()[["Company.Name"]],"DOW"),
+                              selected = "Apple ",multiple = FALSE)
+    }
+    input
+  })
+
+  dataset <- reactive({
+    if (input$country_regression == "Germany"){
+    data_reg <- filter(stockdata_DE(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
+                       .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Regression]) &
+                         .data$Dates >= .env$input$date_regression[1] & .data$Dates <= .env$input$date_regression[2])[c("Dates","Close","name")] #hier später noch CLose flexibel machen
+    } else {
+      data_reg <- filter(stockdata_US(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
+                         .data$name %in% (c(COMPONENTS_US()[["Symbol"]], "DOW")[c(COMPONENTS_US()[["Company.Name"]], "DOW") %in% .env$input$Stock_Regression]) &
+                           .data$Dates >= .env$input$date_regression[1] & .data$Dates <= .env$input$date_regression[2])[c("Dates","Close","name")] #hier später noch CLose flexibel machen
+  }
+  stock_controls <- stock_controls_test()   ### an der stelle müsste dann noch ein if statement für das country hin
+  stock_controls$Dates <- as.Date(stock_controls$Dates)   ##wenn simon aber die controls der companies in 1 dataset packt dann reichts so
+
+  if (input$country_regression == "Germany"){
+    global_controls <- global_controls_test_DE()
+  }else {
+    global_controls <- global_controls_test_US()
+  }
+  global_controls$Dates <- as.Date(global_controls$Dates)
+
+  data_reg2 <- left_join(data_reg,stock_controls,by = c("Dates","name"))
+  data_reg3 <- left_join(data_reg2,global_controls,by = c("Dates"))
+  data_reg3    ##diesen datensatz gibt man dann als input in die regression und wählt dann die spalten per namen aus(durch die inputs)
+
+  })
+
+  output$test_table <- renderPrint ({
+    head(dataset())
+  })
+
+
+
+
+
+
+
 }
