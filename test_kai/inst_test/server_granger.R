@@ -219,8 +219,8 @@ server <- function(input, output, session) {
   global_controls$Dates <- as.Date(global_controls$Dates)
 
   data_reg2 <- left_join(data_reg,stock_controls,by = c("Dates","name"))
-  data_reg3 <- left_join(data_reg2,global_controls,by = c("Dates"))
-  data_reg3    ##diesen datensatz gibt man dann als input in die regression und wählt dann die spalten per namen aus(durch die inputs)
+  data_reg3 <- left_join(data_reg2,global_controls,by = c("Dates")) #hierdurch kommt die varible "global" in den datensatz
+  data_reg3    ##diesen datensatz filtern wir dann nochmal mit dem sliderinput für die kontrollvariablen(eine/keine/mehrere möglich)
 
   })
 
