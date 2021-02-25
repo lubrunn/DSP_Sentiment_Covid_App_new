@@ -12,6 +12,7 @@ library(shinyFiles) # set wd in shiny file directly
 library(glue)
 library(shinyjs)
 library(shinyhelper)
+library(htmltools)
 setwd("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/cleaned/En_NoFilter")
 all_files <- list.files()
 
@@ -20,8 +21,7 @@ all_files <- list.files()
 
 ui <- fluidPage(
   
-  titlePanel("Hello Shiny!"),
-  
+ 
   sidebarLayout(
     
     sidebarPanel(
@@ -36,11 +36,11 @@ ui <- fluidPage(
       numericInput("long", "Minimum Tweet Length", 0),
       numericInput("n_all", "Miimum Number of Tweets that have word pairs",
                    min = 50, value = 50),
-      numericInput("n_words", "Miimum Number of Times words need to appear in subsample",
+      numericInput("n_subset", "Miimum Number of Times words need to appear in subsample",
                    min = 50, value = 50),
       numericInput("min_corr", "Minimum Word Correlation", value = 0.15, min = 0.15, max = 1,
                    step = 0.01),
-      actionButton("search", "Render Plot") %>%
+      actionButton("button", "Render Plot") %>%
         helper(type = "markdown",
                title = "Inline Help",
                content = "network_plot_button",
@@ -48,6 +48,9 @@ ui <- fluidPage(
                easyClose = FALSE,
                fade = TRUE,
                size = "s")
+      
+      
+     
       
     ),
     
@@ -109,23 +112,26 @@ server <- function(session, output, input){
     #browser()
     if(!file.exists(input$dataset_load)){
 
-      disable("search")
+      disable("button")
     }
     
     
   })
   
+  
+  
   # then if the file exists witch the button on, when it does not, turn it off again
   observeEvent(input$directory,{
     #browser()
-    toggleState("search", file.exists(input$dataset_load))
+    toggleState("button", file.exists(input$dataset_load))
   })
   
   
   
   
-  # browser()
-  observeEvent(input$search,{
+  # if button is clicked compute correlations
+  observeEvent(input$button,{
+    disable("button")
     
     df <- readr::read_csv(input$dataset_load,
                           
@@ -142,15 +148,15 @@ server <- function(session, output, input){
     # filter out uncommon words
     df <- df %>%
       group_by(word) %>%
-      filter(n() >= 50) %>%
+      filter(n() >= input$n_all) %>%
       ungroup()
     
     
     # still need to add here that one can enter multiple search terms
     tomatch <- input$search_term
     
-    threshold <- 0
-    min_corr <- 0.15
+    threshold <- input$n_subset
+    min_corr <- input$min_corr
     
     retweets <- input$rt
     likes <- input$likes
@@ -205,7 +211,13 @@ server <- function(session, output, input){
     network.D3$nodes$size <- deg * 3
     
     
+   
+    
+    
+    
+    
     output$plot <- renderForceNetwork({
+      
       if (is.null(network.D3)) return()
       
       # adjust colors of nodes, first is rest, second is main node for word (with group 2)
@@ -238,11 +250,13 @@ server <- function(session, output, input){
         # colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);")# change color scheme
         colourScale = JS(ColourScale),
         width = 200,
-        height = 200
+        height = 350
       )
       
+      
+      
     })
-    
+    enable("button")
   }) 
   
 }
