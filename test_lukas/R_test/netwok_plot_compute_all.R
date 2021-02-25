@@ -129,73 +129,57 @@ server <- function(session, output, input){
   
   
   
-  # if button is clicked compute correlations
+  # if button is clicked compute correlations und plot the plot
   observeEvent(input$button,{
+    # disable the button after computation started so no new computation can
+    # be startedd
     disable("button")
     
-    df <- readr::read_csv(input$dataset_load,
+    # read in the data
+    network <- readr::read_csv(input$dataset_load,
                           
                           col_types = cols(.default = "c",created_at = "c",
                                            retweets_count = "i",
-                                           likes_count = "i", tweet_length = "i"))
+                                           likes_count = "i", tweet_length = "i")) %>%
     
-    df <- df %>%
+    # unneest the words
+    
       select(doc_id, text, created_at) %>%
       tidytext::unnest_tokens(word, text) %>%
       left_join(subset(df, select = c(doc_id, text, retweets_count, likes_count, long_tweet,
-                                      tweet_length, username))) 
+                                      tweet_length, username))) %>%
     
     # filter out uncommon words
-    df <- df %>%
       group_by(word) %>%
       filter(n() >= input$n_all) %>%
-      ungroup()
-    
-    
-    # still need to add here that one can enter multiple search terms
-    tomatch <- input$search_term
-    
-    threshold <- input$n_subset
-    min_corr <- input$min_corr
-    
-    retweets <- input$rt
-    likes <- input$likes
-    longs <- input$long
-    
-    word_cors_pre <- df %>%
+      ungroup() %>%
+      
+      # filter out according to user
       filter(
-        retweets_count >= retweets &
-          likes_count >= likes &
-          tweet_length >= longs
+        retweets_count >= input$rt &
+          likes_count >= input$likes &
+          tweet_length >= input$long
       ) %>%
       # if list provided to specify tweets to look at then extract only those tweets
-      { if (tomatch != "") filter(., grepl(paste(tomatch, collapse="|"), text)) else . } %>%
+      { if (input$search_term!= "") filter(., grepl(paste(tomatch, collapse="|"), text)) else . } %>%
       { if (input$username != "") filter(., grepl(paste(input$username, collapse="|"), username)) else . } %>%
-      
+      # count number of words
       group_by(word) %>%
-      filter(n() >= threshold)
+      filter(n() >= input$n_subset) %>%
     
+      # compute word correlations
+      widyr::pairwise_cor(word, doc_id, sort = TRUE) %>%
     
-    ###############################################
-    
-    word_cors <- word_cors_pre %>%
-      widyr::pairwise_cor(word, doc_id, sort = TRUE) 
-    
-    
-    network_pre <-  word_cors %>%
-      #filter(item1 %in% c("covid", "trump", "china")) %>%
+      # create network
+      # filter out words with too low correaltion as baseline and even more if user
+      # want it
       filter(correlation > 0.15) %>% # fix in order to avoid overcrowed plot
-      filter(correlation > min_corr) # optional
-    
-    
-    network <- network_pre %>%
+      filter(correlation > input$min_corr) %>% # optional
       graph_from_data_frame(directed = FALSE)
     
     
     
-    # Store the degree.
-    # strength function sums up the edge weight of adjacent edges of each node
-    # V(network)$degree <- strength(graph = network)
+    
     
     
     # Create networkD3 object.
@@ -215,7 +199,7 @@ server <- function(session, output, input){
     
     
     
-    
+    # render the network plot
     output$plot <- renderForceNetwork({
       
       if (is.null(network.D3)) return()
