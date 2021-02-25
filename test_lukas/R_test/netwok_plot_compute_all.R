@@ -13,8 +13,8 @@ library(glue)
 library(shinyjs)
 library(shinyhelper)
 library(htmltools)
-setwd("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/cleaned/En_NoFilter")
-all_files <- list.files()
+
+all_files <- list.files("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/cleaned/De_NoFilter")
 
 
 
@@ -131,19 +131,19 @@ server <- function(session, output, input){
   
   # if button is clicked compute correlations und plot the plot
   observeEvent(input$button,{
+    
     # disable the button after computation started so no new computation can
     # be startedd
     disable("button")
     
     # read in the data
-    network <- readr::read_csv(input$dataset_load,
-                          
+    df <- readr::read_csv(input$dataset_load,      
                           col_types = cols(.default = "c",created_at = "c",
                                            retweets_count = "i",
-                                           likes_count = "i", tweet_length = "i")) %>%
+                                           likes_count = "i", tweet_length = "i")) 
     
     # unneest the words
-    
+    network <-  df %>%
       select(doc_id, text, created_at) %>%
       tidytext::unnest_tokens(word, text) %>%
       left_join(subset(df, select = c(doc_id, text, retweets_count, likes_count, long_tweet,
