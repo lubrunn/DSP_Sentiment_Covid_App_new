@@ -208,8 +208,6 @@ server <- function(input, output, session) {
                          .data$name %in% (c(COMPONENTS_US()[["Symbol"]], "DOW")[c(COMPONENTS_US()[["Company.Name"]], "DOW") %in% .env$input$Stock_Regression]) &
                            .data$Dates >= .env$input$date_regression[1] & .data$Dates <= .env$input$date_regression[2])[c("Dates","Close","name")] #hier später noch CLose flexibel machen
   }
-  stock_controls <- stock_controls_test()   ### an der stelle müsste dann noch ein if statement für das country hin
-  stock_controls$Dates <- as.Date(stock_controls$Dates)   ##wenn simon aber die controls der companies in 1 dataset packt dann reichts so
 
   if (input$country_regression == "Germany"){
     global_controls <- global_controls_test_DE()
@@ -218,9 +216,8 @@ server <- function(input, output, session) {
   }
   global_controls$Dates <- as.Date(global_controls$Dates)
 
-  data_reg2 <- left_join(data_reg,stock_controls,by = c("Dates","name"))
-  data_reg3 <- left_join(data_reg2,global_controls,by = c("Dates")) #hierdurch kommt die varible "global" in den datensatz
-  data_reg3    ##diesen datensatz filtern wir dann nochmal mit dem sliderinput für die kontrollvariablen(eine/keine/mehrere möglich)
+  data_reg2 <- left_join(data_reg,global_controls,by = c("Dates")) #hierdurch kommt die varible "global" in den datensatz
+  data_reg2    ##diesen datensatz filtern wir dann nochmal mit dem sliderinput für die kontrollvariablen(eine/keine/mehrere möglich)
 
   })
 
