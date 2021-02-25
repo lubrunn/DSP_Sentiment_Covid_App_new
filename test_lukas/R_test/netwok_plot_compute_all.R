@@ -4,8 +4,10 @@
 library(networkD3)
 # controllable
 library(shiny)
-setwd("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/cleaned/En_NoFilter")
-all_files <- list.files()
+library(igraph)
+library(shinyFiles) # set wd in shiny file directly
+#setwd("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/cleaned/En_NoFilter")
+#all_files <- list.files()
 
 
 
@@ -17,29 +19,65 @@ ui <- fluidPage(
   sidebarLayout(
     
     sidebarPanel(
+      shinyDirButton("directory", "Folder select", "Please select a folder"),
+      
       selectInput("dataset_load", "Choose dataset", choices = all_files),
+      selectInput("lang", "Choose a language", choices = c("EN", "DE")),
       textInput("search_term", "Select filtering term"),
-      numericInput("rt", "rt", 0),
-      numericInput("likes", "rt", 0),
-      numericInput("long", "rt", 0)
+      textInput("username", "Select filtering a username"),
+      numericInput("rt", "Minimum Retweets", 0),
+      numericInput("likes", "Minimum Likes", 0),
+      numericInput("long", "Minimum Tweet Length", 0)
     ),
     
     mainPanel(
-      forceNetworkOutput("plot")
+      forceNetworkOutput("plot"),
+      verbatimTextOutput("directorypath")
     )
   )
 )
 
 
 server <- function(session, output, input){
+  volumes <- c(Home = fs::path_home(), "R Installation" = R.home(), getVolumes()())
+  shinyDirChoose(input, "directory", roots = volumes, session = session, restrictions = system.file(package = "base"), allowDirCreate = FALSE)
+  observe({
+    cat("\ninput$directory value:\n\n")
+    print(input$directory)
+  })
+  
+  output$directorypath <- renderPrint({
+    if (is.integer(input$directory)) {
+      cat("No directory has been selected (shinyDirChoose)")
+      setwd(volumes)
+    } else {
+     
+      path1 <- parseDirPath(volumes, input$directory)
+      if (input$lang == "EN"){
+        path2 <- "Twitter/cleaned/En_NoFilter"
+      } else {
+        path2 <- "Twitter/cleaned/De_NoFilter"
+      }
+      setwd(file.path(path1, path2))
+     
+    }
+  })
+  
+  
+  
   output$plot <- renderForceNetwork({
    # browser()
-    df <- readr::read_csv(input$dataset_load)
+    df <- readr::read_csv(input$dataset_load,
+      
+      col_types = cols(.default = "c",created_at = "c",
+                        retweets_count = "i",
+                        likes_count = "i", tweet_length = "i"))
     
     df <- df %>%
       select(doc_id, text, created_at) %>%
       tidytext::unnest_tokens(word, text) %>%
-      left_join(subset(df, select = c(doc_id, text, retweets_count, likes_count, long_tweet))) 
+      left_join(subset(df, select = c(doc_id, text, retweets_count, likes_count, long_tweet,
+                                      tweet_length, username))) 
     
     # filter out uncommon words
     df <- df %>%
@@ -47,22 +85,26 @@ server <- function(session, output, input){
       filter(n() >= 50) %>%
       ungroup()
     
+    
+    # still need to add here that one can enter multiple search terms
     tomatch <- input$search_term
+    
     threshold <- 0
     min_corr <- 0.2
     
     retweets <- input$rt
     likes <- input$likes
-    long <- input$long
+    longs <- input$long
     
     word_cors_pre <- df %>%
       filter(
-        retweets_count >= retweets,
-        likes_count >= likes,
-        long_tweet == long
+        retweets_count >= retweets &
+        likes_count >= likes &
+          tweet_length >= longs
       ) %>%
       # if list provided to specify tweets to look at then extract only those tweets
       { if (tomatch != "") filter(., grepl(paste(tomatch, collapse="|"), text)) else . } %>%
+      { if (input$username != "") filter(., grepl(paste(input$username, collapse="|"), username)) else . } %>%
       
       group_by(word) %>%
       filter(n() >= threshold)
@@ -76,7 +118,7 @@ server <- function(session, output, input){
     
     network_pre <-  word_cors %>%
       #filter(item1 %in% c("covid", "trump", "china")) %>%
-      filter(correlation > 0.2) %>% # fix in order to avoid overcrowed plot
+      filter(correlation > 0) %>% # fix in order to avoid overcrowed plot
       filter(correlation > min_corr) # optional
     
     
