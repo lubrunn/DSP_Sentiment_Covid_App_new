@@ -5,9 +5,15 @@ library(networkD3)
 # controllable
 library(shiny)
 library(igraph)
+library(tidyverse)
 library(shinyFiles) # set wd in shiny file directly
-#setwd("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/cleaned/En_NoFilter")
-#all_files <- list.files()
+#install.packages("shinyjs")
+#install.packages("shinyhelper")
+library(glue)
+library(shinyjs)
+library(shinyhelper)
+setwd("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/cleaned/En_NoFilter")
+all_files <- list.files()
 
 
 
@@ -20,14 +26,29 @@ ui <- fluidPage(
     
     sidebarPanel(
       shinyDirButton("directory", "Folder select", "Please select a folder"),
-      
+      useShinyjs(),
       selectInput("dataset_load", "Choose dataset", choices = all_files),
       selectInput("lang", "Choose a language", choices = c("EN", "DE")),
       textInput("search_term", "Select filtering term"),
       textInput("username", "Select filtering a username"),
       numericInput("rt", "Minimum Retweets", 0),
       numericInput("likes", "Minimum Likes", 0),
-      numericInput("long", "Minimum Tweet Length", 0)
+      numericInput("long", "Minimum Tweet Length", 0),
+      numericInput("n_all", "Miimum Number of Tweets that have word pairs",
+                   min = 50, value = 50),
+      numericInput("n_words", "Miimum Number of Times words need to appear in subsample",
+                   min = 50, value = 50),
+      numericInput("min_corr", "Minimum Word Correlation", value = 0.15, min = 0.15, max = 1,
+                   step = 0.01),
+      actionButton("search", "Render Plot") %>%
+        helper(type = "markdown",
+               title = "Inline Help",
+               content = "network_plot_button",
+               buttonLabel = "Got it!",
+               easyClose = FALSE,
+               fade = TRUE,
+               size = "s")
+      
     ),
     
     mainPanel(
@@ -39,6 +60,7 @@ ui <- fluidPage(
 
 
 server <- function(session, output, input){
+  observe_helpers(help_dir = "C:/Users/lukas/Documents/GitHub/DSP_Sentiment_Covid_App/test_lukas/helpers")
   volumes <- c(Home = fs::path_home(), "R Installation" = R.home(), getVolumes()())
   shinyDirChoose(input, "directory", roots = volumes, session = session, restrictions = system.file(package = "base"), allowDirCreate = FALSE)
   observe({
@@ -46,32 +68,70 @@ server <- function(session, output, input){
     print(input$directory)
   })
   
-  output$directorypath <- renderPrint({
+  output$directorypath <- renderPrint(
+    path_setter()
+    
+  )
+  
+  path_setter <- reactive({
+    #browser()
     if (is.integer(input$directory)) {
-      cat("No directory has been selected (shinyDirChoose)")
       setwd(volumes)
+      
+      cat(glue("No directory has been selected. Current directory {getwd()})"))
+      
     } else {
-     
+      
       path1 <- parseDirPath(volumes, input$directory)
       if (input$lang == "EN"){
         path2 <- "Twitter/cleaned/En_NoFilter"
       } else {
         path2 <- "Twitter/cleaned/De_NoFilter"
       }
-      setwd(file.path(path1, path2))
-     
+      file_path <- file.path(path1, path2)
+      if(dir.exists(file_path)) {
+        setwd(file_path)
+        cat(glue("Current path {getwd()}"))
+      } else {
+        cat(glue("Current path selection does not contain needed data. \n
+                 Resetting directory to {getwd()}"))
+      }
+      
+      
+      
+      
     }
+  })
+  
+  # if no directory selected disable button
+  # this is for the inital disabling if the file does not exist in the home folder
+  observe({
+    #browser()
+    if(!file.exists(input$dataset_load)){
+
+      disable("search")
+    }
+    
+    
+  })
+  
+  # then if the file exists witch the button on, when it does not, turn it off again
+  observeEvent(input$directory,{
+    #browser()
+    toggleState("search", file.exists(input$dataset_load))
   })
   
   
   
-  output$plot <- renderForceNetwork({
-   # browser()
+  
+  # browser()
+  observeEvent(input$search,{
+    
     df <- readr::read_csv(input$dataset_load,
-      
-      col_types = cols(.default = "c",created_at = "c",
-                        retweets_count = "i",
-                        likes_count = "i", tweet_length = "i"))
+                          
+                          col_types = cols(.default = "c",created_at = "c",
+                                           retweets_count = "i",
+                                           likes_count = "i", tweet_length = "i"))
     
     df <- df %>%
       select(doc_id, text, created_at) %>%
@@ -90,7 +150,7 @@ server <- function(session, output, input){
     tomatch <- input$search_term
     
     threshold <- 0
-    min_corr <- 0.2
+    min_corr <- 0.15
     
     retweets <- input$rt
     likes <- input$likes
@@ -99,7 +159,7 @@ server <- function(session, output, input){
     word_cors_pre <- df %>%
       filter(
         retweets_count >= retweets &
-        likes_count >= likes &
+          likes_count >= likes &
           tweet_length >= longs
       ) %>%
       # if list provided to specify tweets to look at then extract only those tweets
@@ -118,7 +178,7 @@ server <- function(session, output, input){
     
     network_pre <-  word_cors %>%
       #filter(item1 %in% c("covid", "trump", "china")) %>%
-      filter(correlation > 0) %>% # fix in order to avoid overcrowed plot
+      filter(correlation > 0.15) %>% # fix in order to avoid overcrowed plot
       filter(correlation > min_corr) # optional
     
     
@@ -145,41 +205,46 @@ server <- function(session, output, input){
     network.D3$nodes$size <- deg * 3
     
     
-    
-    
-    # adjust colors of nodes, first is rest, second is main node for word (with group 2)
-    ColourScale <- 'd3.scaleOrdinal()
+    output$plot <- renderForceNetwork({
+      if (is.null(network.D3)) return()
+      
+      # adjust colors of nodes, first is rest, second is main node for word (with group 2)
+      ColourScale <- 'd3.scaleOrdinal()
             .range(["#ff2a00" ,"#694489"]);'
+      
+      # doc: https://www.rdocumentation.org/packages/networkD3/versions/0.4/topics/forceNetwork
+      forceNetwork(
+        Links = network.D3$links, 
+        Nodes = network.D3$nodes, 
+        Source = 'source', 
+        Target = 'target',
+        NodeID = 'name',
+        Group = 'Group', 
+        opacity = 0.8,
+        #Value = 'Width',
+        #Nodesize = 'Degree', 
+        Nodesize = "size", # size of nodes, is column name or column number of network.D3$nodes df
+        radiusCalculation = JS("Math.sqrt(d.nodesize)+2"), # radius of nodes (not sure whats difference to nodesize but has different effect)
+        # We input a JavaScript function.
+        #linkWidth = JS("function(d) { return Math.sqrt(d.value); }"), 
+        linkWidth = 1, # width of the linkgs
+        fontSize = 30, # font size of words
+        zoom = TRUE, 
+        opacityNoHover = 100,
+        linkDistance = 100, # length of links
+        charge =  -70, # the more negative the furher away nodes,
+        linkColour = "red", #color of links
+        bounded = F, # if T plot is limited and can not extend outside of box
+        # colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);")# change color scheme
+        colourScale = JS(ColourScale),
+        width = 200,
+        height = 200
+      )
+      
+    })
     
-    # doc: https://www.rdocumentation.org/packages/networkD3/versions/0.4/topics/forceNetwork
-    forceNetwork(
-      Links = network.D3$links, 
-      Nodes = network.D3$nodes, 
-      Source = 'source', 
-      Target = 'target',
-      NodeID = 'name',
-      Group = 'Group', 
-      opacity = 0.8,
-      #Value = 'Width',
-      #Nodesize = 'Degree', 
-      Nodesize = "size", # size of nodes, is column name or column number of network.D3$nodes df
-      radiusCalculation = JS("Math.sqrt(d.nodesize)+2"), # radius of nodes (not sure whats difference to nodesize but has different effect)
-      # We input a JavaScript function.
-      #linkWidth = JS("function(d) { return Math.sqrt(d.value); }"), 
-      linkWidth = 1, # width of the linkgs
-      fontSize = 30, # font size of words
-      zoom = TRUE, 
-      opacityNoHover = 100,
-      linkDistance = 100, # length of links
-      charge =  -70, # the more negative the furher away nodes,
-      linkColour = "red", #color of links
-      bounded = F, # if T plot is limited and can not extend outside of box
-      # colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);")# change color scheme
-      colourScale = JS(ColourScale),
-      width = 200,
-      height = 200
-    )
-  })
+  }) 
+  
 }
 
 shinyApp(ui, server)
