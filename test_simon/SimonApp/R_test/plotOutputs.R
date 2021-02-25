@@ -2,7 +2,7 @@
 #' @export
 #' @rdname timeseries
 TS_plot <- function(filtered_df,aggregation,aggregation1,aggregation2,type,facet,tweet_length,industry_sentiment,language1,
-                    language2,components_de,industry,retweets_min){
+                    language2,components_de,industry,retweets_min,reg_line){
 
 
   listi = c("Mean weighted by likes","Mean weighted by length","Mean weighted by retweets","Mean")
@@ -11,19 +11,19 @@ TS_plot <- function(filtered_df,aggregation,aggregation1,aggregation2,type,facet
   listi1 = listi[which(listi %in% aggregation1)]
   listi2 = listi[which(listi %in% aggregation2)]
 
-  if (type == "NoFilter"){
+  if(type == "NoFilter"){
 
 
     filtered_df <- Multiple_input(filtered_df,aggregation,listio,key())
 
-    if(facet != "Long-Short tweet"){
-      filtered_df <- filtered_df %>% filter(long_tweet == tweet_length)}
+    #if(facet != "Long-Short tweet"){
+    #  filtered_df <- filtered_df %>% filter(long_tweet == tweet_length)}
 
     filtered_df$date <- as.Date(filtered_df$date)
 
-    p <-  ggplot(filtered_df, aes_string(x = "date", y = "value", color = "id",group = "id")) +
-        geom_line() + labs(x = "Period")+
-        theme(
+    p <- ggplot(filtered_df, aes_string(x = "date", y = "value", color = "id",group = "id")) +
+         geom_line() + labs(x = "Period")+
+         theme(
               panel.grid.major = element_blank(),
               panel.grid.minor = element_blank(),
               panel.background = element_blank(),
@@ -32,11 +32,18 @@ TS_plot <- function(filtered_df,aggregation,aggregation1,aggregation2,type,facet
               legend.title = element_blank()) +
         ylim(-1,1) +scale_x_date(date_labels = "%m-%Y")
 
-   if(facet != "Long-Short tweet"){
-       p
-     }else{
-       p + facet_grid(.~long_tweet)
-     }
+
+   if((facet != "Long-Short tweet") & (reg_line == "yes")){
+      p + geom_smooth(method = lm, se=F,size = 0.1,color="black")}
+
+   else if((facet == "Long-Short tweet") & (reg_line == "no")){
+      p + facet_grid(.~long_tweet)}
+
+   else if((facet == "Long-Short tweet") & (reg_line == "yes")){
+     p + facet_grid(.~long_tweet) + geom_smooth(method = lm, se=F,size = 0.1,color="black") }
+
+    else if((facet != "Long-Short tweet") & (reg_line == "no")){
+      p}
 
   }else{
 

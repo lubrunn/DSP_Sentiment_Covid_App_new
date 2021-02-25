@@ -9,8 +9,7 @@ parameter_tabsi <- tabsetPanel(
                                                                      "Mean weighted by likes", "Mean weighted by length"),
                           multiple = T, select = "Mean"),
            actionButton("reset1", "clear selected"),
-           sliderInput("minRetweet_stocks1", "Select minimum number of retweets", min = 0,value = 0,
-                       max = 1,step = 1),
+           radioButtons("minRetweet_stocks1", "Select minimum number of retweets:", choices = c("0","10","50","100","200")),
            radioButtons("tweet_length_stock1","Tweet larger than median length:",
                         choices = c("yes","no"),selected = "no")
 
@@ -26,14 +25,13 @@ parameter_tabsi <- tabsetPanel(
                                                                      "Mean weighted by likes", "Mean weighted by length"),
                           multiple = T, select = "Mean"),
            actionButton("reset2", "clear selected"),
-           sliderInput("minRetweet_stocks2", "Select minimum number of retweets", min = 0,value = 0,
-                       max = 1,step = 1),
+           radioButtons("minRetweet_stocks2", "Select minimum number of retweets:", choices = c("0","10","50","100","200")),
            radioButtons("tweet_length_stock2","Tweet larger than median length:",
-                        choices = c("yes","no"),selected = "no"))
+                        choices = c("yes","no"),selected = "no")
 
 )
 
-
+)
 
 
 
@@ -47,12 +45,10 @@ parameter_tabs <- tabsetPanel(
                           "Mean weighted by likes", "Mean weighted by length"),
                            multiple = T, select = "Mean"),
            actionButton("reset", "clear selected"),
-           sliderInput("minRetweet", "Select minimum number of retweets", min = 0,value = 0,
-                       max = 300,step = 1),
-           sliderInput("minLikes", "Select minimum number of likes", min = 0,value = 0,
-                       max = 300,step = 1),
+           radioButtons("minRetweet", "Select minimum number of retweets", choices = c("0","10","50","100","200"),selected = "0",inline=T),
+           radioButtons("minLikes", "Select minimum number of likes", choices = c("0","10","50","100","200"),selected = "0",inline=T),
            radioButtons("tweet_length","Tweet larger than median length:",
-                        choices = c("yes","no")),
+                        choices = c("yes","no"),inline=T),
            selectInput("facet","Facet by column",
                         choices = c("No Faceting","Long-Short tweet"))
 
@@ -81,7 +77,9 @@ ui <- fluidPage(
       selectInput("plotType", "Plot", choices = c("Time Series","Density","Box Plot"),
                   selected = "Time Series"),
 
-      parameter_tabs
+      parameter_tabs,
+      radioButtons("reg_line","Show regression line",
+                   choices = c("yes","no"),inline=T,selected = "no")
   ),
     mainPanel(
       conditionalPanel(
