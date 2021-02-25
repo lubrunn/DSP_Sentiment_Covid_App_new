@@ -55,24 +55,24 @@ function(input, output, session) {
 
       res <- dataset()
   }else{ # live filtering
-      req(input$industry)
+      req(input$industry_sentiment)
     res <- dataset()
-      if(input$industry == "no"){
+      if(input$industry_sentiment == "no"){
         res <- dataset()
         if(input$tweet_length_stock1 == "yes"){
 
-          res <- res %>% filter((retweets_count > input$minRetweet_stocks1) &
+          res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks1)) &
                                   (tweet_length > 81))}
         else{
-          res <- res %>% filter((retweets_count > input$minRetweet_stocks1))
+          res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks1)))
         }
       }else{
         res <- dataset()
           if(input$tweet_length_stock2 == "yes"){
-            res <- res %>% filter((retweets_count > input$minRetweet_stocks2) &
+            res <- res %>% filter((retweets_count >  as.numeric(input$minRetweet_stocks2)) &
                                (tweet_length > 81))
           }else{
-            res <- res %>% filter(retweets_count > input$minRetweet_stocks2)
+            res <- res %>% filter(retweets_count >  as.numeric(input$minRetweet_stocks2))
           }
       }
     }
