@@ -233,11 +233,36 @@ load_all_stocks_DE <- function(){
   return(help)
 }
 
+#' @export
+#' @rdname load_stocks
+load_all_stocks_US <- function(){
+  filename <- "https://unitc-my.sharepoint.com/:x:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/EQg9PrsDenZIi4Sc0N9iKWQBnJhA2UFNu5smYWes8El6Sg?download=1"
+  help <- read.csv(filename)
+  help$Dates <- as.Date(help$Dates)
+  return(help)
+}
 
+#' @export
+#' @rdname load_stocks
+COMPONENTS_US <- function(){
+  filename <- "https://unitc-my.sharepoint.com/:x:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/Ec9gayTfc09Psw5WKjtD7qYB8DUe3PGKp1uNgAFt41JRqA?download=1"
+  read.csv(filename)
+}
+########################### test datasets für regression
+#' @export
+#' @rdname load_stocks
+stock_controls_test <- function(){
+  read.csv("https://unitc-my.sharepoint.com/:x:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/EdpdLXN-k8lNkc2Y2W4QWJgB_sbN5pmOqjUYiKonw8THSg?download=1")
+}
 
+#' @export
+#' @rdname load_stocks
+global_controls_test_DE <- function(){
+  read.csv("https://unitc-my.sharepoint.com/:x:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/EXdeKbKLByxCpe08oYSIzIEBCL05NKhNzqvHVpmelDRx6Q?download=1")
+}
 
-
-
-
-
-
+#' @export
+#' @rdname load_stocks
+global_controls_test_US <- function(){
+  read.csv("https://unitc-my.sharepoint.com/:x:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/ESTJZ17gJ6lFs9754ZyxNiYBTb6yuzAXfpWEpOUkZGO4MQ?download=1")
+}

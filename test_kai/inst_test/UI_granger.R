@@ -42,7 +42,7 @@ ui <- fluidPage(
                                                   c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
                                                   selected = "Bayer ",multiple = FALSE),
                                    radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
-                                   selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="noch nicht fertig du arsch"),
+                                   selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
                                    sliderInput("date_granger",label="Timeseries",
                                                value = c(min(as.Date(ADS()[["Date"]], "%b %d, %Y")),max(as.Date(ADS()[["Date"]], "%b %d, %Y"))),
                                                min = min(as.Date(ADS()[["Date"]], "%b %d, %Y")),
@@ -52,13 +52,31 @@ ui <- fluidPage(
                                    ),
                                  mainPanel(
                                    tabsetPanel(
+                                     tabPanel("Information Granger",
+                                              htmlOutput("info_granger")),
                                      tabPanel("Visualize",
                                               plotOutput("stocks_granger")),
                                      tabPanel("Background-steps",
                                               htmlOutput("dickey")),
                                      tabPanel("Results",
-                                              verbatimTextOutput("granger_result"))))),
-                        tabPanel("Quantile Regression"))
+                                              verbatimTextOutput("granger_result"),
+                                              htmlOutput("granger_satz"))))),
+                        tabPanel("Regression Analysis",
+                                 sidebarPanel(
+                                   radioButtons("country_regression","Which country?",c("Germany","USA"),selected = "Germany"),
+                                   uiOutput("stock_regression"),
+                                   #radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
+                                   #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
+                                   sliderInput("date_regression",label = "Timeseries",
+                                               value = c(min(as.Date(ADS()[["Date"]], "%b %d, %Y")),max(as.Date(ADS()[["Date"]], "%b %d, %Y"))),
+                                               min = min(as.Date(ADS()[["Date"]], "%b %d, %Y")),
+                                               max = max(as.Date(ADS()[["Date"]], "%b %d, %Y")),
+                                               step = 1,timeFormat = "%F")
+                                 ),
+                                 mainPanel(
+                                   verbatimTextOutput("test_table")
+                                 )
+                                 ))
   )#close tabsetPanel
 )#close fluidpage
 
