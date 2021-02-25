@@ -48,11 +48,15 @@ function(input, output, session) {
 
   filtered_df <- reactive({
     req(input$Sentiment_type)
+    req(input$minRetweet_stocks1)
+    req(input$minRetweet_stocks2)
+
   if(input$Sentiment_type == "NoFilter"){
 
       res <- dataset()
   }else{ # live filtering
       req(input$industry)
+    res <- dataset()
       if(input$industry == "no"){
         res <- dataset()
         if(input$tweet_length_stock1 == "yes"){
@@ -75,30 +79,30 @@ function(input, output, session) {
   })
 
 
-     max_retweet <- reactive({
-       req(input$industry)
-       req(input$industry_sentiment)
-       req(input$Sentiment_type)
-    if(input$Sentiment_type == "Stock"){
-       if(input$industry_sentiment == "no"){
-       test_data <- filtered_df()
-       max_val_vec <- test_data %>% group_by(date) %>%  summarise(maxi = max(retweets_count))
-       min(max_val_vec$maxi)}
-       else if(input$industry_sentiment == "yes"){
-         test_data <- filtered_df()
-         test_data <- get_industry_sentiment_nofiltering(COMPONENTS_DE(),input$industry)
-         max_val_vec <- test_data %>% group_by(date) %>%  summarise(maxi = max(retweets_count))
-         min(max_val_vec$maxi)}
-    }
-  })
-
-     observe({
-       updateSliderInput(session, "minRetweet_stocks1", max = max_retweet())
-     })
-
-     observe({
-       updateSliderInput(session, "minRetweet_stocks2", max = max_retweet())
-     })
+  #    max_retweet <- reactive({
+  #      req(input$industry)
+  #      req(input$industry_sentiment)
+  #      req(input$Sentiment_type)
+  #   if(input$Sentiment_type == "Stock"){
+  #      if(input$industry_sentiment == "no"){
+  #      test_data <- filtered_df()
+  #      max_val_vec <- test_data %>% group_by(date) %>%  summarise(maxi = max(retweets_count))
+  #      min(max_val_vec$maxi)}
+  #      else if(input$industry_sentiment == "yes"){
+  #        test_data <- filtered_df()
+  #        test_data <- get_industry_sentiment_nofiltering(COMPONENTS_DE(),input$industry)
+  #        max_val_vec <- test_data %>% group_by(date) %>%  summarise(maxi = max(retweets_count))
+  #        min(max_val_vec$maxi)}
+  #   }
+  # })
+  #
+  #    observe({
+  #      updateRadioButtons(session, "minRetweet_stocks1", choices = max_retweet())
+  #    })
+  #
+  #    observe({
+  #      updateRadioButtons(session, "minRetweet_stocks2", choices = c("0",max_retweet()))
+  #    })
 
 
 
