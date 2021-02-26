@@ -206,7 +206,7 @@ server <- function(input, output, session) {
     res$name <- NULL
     input <- selectizeInput("Controls","Choose control variables:",
                    c(colnames(res[3:length(res)])),multiple = TRUE
-    )
+    )               # start to filter after date and dep.var
   })
   
   dataset <- reactive({
@@ -221,16 +221,16 @@ server <- function(input, output, session) {
    }
 
   if (input$country_regression == "Germany"){
-    global_controls <- global_controls_test_DE()
-    global_controls$Date <- as.Date(global_controls$Date)
-    dax <- GDAXI()
-    dax$Date <- as.Date(dax$Date, "%d %b %Y")
-    dax <- missing_date_imputer(dax,"Close.") #needs to be dynamic
-    names(dax)[2] <- "DAX"
-    global_controls <- left_join(dax,global_controls,by = c("Date"))
+    global_controls <- global_controls_test_DE()   #load controls
+    global_controls$Date <- as.Date(global_controls$Date) #transform date
+    dax <- GDAXI()  #load dax
+    dax$Date <- as.Date(dax$Date, "%d %b %Y") #transform date
+    dax <- missing_date_imputer(dax,"Close.") #transform time series by imputing missing values
+    names(dax)[2] <- "DAX"  #rename ->   !! is not renamed in final dataset !! -> dont know why 
+    global_controls <- left_join(dax,global_controls,by = c("Date")) #join final
 
   }else {
-    global_controls <- global_controls_test_US()
+    global_controls <- global_controls_test_US() #same procedure as above
     global_controls$Date <- as.Date(global_controls$Date)
     dow <- DOW()
     dow$Date <- as.Date(dow$Date, "%d %b %Y")
@@ -242,15 +242,15 @@ server <- function(input, output, session) {
   data_reg2 <- left_join(data_reg,global_controls,by = c("Dates")) #hierdurch kommt die varible "global" in den datensatz
       ##diesen datensatz filtern wir dann nochmal mit dem sliderinput für die kontrollvariablen(eine/keine/mehrere möglich)
   data_reg2
-  })
+  })        
 
 
   df_selected_controls <- reactive({
     req(input$Controls)
     res <- dataset_rec()
     res <- res[c("Dates","Close",input$Controls)]
-    res                  #dynamic
-  }) 
+    res                  #not yet dynamic -> need possibility for returns etc.
+  })                      
 
   observeEvent(input$Sentiment_type, {                         #Observe event from input (model choices)
     req(input$Sentiment_type)
@@ -266,21 +266,21 @@ server <- function(input, output, session) {
     req(input$Sentiment_type)
     if(input$Sentiment_type == "NoFilter"){
       
-      res <- En_NoFilter_0_0_yes()
+      res <- En_NoFilter_0_0_yes()   # still fix as it is not clear yet if sql or csv
       #res <- eval(parse(text = paste('En', '_NoFilter_',input$minRetweet,'_',
       #                               input$minminLikes,'_',input$tweet_length,'()', sep='')))
       #input$language
     }else{
-       req(input$Stock)
-       ticker <- ticker_dict(input$Stock)
-       res <- eval(parse(text = paste(ticker,'()', sep='')))
-        
+       req(input$Stock_reg)
+       ticker <- ticker_dict(input$Stock_reg) # dict for a few stock
+       res <- eval(parse(text = paste(ticker,'()', sep=''))) # example: ADS.DE()
+    
     }
     
     
   })
-  
-  filtered_df <- reactive({
+  # filter
+  filtered_df <- reactive({ 
     req(input$Sentiment_type)
     req(input$minRetweet_stocks1)
     req(input$minRetweet_stocks2)
@@ -312,26 +312,26 @@ server <- function(input, output, session) {
     }
   })
   
-  
+  # aggregate dataset to get one sentiment per day
   aggri_select <- reactive({
     
-    if(input$Sentiment_type == "NoFilter"){
+    if(input$Sentiment_type == "NoFilter"){ # NoFilter files already aggregated
       res <- filtered_df()
-      aggregation <- key(input$aggregation)
+      aggregation <- key(input$aggregation)  # select aggregation type: Mean, mean weighted by,...
       res <- res %>% tidyr::gather("id", "aggregation", aggregation)
       res <- res[c("date","aggregation")]
     }else{
       if(input$industry_sentiment == "no"){ 
         res <- filtered_df()
-        res <- aggregate_sentiment(res)
+        res <- aggregate_sentiment(res) # function to aggregate sentiment per day
         res <- res %>% filter(language == input$language1)
         aggregation <- key(input$aggregation1)
         res <- res %>% tidyr::gather("id", "aggregation", aggregation)
         res <- res[c("date","aggregation")]
        }else{
         res <- get_industry_sentiment(COMPONENTS_DE(),input$industry,input$minRetweet_stocks2,
-                                      input$tweet_length_stock2)      
-        aggregation <- key(input$aggregation2)
+                                      input$tweet_length_stock2)      #function to gather all stock in certain industry
+        aggregation <- key(input$aggregation2)                          #--> also calculates aggregation inside function
         res <- res %>% tidyr::gather("id", "aggregation", aggregation)
         res <- res[c("date","aggregation")]
         }
@@ -345,7 +345,7 @@ server <- function(input, output, session) {
 
   
   
-  #merge
+  #merge sentiment with control+dep vars
   final_regression_df <- reactive ({
     res <- aggri_select()
     res$date <- as.Date(res$date)

@@ -83,10 +83,10 @@ hover_info_corona <- function() {
 # selectize input for companies
 #' @export
 #' @rdname uiElements
-selectize_Stocks <- function(components1,components2) {
-  full_components <- rbind(components1)
+selectize_Stocks_reg <- function(components1,components2) {
+  full_components <- rbind(components1,components2)
   
-  selectInput("Stock","Choose Company",
+  selectInput("Stock_reg","Chose Company",
               c(full_components[["Company.Name"]]),selected = "adidas ")
   
 }

@@ -2,7 +2,7 @@ parameter_tabsi <- tabsetPanel(
   id = "industry_tab",
   type = "hidden",
   tabPanel("no",
-           selectize_Stocks(COMPONENTS_DE(),COMPONENTS_US()),
+           selectize_Stocks_reg(COMPONENTS_DE(),COMPONENTS_US()),
            radioButtons("language1","Language of tweets ?",
                         choices = c("en","de"),inline=T),
            selectizeInput("aggregation1", "Aggregation", choices = c("Mean","Mean weighted by retweets",
