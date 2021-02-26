@@ -160,7 +160,6 @@ ui <- fluidPage(
                                    tabs_custom
                                  ),
                                  mainPanel(
-                                   verbatimTextOutput("test_table"),
                                    verbatimTextOutput("testi_table"),
                                    verbatimTextOutput("senti"),
                                    verbatimTextOutput("senti_agg")

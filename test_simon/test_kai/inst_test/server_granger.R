@@ -245,15 +245,12 @@ server <- function(input, output, session) {
   data_reg2
   })
 
-  output$test_table <- renderPrint ({
-    head(dataset())
-  })
 
   df_selected_controls <- reactive({
     req(input$Controls)
     res <- dataset_rec()
-    res <- res[c(input$Controls)]
-    res
+    res <- res[c("Dates",input$Controls)]
+    
   }) # add sentiment to this dataframe
 
   observeEvent(input$Sentiment_type, {                         #Observe event from input (model choices)
@@ -325,33 +322,54 @@ server <- function(input, output, session) {
       listio = listi[which(listi %in% input$aggregation)]
       res <- filtered_df()
       res <- Multiple_input(res,input$aggregation,listio,key())
-      
     }else{
-      
-      listi1 = listi[which(listi %in% input$aggregation1)]
-      res <- filtered_df()
-      res <- aggregate_sentiment(res)
-      res <- res %>% filter(language == input$language1)
-      res <- Multiple_input(res,input$aggregation1,listi1,key())
-      
-      }
-    
+      if(input$industry_sentiment == "no"){ 
+        listi1 = listi[which(listi %in% input$aggregation1)]
+        res <- filtered_df()
+        res <- aggregate_sentiment(res)
+        res <- res %>% filter(language == input$language1)
+        res <- Multiple_input(res,input$aggregation1,listi1,key())
+       }else{
+        listi2 = listi[which(listi %in% input$aggregation2)]
+        res <- get_industry_sentiment(COMPONENTS_DE(),input$industry,input$minRetweet_stocks2)
+        res <- res %>% filter(language == input$language2)
+        res <- Multiple_input(res,input$aggregation2,listi2,key())
+        }
+    }
     
   })
   
-  #aggregation, industry,column selection, merge
+  observeEvent(input$reset,{
+    updateSelectizeInput(session,"aggregation",selected = "")
+  })
+  observeEvent(input$reset1,{
+    updateSelectizeInput(session,"aggregation1",selected = "")
+  })
+  observeEvent(input$reset2,{
+    updateSelectizeInput(session,"aggregation2",selected = "")
+  })
   
+  
+  
+  #merge
+  final_regression_df <- reactive ({
+    res <- aggri_select()
+    res$date <- as.Date(res$date)
+    res_c <- df_selected_controls()
+    res <- left_join(res,res_c, by=c("date" = "Dates"))
+    res
+  })
   
   
   output$testi_table <- renderPrint ({
-    head(df_selected_controls())
+    head(aggri_select())
   })
   
   output$senti <- renderPrint ({
-    head(filtered_df())
+    head(df_selected_controls())
   })
 
   output$senti_agg <- renderPrint ({
-    head(aggri_select())
+    head(final_regression_df())
   })
 }
