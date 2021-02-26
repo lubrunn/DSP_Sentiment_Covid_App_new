@@ -78,7 +78,7 @@ aggregate_sentiment <- function(test_data) {
 #' @export
 #' @rdname industry_sentiment
 
-get_industry_sentiment <- function(de,industry,retweets_min){
+get_industry_sentiment <- function(de,industry,retweets_min,tweet_length){
   
   components_de <- de %>%  filter(Symbol == "ADS.DE"|Symbol == "ALV.DE" |
                                     Symbol == "DBK.DE" | Symbol == "DHER.DE")
@@ -88,7 +88,12 @@ get_industry_sentiment <- function(de,industry,retweets_min){
   for (s in symbols) {
     
     load_data <- eval(parse(text = paste(s,'()', sep='')))
-    load_data <- load_data %>% filter(retweets_count > retweets_min)
+    if(tweet_length == "yes"){
+      load_data <- load_data %>% filter(retweets_count > as.numeric(retweets_min)&
+                                        (tweet_length > 81))
+    }else{
+      load_data <- load_data %>% filter(retweets_count > as.numeric(retweets_min))
+    }
     senti_stock <- aggregate_sentiment(load_data)
     
     df_total <- rbind(df_total,senti_stock)

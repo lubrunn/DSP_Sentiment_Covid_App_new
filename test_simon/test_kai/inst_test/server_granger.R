@@ -235,6 +235,7 @@ server <- function(input, output, session) {
     dow <- DOW()
     dow$Date <- as.Date(dow$Date, "%d %b %Y")
     dow <- missing_date_imputer(dow,"Close.")
+    names(dow)[2] <- "DOW"
     global_controls <- left_join(dow,global_controls,by = c("Date"))
   }
   names(global_controls)[1] <- "Dates"
@@ -270,10 +271,10 @@ server <- function(input, output, session) {
       #                               input$minminLikes,'_',input$tweet_length,'()', sep='')))
       #input$language
     }else{
-      req(input$Stock)
-       #ticker <- ticker_dict(input$Stock)
-       #res <- eval(parse(text = paste(ticker,'()', sep='')))
-        res <- ADS.DE()
+       req(input$Stock)
+       ticker <- ticker_dict(input$Stock)
+       res <- eval(parse(text = paste(ticker,'()', sep='')))
+        
     }
     
     
@@ -299,22 +300,20 @@ server <- function(input, output, session) {
         else{
           res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks1)))
         }
-      }else{
-        res <- dataset_senti()
-        if(input$tweet_length_stock2 == "yes"){
-          res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks2)) &
-                                  (tweet_length > 81))
-        }else{
-          res <- res %>% filter(retweets_count > as.numeric(input$minRetweet_stocks2))
-        }
-      }
+      }#else{
+        #res <- dataset_senti()
+        #if(input$tweet_length_stock2 == "yes"){
+         # res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks2)) &
+        #                          (tweet_length > 81))
+        #}else{
+        #  res <- res %>% filter(retweets_count > as.numeric(input$minRetweet_stocks2))
+        #}
+      #}
     }
   })
   
   
   aggri_select <- reactive({
-    
-    listi = c("Mean weighted by likes","Mean weighted by length","Mean weighted by retweets","Mean")
     
     if(input$Sentiment_type == "NoFilter"){
       res <- filtered_df()
@@ -330,7 +329,8 @@ server <- function(input, output, session) {
         res <- res %>% tidyr::gather("id", "aggregation", aggregation)
         res <- res[c("date","aggregation")]
        }else{
-        res <- get_industry_sentiment(COMPONENTS_DE(),input$industry,input$minRetweet_stocks2)      
+        res <- get_industry_sentiment(COMPONENTS_DE(),input$industry,input$minRetweet_stocks2,
+                                      input$tweet_length_stock2)      
         aggregation <- key(input$aggregation2)
         res <- res %>% tidyr::gather("id", "aggregation", aggregation)
         res <- res[c("date","aggregation")]
