@@ -5,7 +5,7 @@ server <- function(input, output, session) {
   stockdata_DE <- reactive({
     #req(input$Stock)
     #stock_dataset_DE(input$Stock,input$dates[1],input$dates[2])
-    load_all_stocks_DE()
+  load_all_stocks_DE()
   })
 
   stockdata_US <- reactive({
@@ -201,13 +201,12 @@ server <- function(input, output, session) {
     res <- dataset()
   })
   
-  output$controls <- renderUI({
+  output$Controls <- renderUI({
     res <- dataset_rec()
     res$name <- NULL
     input <- selectizeInput("Controls","Choose control variables:",
-                   c(colnames(res[2:length(res)])),multiple = TRUE
+                   c(colnames(res[3:length(res)])),multiple = TRUE
     )
-    
   })
   
   dataset <- reactive({
@@ -219,25 +218,24 @@ server <- function(input, output, session) {
       data_reg <- filter(stockdata_US(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
                          .data$name %in% (c(COMPONENTS_US()[["Symbol"]], "DOW")[c(COMPONENTS_US()[["Company.Name"]], "DOW") %in% .env$input$Stock_Regression]) &
                            .data$Dates >= .env$input$date_regression[1] & .data$Dates <= .env$input$date_regression[2])[c("Dates","Close","name")] #hier später noch CLose flexibel machen
-  }
+   }
 
   if (input$country_regression == "Germany"){
     global_controls <- global_controls_test_DE()
-    global_controls$Date = as.Date(global_controls$Date)
+    global_controls$Date <- as.Date(global_controls$Date)
     dax <- GDAXI()
-    dax$Date = as.Date(dax$Date, "%d %b %Y")
-    dax <- missing_date_imputer(dax,"Close.")
+    dax$Date <- as.Date(dax$Date, "%d %b %Y")
+    dax <- missing_date_imputer(dax,"Close.") #needs to be dynamic
+    names(dax)[2] <- "DAX"
     global_controls <- left_join(dax,global_controls,by = c("Date"))
-    names(global_controls)[2] <- "DAX"
-    
+
   }else {
     global_controls <- global_controls_test_US()
-    global_controls$Date = as.Date(global_controls$Date)
+    global_controls$Date <- as.Date(global_controls$Date)
     dow <- DOW()
-    dow$Date = as.Date(dow$Date, "%d %b %Y")
+    dow$Date <- as.Date(dow$Date, "%d %b %Y")
     dow <- missing_date_imputer(dow,"Close.")
     global_controls <- left_join(dow,global_controls,by = c("Date"))
-    names(global_controls)[2] <- "DOW"
   }
   names(global_controls)[1] <- "Dates"
   data_reg2 <- left_join(data_reg,global_controls,by = c("Dates")) #hierdurch kommt die varible "global" in den datensatz
@@ -249,9 +247,9 @@ server <- function(input, output, session) {
   df_selected_controls <- reactive({
     req(input$Controls)
     res <- dataset_rec()
-    res <- res[c("Dates",input$Controls)]
-    
-  }) # add sentiment to this dataframe
+    res <- res[c("Dates","Close",input$Controls)]
+    res                  #dynamic
+  }) 
 
   observeEvent(input$Sentiment_type, {                         #Observe event from input (model choices)
     req(input$Sentiment_type)
@@ -319,36 +317,32 @@ server <- function(input, output, session) {
     listi = c("Mean weighted by likes","Mean weighted by length","Mean weighted by retweets","Mean")
     
     if(input$Sentiment_type == "NoFilter"){
-      listio = listi[which(listi %in% input$aggregation)]
       res <- filtered_df()
-      res <- Multiple_input(res,input$aggregation,listio,key())
+      aggregation <- key(input$aggregation)
+      res <- res %>% tidyr::gather("id", "aggregation", aggregation)
+      res <- res[c("date","aggregation")]
     }else{
       if(input$industry_sentiment == "no"){ 
-        listi1 = listi[which(listi %in% input$aggregation1)]
         res <- filtered_df()
         res <- aggregate_sentiment(res)
         res <- res %>% filter(language == input$language1)
-        res <- Multiple_input(res,input$aggregation1,listi1,key())
+        aggregation <- key(input$aggregation1)
+        res <- res %>% tidyr::gather("id", "aggregation", aggregation)
+        res <- res[c("date","aggregation")]
        }else{
-        listi2 = listi[which(listi %in% input$aggregation2)]
-        res <- get_industry_sentiment(COMPONENTS_DE(),input$industry,input$minRetweet_stocks2)
-        res <- res %>% filter(language == input$language2)
-        res <- Multiple_input(res,input$aggregation2,listi2,key())
+        res <- get_industry_sentiment(COMPONENTS_DE(),input$industry,input$minRetweet_stocks2)      
+        aggregation <- key(input$aggregation2)
+        res <- res %>% tidyr::gather("id", "aggregation", aggregation)
+        res <- res[c("date","aggregation")]
         }
     }
     
   })
   
   observeEvent(input$reset,{
-    updateSelectizeInput(session,"aggregation",selected = "")
+    updateSelectizeInput(session,"Controls",selected = "")
   })
-  observeEvent(input$reset1,{
-    updateSelectizeInput(session,"aggregation1",selected = "")
-  })
-  observeEvent(input$reset2,{
-    updateSelectizeInput(session,"aggregation2",selected = "")
-  })
-  
+
   
   
   #merge
@@ -356,13 +350,13 @@ server <- function(input, output, session) {
     res <- aggri_select()
     res$date <- as.Date(res$date)
     res_c <- df_selected_controls()
-    res <- left_join(res,res_c, by=c("date" = "Dates"))
+    res <- left_join(res_c,res, by=c("Dates" = "date"))
     res
   })
   
   
   output$testi_table <- renderPrint ({
-    head(aggri_select())
+    head(dataset())
   })
   
   output$senti <- renderPrint ({
