@@ -107,22 +107,19 @@ ui <- fluidPage(
              tabPanel("Sentiment"),
              tabPanel("Stocks",
                       sidebarPanel(
-                        selectize_Stocks(COMPONENTS_DE()),
+                        radioButtons("country_stocks","Which country?",c("Germany","USA"),selected = "Germany"),
+                        #selectize_Stocks(COMPONENTS_DE()),
+                        uiOutput("stock_choice"),
                         radioButtons("stock_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
                         actionButton("reset", "clear selected"),
                         checkboxInput("hovering","Enable hover",value = FALSE),
                         sliderinput_dates()
                       ),
                       mainPanel(
-                        tabsetPanel(
-                          tabPanel("Germany",
-                                   plot_stocks_DE(),
-                                   hover_info_DE()
-                          ),#close tabPanel Germany
-                          tabPanel("USA")
-                        )#close tabsetPanel
-                      )#close mainpanel
-             ),#close tabPanel stock
+                        plot_stocks_DE(),
+                        hover_info_DE()
+                          ),#close MainPanel
+                      ),#close tabPanel stock
              tabPanel("Corona",
                       sidebarPanel(
                         selectize_corona(),
@@ -138,9 +135,11 @@ ui <- fluidPage(
              navbarMenu("Model",
                         tabPanel("Granger",
                                  sidebarPanel(
-                                   selectizeInput("Stock_Granger","Choose first argument: Company or Index",
-                                                  c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
-                                                  selected = "Bayer ",multiple = FALSE),
+                                   radioButtons("country_granger","Which country?",c("Germany","USA"),selected = "Germany"),
+                                   uiOutput("Stock_Granger"),
+                                   # selectizeInput("Stock_Granger","Choose first argument: Company or Index",
+                                   #                c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
+                                   #                selected = "Bayer ",multiple = FALSE),
                                    radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
                                    selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
                                    sliderInput("date_granger",label="Timeseries",

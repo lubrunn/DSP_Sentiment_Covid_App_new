@@ -14,6 +14,19 @@ server <- function(input, output, session) {
     load_all_stocks_US()
   })
 
+  output$stock_choice <- renderUI({
+    if (input$country_stocks == "Germany"){
+      input <- selectizeInput("Stock","Choose Companies:",
+                              c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
+                              selected = "Bayer ",multiple = TRUE)
+    } else {
+      input <- selectizeInput("Stock","Choose Companies:",
+                              c(COMPONENTS_US()[["Company.Name"]],"DOW"),
+                              selected = "Apple ",multiple = TRUE)
+    }
+  })
+
+
 
   # reset button for stock selection
   observeEvent(input$reset,{
@@ -22,9 +35,16 @@ server <- function(input, output, session) {
   # plot of the stocks
   output$plot_DE <- renderPlot({
     req(input$Stock)
-    plotdata <- filter(stockdata_DE(),
+    if (input$country_stocks == "Germany"){
+      plotdata <- filter(stockdata_DE(),
                        .data$name %in% (c(COMPONENTS_DE()[["Symbol"]],"GDAXI")[c(COMPONENTS_DE()[["Company.Name"]],"GDAXI") %in% .env$input$Stock]) &
                          .data$Dates >= .env$input$dates[1] & .data$Dates <= .env$input$dates[2])
+    } else {
+      plotdata <- filter(stockdata_US(),
+                         .data$name %in% (c(COMPONENTS_US()[["Symbol"]], "DOW")[c(COMPONENTS_US()[["Company.Name"]], "DOW") %in% .env$input$Stock]) &
+                           .data$Dates >= .env$input$dates[1] & .data$Dates <= .env$input$dates[2])
+    }
+
     if (!is.null(ranges$x)) {
       ranges$x <- as.Date(ranges$x, origin = "1970-01-01")
     }
@@ -92,18 +112,34 @@ server <- function(input, output, session) {
 
   ##################################################################################### Granger
 
-  # both <- reactive({
-  #   req(input$Stock_Granger)
-  #   granger_data1 <-  stock_dataset_DE(input$Stock_Granger,input$date_granger[1],input$date_granger[2])[c("Dates",input$Granger_outcome)]
-  #   granger_data1["zweitevariable"] <- stock_dataset_DE("adidas ",input$date_granger[1],input$date_granger[2])[["Open"]]
-  #   granger_data1
-  #   #cbind(granger_data1[input$Granger_outcome],granger_data2["Open"])
-  # })
+
+
+
+  output$Stock_Granger <- renderUI({
+    if (input$country_granger == "Germany"){
+      input <- selectizeInput("Stock_Granger","Choose dependent variable:",
+                              c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
+                              selected = "Bayer ",multiple = FALSE)
+    } else {
+      input <- selectizeInput("Stock_Granger","Choose dependent variable:",
+                              c(COMPONENTS_US()[["Company.Name"]],"DOW"),
+                              selected = "Apple ",multiple = FALSE)
+    }
+  })
+
 
   granger_data <- reactive({
+    req(input$Stock_Granger)
+    if (input$country_granger == "Germany"){
     granger1 <- filter(stockdata_DE(),
                        .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Granger]) &
                          .data$Dates >= .env$input$date_granger[1] & .data$Dates <= .env$input$date_granger[2])[c("Dates", input$Granger_outcome)]
+    } else {
+      granger1 <- filter(stockdata_US(),
+                         .data$name %in% (c(COMPONENTS_US()[["Symbol"]], "DOW")[c(COMPONENTS_US()[["Company.Name"]], "DOW") %in% .env$input$Stock_Granger]) &
+                           .data$Dates >= .env$input$date_granger[1] & .data$Dates <= .env$input$date_granger[2])[c("Dates", input$Granger_outcome)]
+
+    }
     granger1["zweitevariable"] <- filter(stockdata_DE(),
                                          .data$name == "ADS.DE" &
                                            .data$Dates >= .env$input$date_granger[1] & .data$Dates <= .env$input$date_granger[2])[["Open"]]
@@ -137,6 +173,7 @@ server <- function(input, output, session) {
     granger_result()})
 
   output$stocks_granger <- renderPlot({
+    req(input$Granger_outcome)
     ggplot(granger_data(),aes_string("Dates",input$Granger_outcome))+
       geom_line()
   })
