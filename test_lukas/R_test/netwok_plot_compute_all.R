@@ -14,7 +14,7 @@ library(shinyjs)
 library(shinyhelper)
 library(htmltools)
 
-all_files <- list.files("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/cleaned/De_NoFilter")
+all_files <- list.files("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/cleaned/En_NoFilter")
 
 
 
@@ -37,7 +37,7 @@ ui <- fluidPage(
       numericInput("n_all", "Miimum Number of Tweets that have word pairs",
                    min = 50, value = 50),
       numericInput("n_subset", "Miimum Number of Times words need to appear in subsample",
-                   min = 50, value = 50),
+                   min = 0, value = 0),
       numericInput("min_corr", "Minimum Word Correlation", value = 0.15, min = 0.15, max = 1,
                    step = 0.01),
       actionButton("button", "Render Plot") %>%
@@ -161,7 +161,7 @@ server <- function(session, output, input){
           tweet_length >= input$long
       ) %>%
       # if list provided to specify tweets to look at then extract only those tweets
-      { if (input$search_term!= "") filter(., grepl(paste(tomatch, collapse="|"), text)) else . } %>%
+      { if (input$search_term!= "") filter(., grepl(paste(input$search_term, collapse="|"), text)) else . } %>%
       { if (input$username != "") filter(., grepl(paste(input$username, collapse="|"), username)) else . } %>%
       # count number of words
       group_by(word) %>%
