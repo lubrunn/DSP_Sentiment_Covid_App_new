@@ -67,7 +67,6 @@ density_plot <- function(filtered_df,type,industry_sentiment,facet,tweet_length)
 
 #' @export
 #' @rdname boxplot
-
 box_plot <- function(filtered_df,type,industry_sentiment,facet,tweet_length) {
 
   res <- filtered_df
@@ -76,8 +75,9 @@ box_plot <- function(filtered_df,type,industry_sentiment,facet,tweet_length) {
   #   filtered_df <- filtered_df %>% filter(long_tweet == tweet_length)}
 
 
-  p <- ggplot(filtered_df, aes_string("value", fill = "id",group = "id")) +
-    geom_boxplot(color="black",size=1) +
+  p <- ggplot(filtered_df, aes_string("value", fill = "id",y = "id")) +
+    geom_violin(position = position_dodge(width = 0.9)) +
+    geom_point(position = position_jitterdodge(seed = 1, dodge.width = 0.1)) +
     coord_flip() + # change y axis title
     theme(axis.title.x=element_blank(),
           axis.text.x=element_blank(),
@@ -87,14 +87,43 @@ box_plot <- function(filtered_df,type,industry_sentiment,facet,tweet_length) {
           panel.background = element_blank(),
           axis.line = element_line(colour = "black"),
           legend.title = element_blank())
-    if(facet != "Long-Short tweet"){
-      p
-    }else{
-      p + facet_grid(.~long_tweet)
-    }
+  if(facet != "Long-Short tweet"){
+    p
+  }else{
+    p + facet_grid(.~long_tweet)
+  }
 
 }
 
 
-
-
+#
+# box_plot <- function(filtered_df,type,industry_sentiment,facet,tweet_length) {
+#
+#   res <- filtered_df
+#   res$date <- as.Date(res$date)
+#   #  if(facet != "Long-Short tweet"){
+#   #   filtered_df <- filtered_df %>% filter(long_tweet == tweet_length)}
+#
+#
+#   p <- ggplot(filtered_df, aes_string("value", fill = "id",group = "id")) +
+#     geom_boxplot(color="black",size=1) +
+#     coord_flip() + # change y axis title
+#     theme(axis.title.x=element_blank(),
+#           axis.text.x=element_blank(),
+#           axis.ticks.x=element_blank(),
+#           panel.grid.major = element_blank(),
+#           panel.grid.minor = element_blank(),
+#           panel.background = element_blank(),
+#           axis.line = element_line(colour = "black"),
+#           legend.title = element_blank())
+#     if(facet != "Long-Short tweet"){
+#       p
+#     }else{
+#       p + facet_grid(.~long_tweet)
+#     }
+#
+# }
+#
+#
+#
+#

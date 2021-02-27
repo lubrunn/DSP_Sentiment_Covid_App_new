@@ -77,18 +77,19 @@ ui <- fluidPage(
       selectInput("plotType", "Plot", choices = c("Time Series","Density","Box Plot"),
                   selected = "Time Series"),
 
-      parameter_tabs,
-      radioButtons("reg_line","Show regression line",
-                   choices = c("yes","no"),inline=T,selected = "no")
+      parameter_tabs
+
   ),
-    mainPanel(
-      conditionalPanel(
-        condition = "input.plotType == 'Time Series'", plotOutput("plot1"),
-        textOutput("text_avg_tweet")),
-      conditionalPanel(
-        condition = "input.plotType == 'Density'", plotOutput("plot2")),
-      conditionalPanel(
-        condition = "input.plotType == 'Box Plot'", plotOutput("plot3"))
-    )
+  mainPanel(
+    conditionalPanel(
+      condition = "input.plotType == 'Time Series'", plotOutput("plot1"),
+      textOutput("text_avg_tweet"),
+      radioButtons("reg_line","Show regression line",
+      choices = c("yes","no"),inline=T,selected = "no")),
+    conditionalPanel(
+      condition = "input.plotType == 'Density'", plotOutput("plot2")),
+    conditionalPanel(
+      condition = "input.plotType == 'Box Plot'", plotOutput("plot3"))
+  )
   )
 )
