@@ -4,14 +4,14 @@ parameter_tabsi <- tabsetPanel(
   tabPanel("no",
            selectize_Stocks(COMPONENTS_DE(),COMPONENTS_EN()),
            radioButtons("language1","Language of tweets ?",
-                        choices = c("en","de")),
+                        choices = c("en","de"),inline=T),
            selectizeInput("aggregation1", "Aggregation", choices = c("Mean","Mean weighted by retweets",
                                                                      "Mean weighted by likes", "Mean weighted by length"),
                           multiple = T, select = "Mean"),
            actionButton("reset1", "clear selected"),
-           radioButtons("minRetweet_stocks1", "Select minimum number of retweets:", choices = c("0","10","50","100","200")),
+           radioButtons("minRetweet_stocks1", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
            radioButtons("tweet_length_stock1","Tweet larger than median length:",
-                        choices = c("yes","no"),selected = "no")
+                        choices = c("yes","no"),selected = "no",inline=T)
 
 
   ),
@@ -19,15 +19,15 @@ parameter_tabsi <- tabsetPanel(
            selectInput("industry", "Industry", choices = c("Consumer Cyclical","Financial Services")),
 
            radioButtons("language2","Language of tweets ?",
-                        choices = c("en","de")),
+                        choices = c("en","de"),inline=T),
 
            selectizeInput("aggregation2", "Aggregation", choices = c("Mean","Mean weighted by retweets",
                                                                      "Mean weighted by likes", "Mean weighted by length"),
                           multiple = T, select = "Mean"),
            actionButton("reset2", "clear selected"),
-           radioButtons("minRetweet_stocks2", "Select minimum number of retweets:", choices = c("0","10","50","100","200")),
+           radioButtons("minRetweet_stocks2", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
            radioButtons("tweet_length_stock2","Tweet larger than median length:",
-                        choices = c("yes","no"),selected = "no")
+                        choices = c("yes","no"),selected = "no",inline=T)
 
 )
 
@@ -56,7 +56,7 @@ parameter_tabs <- tabsetPanel(
   ),
   tabPanel("Stocks",
            radioButtons("industry_sentiment","Sentiment by industry ?",
-                        choices = c("yes","no"),selected = "no"),
+                        choices = c("yes","no"),selected = "no",inline=T),
            parameter_tabsi
 
   )
@@ -83,7 +83,8 @@ ui <- fluidPage(
   ),
     mainPanel(
       conditionalPanel(
-        condition = "input.plotType == 'Time Series'", plotOutput("plot1")),
+        condition = "input.plotType == 'Time Series'", plotOutput("plot1"),
+        textOutput("text_avg_tweet")),
       conditionalPanel(
         condition = "input.plotType == 'Density'", plotOutput("plot2")),
       conditionalPanel(

@@ -39,108 +39,110 @@ function(input, output, session) {
 
   })
 
-   components_de <- reactive({
-     res <- COMPONENTS_DE()
-   })
-   components_en <- reactive({
-     res <- COMPONENTS_EN()
-   })
 
   filtered_df <- reactive({
     req(input$Sentiment_type)
     req(input$minRetweet_stocks1)
+    req(input$aggregation)
+    req(input$aggregation1)
+    req(input$language1)
+    req(input$aggregation2)
+    req(input$language2)
+    req(input$industry)
     req(input$minRetweet_stocks2)
+    req(input$industry_sentiment)
+    req(input$tweet_length_stock2)
+
+  listi = c("Mean weighted by likes","Mean weighted by length","Mean weighted by retweets","Mean")
 
   if(input$Sentiment_type == "NoFilter"){
+    listio = listi[which(listi %in% input$aggregation)]
+    res <- dataset()
+    res <- Multiple_input(res,input$aggregation,listio,key())
 
-      res <- dataset()
   }else{ # live filtering
-      req(input$industry_sentiment)
     res <- dataset()
       if(input$industry_sentiment == "no"){
-        res <- dataset()
         if(input$tweet_length_stock1 == "yes"){
-
+          res <- dataset()
           res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks1)) &
                                   (tweet_length > 81))}
         else{
+          res <- dataset()
           res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks1)))
         }
+        listi1 = listi[which(listi %in% input$aggregation1)]
+        res <- aggregate_sentiment(res)
+        res <- res %>% filter(language == input$language1)
+        res <- Multiple_input(res,input$aggregation1,listi1,key())
+
       }else{
-        res <- dataset()
-          if(input$tweet_length_stock2 == "yes"){
-            res <- res %>% filter((retweets_count >  as.numeric(input$minRetweet_stocks2)) &
-                               (tweet_length > 81))
-          }else{
-            res <- res %>% filter(retweets_count >  as.numeric(input$minRetweet_stocks2))
-          }
+        listi2 = listi[which(listi %in% input$aggregation2)]
+        res <- get_industry_sentiment(COMPONENTS_DE(),input$industry,input$minRetweet_stocks2,
+                                      input$tweet_length_stock2)
+        res <- res %>% filter(language == input$language2)
+        res <- Multiple_input(res,input$aggregation2,listi2,key())
       }
     }
   })
 
 
-  #    max_retweet <- reactive({
-  #      req(input$industry)
-  #      req(input$industry_sentiment)
-  #      req(input$Sentiment_type)
-  #   if(input$Sentiment_type == "Stock"){
-  #      if(input$industry_sentiment == "no"){
-  #      test_data <- filtered_df()
-  #      max_val_vec <- test_data %>% group_by(date) %>%  summarise(maxi = max(retweets_count))
-  #      min(max_val_vec$maxi)}
-  #      else if(input$industry_sentiment == "yes"){
-  #        test_data <- filtered_df()
-  #        test_data <- get_industry_sentiment_nofiltering(COMPONENTS_DE(),input$industry)
-  #        max_val_vec <- test_data %>% group_by(date) %>%  summarise(maxi = max(retweets_count))
-  #        min(max_val_vec$maxi)}
-  #   }
-  # })
-  #
-  #    observe({
-  #      updateRadioButtons(session, "minRetweet_stocks1", choices = max_retweet())
-  #    })
-  #
-  #    observe({
-  #      updateRadioButtons(session, "minRetweet_stocks2", choices = c("0",max_retweet()))
-  #    })
+
+   #    max_retweet <- reactive({
+   #      req(input$industry)
+   #      req(input$industry_sentiment)
+   #    if(input$industry_sentiment == "no"){
+   #      test_data <- filtered_df()
+   #      max_val_vec <- test_data %>% group_by(date) %>%  summarise(maxi = max(retweets_count))
+   #      min(max_val_vec$maxi)}
+   #    else{
+   #        test_data <- filtered_df()
+   #        test_data <- get_industry_sentiment_nofiltering(COMPONENTS_DE(),input$industry)
+   #        max_val_vec <- test_data %>% group_by(date) %>%  summarise(maxi = max(retweets_count))
+   #        min(max_val_vec$maxi)}
+   #
+   # })
+
+      # observe({
+      #   updateRadioButtons(session, "minRetweet_stocks1", choices = max_retweet())
+      # })
+      #
+      # observe({
+      #   updateRadioButtons(session, "minRetweet_stocks2", choices = c("0",max_retweet()))
+      # })
+
+  avg_tweets_per_day <- reactive({
+      res <- filtered_df()
+      avg_per_day <- mean(res$tweets_used_daily)
+  })
+
+
+  output$text_avg_tweet <- renderText({
+    paste("The sentiment is calculated with an average of", round(avg_tweets_per_day()),
+          "tweets per day.")
+  })
+
 
 
 
   output$plot1 <- renderPlot({
-    #req(input$aggregation)
-    #req(input$aggregation2)
-    #req(input$Sentiment_type)
-    #req(input$industry_sentiment)
-    #req(input$language1)
-    #req(input$language2)
-   # req(input$aggregation1)
-  #  req(input$industry)
-##    req(input$minRetweet_stocks2)
 
-    TS_plot(filtered_df(),input$aggregation,input$aggregation1,input$aggregation2,input$Sentiment_type,
-            input$facet,input$tweet_length,input$industry_sentiment,input$language1,input$language2,
-            components_de(),input$industry,input$minRetweet_stocks2,input$reg_line)
+    TS_plot(filtered_df(),input$Sentiment_type,input$industry_sentiment,
+            input$facet,input$tweet_length,input$reg_line)
     })
 
   output$plot2 <- renderPlot({
-    req(input$aggregation)
-    req(input$Sentiment_type)
-    req(input$industry_sentiment)
-    req(input$language)
-    req(input$aggregation1)
 
-    density_plot(filtered_df(),input$aggregation,input$aggregation1,input$Sentiment_type,
-                 input$facet,input$tweet_length,input$industry_sentiment,input$language)})
+    density_plot(filtered_df(),input$Sentiment_type,input$industry_sentiment,
+                 input$facet,input$tweet_length)
+    })
 
   output$plot3 <- renderPlot({
-    req(input$aggregation)
-    req(input$Sentiment_type)
-    req(input$industry_sentiment)
-    req(input$language)
-    req(input$aggregation1)
 
-    box_plot(filtered_df(),input$aggregation,input$aggregation1,input$Sentiment_type,
-             input$facet,input$tweet_length,input$industry_sentiment,input$language)})
+
+    box_plot(filtered_df(),input$Sentiment_type,input$industry_sentiment,
+             input$facet,input$tweet_length)
+    })
 
 }
 

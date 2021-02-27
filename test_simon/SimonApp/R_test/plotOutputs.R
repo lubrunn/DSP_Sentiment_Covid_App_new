@@ -1,27 +1,14 @@
 #' Plot Output Functions
 #' @export
 #' @rdname timeseries
-TS_plot <- function(filtered_df,aggregation,aggregation1,aggregation2,type,facet,tweet_length,industry_sentiment,language1,
-                    language2,components_de,industry,retweets_min,reg_line){
+TS_plot <- function(filtered_df,type,industry_sentiment,facet,tweet_length,reg_line){
 
+   # if(tweet_length == "yes"){
+  #    filtered_df <- filtered_df %>% filter(long_tweet == tweet_length)}
+    res <- filtered_df
+    res$date <- as.Date(res$date)
 
-  listi = c("Mean weighted by likes","Mean weighted by length","Mean weighted by retweets","Mean")
-
-  listio = listi[which(listi %in% aggregation)]
-  listi1 = listi[which(listi %in% aggregation1)]
-  listi2 = listi[which(listi %in% aggregation2)]
-
-  if(type == "NoFilter"){
-
-
-    filtered_df <- Multiple_input(filtered_df,aggregation,listio,key())
-
-    #if(facet != "Long-Short tweet"){
-    #  filtered_df <- filtered_df %>% filter(long_tweet == tweet_length)}
-
-    filtered_df$date <- as.Date(filtered_df$date)
-
-    p <- ggplot(filtered_df, aes_string(x = "date", y = "value", color = "id",group = "id")) +
+    p <- ggplot(res, aes_string(x = "date", y = "value", color = "id",group = "id")) +
          geom_line() + labs(x = "Period")+
          theme(
               panel.grid.major = element_blank(),
@@ -45,55 +32,22 @@ TS_plot <- function(filtered_df,aggregation,aggregation1,aggregation2,type,facet
     else if((facet != "Long-Short tweet") & (reg_line == "no")){
       p}
 
-  }else{
-
-  if(industry_sentiment == "no"){
-     filtered_df <- aggregate_sentiment(filtered_df)
-     filtered_df <- filtered_df %>% filter(language == language1)
-     filtered_df <- Multiple_input(filtered_df,aggregation1,listi1,key())}
-
-  else{
-    filtered_df <- get_industry_sentiment(components_de,industry,retweets_min)
-    filtered_df <- filtered_df %>% filter(language == language2)
-    filtered_df <- Multiple_input(filtered_df,aggregation2,listi2,key())
-  }
-
-    filtered_df$date <- as.Date(filtered_df$date)
-
-    ggplot(filtered_df, aes_string(x = "date", y = "value", color = "id",group = "id")) +
-      geom_line() + labs(x = "Period") +
-      theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        axis.line = element_line(colour = "black"),
-        legend.key = element_rect(fill = "white", color = NA),
-        legend.title = element_blank()) +
-      ylim(-1,1) +scale_x_date(date_labels = "%m-%Y")
-    }
 }
 
 
 #' @export
 #' @rdname density
 
-density_plot <- function(filtered_df,aggregation,aggregation1,type,facet,tweet_length,industry_sentiment,language1) {
+density_plot <- function(filtered_df,type,industry_sentiment,facet,tweet_length) {
 
-  listi = c("Mean weighted by likes","Mean weighted by length","Mean weighted by retweets","Mean")
-
-  listi1 = listi[which(listi %in% aggregation1)]
-  listi = listi[which(listi %in% aggregation)]
-
-  if (type == "NoFilter"){
-
-    filtered_df <- Multiple_input(filtered_df,aggregation,listi,key())
-
-    if(facet != "Long-Short tweet"){
-      filtered_df <- filtered_df %>% filter(long_tweet == tweet_length)}
+  res <- filtered_df
+  res$date <- as.Date(res$date)
+  #  if(facet != "Long-Short tweet"){
+   #   filtered_df <- filtered_df %>% filter(long_tweet == tweet_length)}
 
 
-     p <- ggplot(filtered_df, aes_string("value", fill = "id",group = "id")) +
-      geom_density(color="black",size=1) + labs(x = aggregation, y = "density") +
+     p <- ggplot(res, aes_string("value", fill = "id",group = "id")) +
+      geom_density(color="black",size=1) + labs(x = "sentiment score", y = "density") +
       theme(
             panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
@@ -108,87 +62,36 @@ density_plot <- function(filtered_df,aggregation,aggregation1,type,facet,tweet_l
        p + facet_grid(.~long_tweet)
      }
 
-  }else{
 
-    if(industry_sentiment == "no"){
-      filtered_df <- aggregate_sentiment(filtered_df)}
-
-    filtered_df <- filtered_df %>% filter(language == language1)
-
-    filtered_df <- Multiple_input(filtered_df,aggregation1,listi1,key())
-
-  ggplot(filtered_df, aes_string("value", fill = "id",group = "id")) +
-    geom_density(color="black",size=1) + labs(x = aggregation1,y = "density") +
-    theme(
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-      panel.background = element_blank(),
-      axis.line = element_line(colour = "black"),
-      legend.title = element_blank()) +
-    xlim(-1,1)
-
-  }
 }
 
 #' @export
 #' @rdname boxplot
 
-box_plot <- function(filtered_df,aggregation,aggregation1,type,facet,tweet_length,industry_sentiment,language1) {
+box_plot <- function(filtered_df,type,industry_sentiment,facet,tweet_length) {
 
-  listi = c("Mean weighted by likes","Mean weighted by length","Mean weighted by retweets","Mean")
-
-  listi1 = listi[which(listi %in% aggregation1)]
-  listi = listi[which(listi %in% aggregation)]
-
-  if (type == "NoFilter"){
+  res <- filtered_df
+  res$date <- as.Date(res$date)
+  #  if(facet != "Long-Short tweet"){
+  #   filtered_df <- filtered_df %>% filter(long_tweet == tweet_length)}
 
 
-    filtered_df <- Multiple_input(filtered_df,aggregation,listi,key())
-
-    if(facet != "Long-Short tweet"){
-      filtered_df <- filtered_df %>% filter(long_tweet == tweet_length)}
-
-    p <- ggplot(filtered_df, aes_string("value", fill = "id",group = "id")) +
-      geom_boxplot(color="black",size=1) +
-      labs(x = aggregation) +
-      coord_flip() +
-      theme(axis.title.x=element_blank(),
-            axis.text.x=element_blank(),
-            axis.ticks.x=element_blank(),
-            panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank(),
-            panel.background = element_blank(),
-            axis.line = element_line(colour = "black"),
-            legend.title = element_blank())
+  p <- ggplot(filtered_df, aes_string("value", fill = "id",group = "id")) +
+    geom_boxplot(color="black",size=1) +
+    coord_flip() + # change y axis title
+    theme(axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(),
+          axis.line = element_line(colour = "black"),
+          legend.title = element_blank())
     if(facet != "Long-Short tweet"){
       p
     }else{
       p + facet_grid(.~long_tweet)
     }
-
-  }else{
-
-    if(industry_sentiment == "no"){
-      filtered_df <- aggregate_sentiment(filtered_df)}
-
-    filtered_df <- filtered_df %>% filter(language == language1)
-
-    filtered_df <- Multiple_input(filtered_df,aggregation1,listi1,key())
-
-    ggplot(filtered_df, aes_string("value", fill = "id",group = "id")) +
-      geom_boxplot(color="black",size=1) +
-      labs(x = aggregation1) +
-      coord_flip() +
-      theme(axis.title.x=element_blank(),
-            axis.text.x=element_blank(),
-            axis.ticks.x=element_blank(),
-            panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank(),
-            panel.background = element_blank(),
-            axis.line = element_line(colour = "black"),
-            legend.title = element_blank())
-
-  }
 
 }
 
