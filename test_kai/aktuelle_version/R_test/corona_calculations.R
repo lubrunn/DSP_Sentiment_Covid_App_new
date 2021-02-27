@@ -44,4 +44,3 @@ create_hover_info_corona <- function(hovercorona,coronadata,selectedmeasure){
                   "<b>" ,selectedmeasure,": </b>", point[selectedmeasure], "<br/>")))
   )
 }
-
