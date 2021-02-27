@@ -168,6 +168,7 @@ ui <- fluidPage(
                                    verbatimTextOutput("testi_table"),
                                    verbatimTextOutput("senti"),
                                    verbatimTextOutput("senti_agg"),
+                                   htmlOutput("regression_equation"),
                                    verbatimTextOutput("regression_result")
                                  )
                                  ))

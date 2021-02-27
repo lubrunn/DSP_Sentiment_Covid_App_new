@@ -234,16 +234,22 @@ server <- function(input, output, session) {
     }
   })
 
-  dataset_rec <- reactive({
-    res <- dataset()
-  })
+  # dataset_rec <- reactive({
+  #   res <- dataset()
+  # })
 
   output$Controls <- renderUI({
-    res <- dataset_rec()
-    res$name <- NULL
-    input <- selectizeInput("Controls","Choose control variables:",
-                   c(colnames(res[3:length(res)])),multiple = TRUE
-    )               # start to filter after date and dep.var
+    #res <- dataset()
+    #res$name <- NULL
+    if (input$country_regression == "Germany"){
+     input <- selectizeInput("Controls","Choose control variables:",
+                        c(colnames(global_controls_test_DE())[-1],"DAX"),multiple = TRUE)
+                   #c(colnames(res[3:length(res)])),multiple = TRUE
+    }else{
+        input <- selectizeInput("Controls","Choose control variables:",
+                                c(colnames(global_controls_test_US())[-1],"DOW"),multiple = TRUE)
+       }
+
   })
 
   dataset <- reactive({
@@ -284,9 +290,9 @@ server <- function(input, output, session) {
 
   df_selected_controls <- reactive({
     req(input$Controls)
-    res <- dataset_rec()
+    res <- dataset()
     res <- res[c("Dates",input$regression_outcome,input$Controls)]
-    res                  #not yet dynamic -> need possibility for returns etc.
+    res
   })
 
   observeEvent(input$Sentiment_type, {                         #Observe event from input (model choices)
@@ -413,7 +419,11 @@ server <- function(input, output, session) {
   output$regression_result <- renderPrint({
     regression_result()})
 
-
+  output$regression_equation <- renderUI({
+    req(input$Controls)
+    str1 <- paste("Linear regression: ",input$regression_outcome,"of ",input$Stock_Regression,"~",paste(input$Controls,collapse = " + "),"<br/>")
+    HTML(paste(str1,sep = '<br/>'))
+  })
 
 
 
