@@ -1,3 +1,7 @@
+library(glue)
+
+
+
 Sys.setlocale("LC_TIME", "English")
 ui <- fluidPage(
   #theme = shinythemes::shinytheme("cosmo"),
@@ -6,13 +10,13 @@ ui <- fluidPage(
   navbarPage("APP",
     tabPanel("Select Working Directory",
              sidebarPanel(
-               
+
                tags$p(),
                tags$p("Please choose the directory containing the folder containig \n
                the data called 'Data'."),
-               shinyDirButton("directory", "Folder select", "Please select a folder"
+              shinyFiles::shinyDirButton("directory", "Folder select", "Please select a folder"
                               ),
-               
+
              ),
              mainPanel(
                tags$h4("Selected folder"),
@@ -21,7 +25,17 @@ ui <- fluidPage(
                textOutput("directorypath"),
                tags$hr()
              )),
-    tabPanel("Twitter"),
+    navbarMenu("Twitter",
+               tabPanel("Descriptives",
+                        sidebarPanel(),
+                        mainPanel(
+                          tabsetPanel(
+                            tabPanel("Descriptives"),
+                            tabPanel("Exploratory")
+                            ))),
+               tabPanel("Sentiment"),
+                tabPanel("Daily Analysis"),
+                tabPanel("Going deeper")),
     tabPanel("Sentiment"),
     tabPanel("Stocks",
              sidebarPanel(
