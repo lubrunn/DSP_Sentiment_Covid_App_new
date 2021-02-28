@@ -47,7 +47,8 @@ ui <- fluidPage(
         #condition = "input.plot_type == 'Frequency Plot'",
         # keep for both because bigram also makes senese with wordcloud
         condition = "input.plot_type == 'histo'",
-        numericInput("bins", "Adjust the number of bins for the histogram", min = 30, max = 10000, value = 100)
+        numericInput("bins", "Adjust the number of bins for the histogram", min = 30, max = 10000, value = 100),
+
       ),
       conditionalPanel(
 
@@ -55,8 +56,10 @@ ui <- fluidPage(
         # keep for both because bigram also makes senese with wordcloud
         condition = "input.plot_type == 'sum_stats'",
         radioButtons("metric", "Select a metric", choiceNames = c("Mean", "Standard deviation", "Median"), choiceValues = c("mean", "std", "median")),
-        selectInput("value", "Which value would you like to show", choices = c("Retweets" = "rt", "Likes"="likes", "Tweet Length" = "length"), selected = "Retweets")
-      )
+      ),
+      selectInput("value", "Which value would you like to show", choices = c("Retweets" = "rt", "Likes"="likes", "Tweet Length" = "length",
+                                                                             "Number of Tweets" = "N"), selected = "Retweets")
+
 
     ),
 
@@ -98,15 +101,24 @@ server <- function(session, input, output){
     }
     #browser()
     if (input$plot_type == "sum_stats"){
+
+      if (input$value == "N"){
+        metric <- "N"
+      } else{
+        metric <- glue("{input$metric}_{input$value}")
+      }
+
+
+
       table_name <- glue("{input$plot_type}_{tolower(input$lang)}")
-      glue("SELECT date,{input$metric}_{input$value} as value FROM {table_name}  WHERE date >= '{input$dates[1]}' and date <= '{input$dates[2]}'
+      glue("SELECT date, {metric} as value FROM {table_name}  WHERE date >= '{input$dates[1]}' and date <= '{input$dates[2]}'
          and retweets_count = {input$rt} and likes_count = {input$likes} and
          tweet_length = {long}" )
 
 
     } else if (input$plot_type == "histo"){
-
-      if (input$value == "tweet_length"){
+        browser()
+      if (input$value == "length"){
         tb_metric <- "len"
         col_value <- input$value
 
@@ -115,16 +127,12 @@ server <- function(session, input, output){
         tb_metric <- input$value
         col_val <- "retweets_count"
 
-      } else {
+      } else if(input$value == "likes") {
         tb_metric <- input$value
-        col_val <- input$value
+        col_val <- "likes_count"
       }
 
-      if (input$value == "rt"){
-        col_val <- "retweets_count"
-      } else {
-        col_val <- input$value
-      }
+
 
       table_name <- glue("{input$plot_type}_{tb_metric}_{tolower(input$lang)}")
 
@@ -165,10 +173,11 @@ output$sum_stats_plot <- renderPlot({
 
   output$histo_plot <- renderPlot({
     df <- data()
-    #browser()
+
     #freezeReactiveValue(input, "plot_type")
 
     if (input$plot_type == "histo"){
+
     df %>%
       mutate(log_metric = log(.[[1]]+ 0.0001),
              bins = cut_interval(log_metric, n = input$bins)) %>%
