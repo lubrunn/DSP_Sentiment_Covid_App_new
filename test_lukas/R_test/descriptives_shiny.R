@@ -39,7 +39,7 @@ ui <- fluidPage(
       #switchInput(inputId = "long", value = TRUE),
       shinyWidgets::materialSwitch(inputId = "long", label = "Long Tweets only?", value = F),
 
-      selectInput("plot_type", "What kind of plot would you like to see?", choices = c("Histogram" = "histo", "Time Series"="sum_stats"), selected = "Histogram"),
+      selectInput("plot_type", "What kind of plot would you like to see?", choices = c("Time Series"="sum_stats", "Histogram" = "histo"), selected = "Histogram"),
 
 
       conditionalPanel(
@@ -47,7 +47,7 @@ ui <- fluidPage(
         #condition = "input.plot_type == 'Frequency Plot'",
         # keep for both because bigram also makes senese with wordcloud
         condition = "input.plot_type == 'histo'",
-        numericInput("bins", "Adjust the number of bins for the histogram", min = 30, max = 10000, value = 30)
+        numericInput("bins", "Adjust the number of bins for the histogram", min = 30, max = 10000, value = 100)
       ),
       conditionalPanel(
 
@@ -63,7 +63,7 @@ ui <- fluidPage(
     mainPanel(
       conditionalPanel(
         condition = "input.plot_type == 'histo'",
-        plotOutput("histo")
+        plotOutput("histo_plot")
 
       ),
       conditionalPanel(
@@ -96,16 +96,46 @@ server <- function(session, input, output){
     } else{
       long <- 0
     }
-
+    #browser()
     if (input$plot_type == "sum_stats"){
       table_name <- glue("{input$plot_type}_{tolower(input$lang)}")
-    } else{
-      table_name <- glue("{input$plot_type}_{input$value}_{tolower(input$lang)}")
-    }
-   #browser()
-    glue("SELECT {input$metric}_{input$value} as value FROM {table_name}  WHERE date >= '{input$dates[1]}' and date <= '{input$dates[2]}'
+      glue("SELECT date,{input$metric}_{input$value} as value FROM {table_name}  WHERE date >= '{input$dates[1]}' and date <= '{input$dates[2]}'
          and retweets_count = {input$rt} and likes_count = {input$likes} and
          tweet_length = {long}" )
+
+
+    } else if (input$plot_type == "histo"){
+
+      if (input$value == "tweet_length"){
+        tb_metric <- "len"
+        col_value <- input$value
+
+      } else if(input$value == "rt") {
+
+        tb_metric <- input$value
+        col_val <- "retweets_count"
+
+      } else {
+        tb_metric <- input$value
+        col_val <- input$value
+      }
+
+      if (input$value == "rt"){
+        col_val <- "retweets_count"
+      } else {
+        col_val <- input$value
+      }
+
+      table_name <- glue("{input$plot_type}_{tb_metric}_{tolower(input$lang)}")
+
+      querry_str <- glue("SELECT {col_val}, sum(N) as  n  FROM {table_name}  WHERE date >=  '{input$dates[1]}' and date <= '{input$dates[2]}'
+      and retweets_count_filter = {input$rt} and likes_count_filter = {input$likes} and
+      tweet_length_filter = {long}
+      group by {col_val}")
+
+    }
+   #browser()
+
 
   })
 
@@ -122,17 +152,35 @@ output$sum_stats_plot <- renderPlot({
 
   df <- data()
 
-  if (input$plot_type == "sum_stats"){
+  df$date <- as.Date(df$date)
+  if(input$plot_type == "sum_stats"){
   df %>%
-    ggplot(aes(x = 1:dim(df)[1],
+    ggplot(aes(x = date,
                y = value)) +
       geom_line()
   }
+
 })
 
-  output$num_tweets <- renderPrint({
+  output$histo_plot <- renderPlot({
+    df <- data()
+    #browser()
+    freezeReactiveValue(input, "plot_type")
+
+    df %>%
+      mutate(log_metric = log(.[[1]]+ 0.0001),
+             bins = cut_interval(log_metric, n = input$bins)) %>%
+      ggplot(aes(bins, n)) +
+      geom_col() +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
 
   })
+
+
+
+
+
 
 }
 
