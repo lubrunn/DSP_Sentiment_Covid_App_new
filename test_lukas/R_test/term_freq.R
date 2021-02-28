@@ -39,7 +39,7 @@ file <- files[1]
 
 
 ui <- fluidPage(
-
+  theme = shinythemes::shinytheme("darkly"),
   titlePanel("term frequencies"),
 
   sidebarLayout(
@@ -74,19 +74,44 @@ ui <- fluidPage(
       conditionalPanel(
         condition = "input.plot_type == 'Frequency Plot'",
         plotOutput("Plot")
+        #uiOutput("plot.ui")
       ),
       conditionalPanel(
         condition = "input.plot_type == 'Word Cloud'",
-        wordcloud2Output('wordcloud')
-      ),
+        "text",
+        wordcloud2Output('wordcloud', height = "800px")
+      )
 
-
-      verbatimTextOutput("num_tweets")
     )
   )
 )
 
 server <- function(session, input, output){
+
+
+
+
+  output$Plot <- renderPlot(
+    # dynamically change height of plot
+   height = function() input$n * 30 + 400,
+
+    {
+      df <- data()
+
+
+        if (input$plot_type == "Frequency Plot"){
+          df %>%
+            #filter(X1 != "num_tweets") %>%
+            top_n(input$n) %>%
+            arrange(desc(n)) %>%
+            ggplot(aes(reorder(x = words, n), y = n)) +
+            geom_col() +
+            coord_flip()
+
+
+        }
+  })
+
   data <- reactive({
     if (input$lang == "EN"){
       lang <- "En"
@@ -158,20 +183,21 @@ server <- function(session, input, output){
     }
   })
 
-  output$Plot <- renderPlot({
-
-    df <- data()
-
-    if (input$plot_type == "Frequency Plot"){
-    df %>%
-      #filter(X1 != "num_tweets") %>%
-      top_n(input$n) %>%
-      arrange(desc(n)) %>%
-      ggplot(aes(reorder(x = words, n), y = n)) +
-      geom_col() +
-      coord_flip()
-      }
-  })
+  # output$Plot <- renderPlot({
+  #
+  #   df <- data()
+  #
+  #   if (input$plot_type == "Frequency Plot"){
+  #   df %>%
+  #     #filter(X1 != "num_tweets") %>%
+  #     top_n(input$n) %>%
+  #     arrange(desc(n)) %>%
+  #     ggplot(aes(reorder(x = words, n), y = n)) +
+  #     geom_col() +
+  #     coord_flip()
+  #     }
+  #
+  # })
 
   output$num_tweets <- renderPrint({
 
