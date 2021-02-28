@@ -31,7 +31,7 @@ ui <- fluidPage(
       selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
 
       dateRangeInput("dates", "Select date range:", start = "2018-11-30", end = "2021-02-13",
-                     min = "2018-11-30", max = "2018-12-09", format = "yyyy-mm-dd"),
+                     min = "2018-11-30", max = "2021-02-13", format = "yyyy-mm-dd"),
       radioButtons("rt", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
                    inline = T),
       radioButtons("likes", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
@@ -55,21 +55,21 @@ ui <- fluidPage(
         # keep for both because bigram also makes senese with wordcloud
         condition = "input.plot_type == 'sum_stats'",
         radioButtons("metric", "Select a metric", choiceNames = c("Mean", "Standard deviation", "Median"), choiceValues = c("mean", "std", "median")),
-        selectInput("value", "Which value would you like to show", choices = c("Retweets" = "rt", "Likes"="likes", "Tweet Length = length"), selected = "Retweets")
+        selectInput("value", "Which value would you like to show", choices = c("Retweets" = "rt", "Likes"="likes", "Tweet Length" = "length"), selected = "Retweets")
       )
 
     ),
 
     mainPanel(
       conditionalPanel(
-        condition = "input.plot_type == 'Histogram'",
+        condition = "input.plot_type == 'histo'",
         plotOutput("histo")
-        #uiOutput("plot.ui")
+
       ),
       conditionalPanel(
-        condition = "input.plot_type == 'Time Series'",
+        condition = "input.plot_type == 'sum_stats'",
         "text",
-        wordcloud2::wordcloud2Output('wordcloud', height = "800px")
+        plotOutput('sum_stats_plot')#, height = "800px")
       )
 
     )
@@ -83,7 +83,7 @@ server <- function(session, input, output){
 
   ######## disconnect from database after exit
   cancel.onSessionEnded <- session$onSessionEnded(function() {
-    DBI::dbDisconnect(db)
+    DBI::dbDisconnect(con)
   })
 
 
@@ -91,14 +91,19 @@ server <- function(session, input, output){
 
   querry <- reactive({
 
-    if (ipnut$long == T){
+    if (input$long == T){
       long <- 81
     } else{
       long <- 0
     }
 
-
-    glue("SELECT {input$metric}_{input$value} FROM pairwise_count WHERE date >= {input$dates[1]} and date <= {input$dates[2]}
+    if (input$plot_type == "sum_stats"){
+      table_name <- glue("{input$plot_type}_{tolower(input$lang)}")
+    } else{
+      table_name <- glue("{input$plot_type}_{input$value}_{tolower(input$lang)}")
+    }
+   #browser()
+    glue("SELECT {input$metric}_{input$value} as value FROM {table_name}  WHERE date >= '{input$dates[1]}' and date <= '{input$dates[2]}'
          and retweets_count = {input$rt} and likes_count = {input$likes} and
          tweet_length = {long}" )
 
@@ -107,39 +112,23 @@ server <- function(session, input, output){
   data <- reactive({
 
 
+    df_need <- DBI::dbGetQuery(con, querry())
+    df_need
+    })
 
 
 
+output$sum_stats_plot <- renderPlot({
 
-    # go into specified folder and load dataframe
-    table_name <- glue("{input$plot_type}_{tolower(input$lang)}")
+  df <- data()
 
-
-
-
-
-
-
-
-  })
-
-
-
-  # output$Plot <- renderPlot({
-  #
-  #   df <- data()
-  #
-  #   if (input$plot_type == "Frequency Plot"){
-  #   df %>%
-  #     #filter(X1 != "num_tweets") %>%
-  #     top_n(input$n) %>%
-  #     arrange(desc(n)) %>%
-  #     ggplot(aes(reorder(x = words, n), y = n)) +
-  #     geom_col() +
-  #     coord_flip()
-  #     }
-  #
-  # })
+  if (input$plot_type == "sum_stats"){
+  df %>%
+    ggplot(aes(x = 1:dim(df)[1],
+               y = value)) +
+      geom_line()
+  }
+})
 
   output$num_tweets <- renderPrint({
 
