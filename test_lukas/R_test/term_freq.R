@@ -4,38 +4,10 @@ library(glue)
 library(tidyverse)
 
 
-folders <- list.files()
-folder <- "En_Nofilter"
 
 
-subfolders <- list.files(folder)
-
-file <- files[1]
 
 
-# # got through all files and extract the info it stores from the filename
-# for (file in files){
-# # split file name into dataframe containing info about which dataframestring contains which filters
-# rt <- as.numeric(stringr::str_match(file, "rt_\\s*(.*?)\\s*_li")[2])
-# likes <- as.numeric(stringr::str_match(file, "li_\\s*(.*?)\\s*_lo")[2])
-# long <- as.numeric(stringr::str_match(file, "lo_\\s*(.*?)\\s*.csv")[2])
-#
-# # setup df, if already exists append new row
-# if (is.null(file_info)){
-# file_info <- data.frame(file = file, rt = rt, likes = likes, long = long)
-# } else{
-#   file_info_new <- data.frame(file = file, rt = rt, likes = likes, long = long)
-#   file_info <- rbind(file_info, file_info_new)
-# }
-# }
-#
-# # save info_df
-# readr::write_csv(file_info, file.path("info_dfs",path, folder))
-
-
-#file_path <- file.path(folder, file)
-
-#df <- readr::read_csv(file_path,  col_types = cols(date = "D"))
 
 
 ui <- fluidPage(
