@@ -152,8 +152,9 @@ output$sum_stats_plot <- renderPlot({
 
   df <- data()
 
-  df$date <- as.Date(df$date)
+
   if(input$plot_type == "sum_stats"){
+    df$date <- as.Date(df$date)
   df %>%
     ggplot(aes(x = date,
                y = value)) +
@@ -165,8 +166,9 @@ output$sum_stats_plot <- renderPlot({
   output$histo_plot <- renderPlot({
     df <- data()
     #browser()
-    freezeReactiveValue(input, "plot_type")
+    #freezeReactiveValue(input, "plot_type")
 
+    if (input$plot_type == "histo"){
     df %>%
       mutate(log_metric = log(.[[1]]+ 0.0001),
              bins = cut_interval(log_metric, n = input$bins)) %>%
@@ -174,7 +176,7 @@ output$sum_stats_plot <- renderPlot({
       geom_col() +
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-
+    }
   })
 
 
