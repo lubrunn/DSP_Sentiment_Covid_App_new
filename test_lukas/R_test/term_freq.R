@@ -49,21 +49,22 @@ ui <- fluidPage(
       radioButtons("lang", "Select Language", choices = c("EN", "DE")),
       selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
 
-      dateRangeInput("dates", "Select date range:", start = "2018-11-30", end = "2018-12-09",
+      dateRangeInput("dates", "Select date range:", start = "2018-11-30", end = "2021-02-13",
                      min = "2018-11-30", max = "2018-12-09", format = "yyyy-mm-dd"),
       radioButtons("rt", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
                    inline = T),
       radioButtons("likes", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
                   inline = T),
       #switchInput(inputId = "long", value = TRUE),
-      materialSwitch(inputId = "long", label = "Long Tweets only?", value = F),
-      materialSwitch(inputId = "emo", label = "Include Emoji Words?", value = F),
+    shinyWidgets::materialSwitch(inputId = "long", label = "Long Tweets only?", value = F),
+    shinyWidgets::materialSwitch(inputId = "emo", label = "Remove Emoji Words?", value = F),
       selectInput("plot_type", "What kind of plot would you like to see?", choices = c("Frequency Plot", "Word Cloud")),
-      sliderInput("n", "Number of words to show", min = 5, max = 500, value = 15),
+      sliderInput("n", "Number of words to show", min = 5, max = 5000, value = 15),
 
       conditionalPanel(
 
         #condition = "input.plot_type == 'Frequency Plot'",
+        # keep for both because bigram also makes senese with wordcloud
         condition = "true == true",
         radioButtons("ngram_sel", "Would like to to see single words or bigrams?", choices = c("Unigram", "Bigram"))
       )
@@ -79,7 +80,7 @@ ui <- fluidPage(
       conditionalPanel(
         condition = "input.plot_type == 'Word Cloud'",
         "text",
-        wordcloud2Output('wordcloud', height = "800px")
+        wordcloud2::wordcloud2Output('wordcloud', height = "800px")
       )
 
     )
@@ -159,7 +160,7 @@ server <- function(session, input, output){
           retweets_count >= input$rt &
           likes_count >= input$likes &
           tweet_length >= tweet_length_filter) %>%
-      {if (input$emo == F) filter(., emo == F) else .} %>%
+      {if (input$emo == T) filter(., emo == F) else .} %>%
       select(-emo) %>%
       pivot_wider(names_from = word, values_from = N) %>%
       select(-c(date_variable, language_variable, retweets_count,
@@ -174,11 +175,11 @@ server <- function(session, input, output){
 
   })
 
-  output$wordcloud <- renderWordcloud2({
+  output$wordcloud <- wordcloud2::renderWordcloud2({
     df <- data()
     if (input$plot_type == "Word Cloud"){
       df %>% top_n(input$n) %>%
-      wordcloud2(size = 1,shape = 'star',
+      wordcloud2::wordcloud2(size = 1,shape = 'star',
                  color = "random-light", backgroundColor = "grey")
     }
   })
