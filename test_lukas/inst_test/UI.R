@@ -1,5 +1,5 @@
 library(glue)
-
+library(shinyFiles)
 
 
 Sys.setlocale("LC_TIME", "English")
@@ -27,7 +27,12 @@ ui <- fluidPage(
              )),
     navbarMenu("Twitter",
                tabPanel("Descriptives",
-                        sidebarPanel(),
+                        sidebarPanel(
+                          selectInput("comp", "Select a Company or look at unfiltered tweets",
+                                    choices = c("Adidas", "Nike"))
+
+
+                        ),
                         mainPanel(
                           tabsetPanel(
                             tabPanel("Descriptives"),
