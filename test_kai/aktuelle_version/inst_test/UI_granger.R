@@ -16,15 +16,15 @@ parameter_tabsi <- tabsetPanel(
            radioButtons("minRetweet_stocks1", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
            radioButtons("tweet_length_stock1","Tweet larger than median length:",
                         choices = c("yes","no"),selected = "no",inline=T)
-
-
+           
+           
   ),
   tabPanel("yes",
            selectInput("industry", "Industry", choices = c("Consumer Cyclical","Financial Services")),
-
+           
            radioButtons("language2","Language of tweets ?",
                         choices = c("en","de"),inline=T),
-
+           
            selectizeInput("aggregation2", "Aggregation", choices = c("Mean","Mean weighted by retweets",
                                                                      "Mean weighted by likes", "Mean weighted by length"),
                           select = "Mean"),
@@ -32,9 +32,9 @@ parameter_tabsi <- tabsetPanel(
            radioButtons("minRetweet_stocks2", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
            radioButtons("tweet_length_stock2","Tweet larger than median length:",
                         choices = c("yes","no"),selected = "no",inline=T)
-
+           
   )
-
+  
 )
 
 
@@ -45,21 +45,21 @@ parameter_tabs <- tabsetPanel(
            radioButtons("language","Choose Langugage of Tweets:",choices = c("En","De")),
            selectizeInput("aggregation", "Aggregation", choices = c("Mean","Mean weighted by retweets",
                                                                     "Mean weighted by likes", "Mean weighted by length"),
-                        select = "Mean"),
+                          select = "Mean"),
            radioButtons("minRetweet", "Select minimum number of retweets", choices = c("0","10","50","100","200"),selected = "0",inline=T),
            radioButtons("minLikes", "Select minimum number of likes", choices = c("0","10","50","100","200"),selected = "0",inline=T),
            radioButtons("tweet_length","Tweet larger than median length:",
                         choices = c("yes","no"),inline=T)
-
-
+           
+           
   ),
   tabPanel("Stocks",
            radioButtons("industry_sentiment","Sentiment by industry ?",
                         choices = c("yes","no"),selected = "no",inline=T),
            parameter_tabsi
-
+           
   )
-
+  
 )
 
 
@@ -81,17 +81,17 @@ tabs_custom <- tabsetPanel(
                        min = min(as.Date(ADS()[["Date"]], "%b %d, %Y")),
                        max = max(as.Date(ADS()[["Date"]], "%b %d, %Y")),
                        step = 1,timeFormat = "%F")
-
-
-
+           
+           
+           
   ),
   tabPanel("Filter sentiment input",
            selectInput("Sentiment_type", "Type of Sentiment:", choices = c("NoFilter","Stocks"),
                        selected = "NoFilter"),
            parameter_tabs
-
+           
   )
-
+  
 )
 
 
@@ -118,8 +118,8 @@ ui <- fluidPage(
                       mainPanel(
                         plot_stocks_DE(),
                         hover_info_DE()
-                          ),#close MainPanel
-                      ),#close tabPanel stock
+                      ),#close MainPanel
+             ),#close tabPanel stock
              tabPanel("Corona",
                       sidebarPanel(
                         selectize_corona(),
@@ -148,7 +148,7 @@ ui <- fluidPage(
                                                max = max(as.Date(ADS()[["Date"]], "%b %d, %Y")),
                                                step = 1,timeFormat = "%F"),
                                    checkboxInput("direction_granger","Second variable causes first?",value = TRUE)
-                                   ),
+                                 ),
                                  mainPanel(
                                    tabsetPanel(
                                      tabPanel("Information Granger",
@@ -165,22 +165,20 @@ ui <- fluidPage(
                                    tabs_custom
                                  ),
                                  mainPanel(
-                                   verbatimTextOutput("testi_table"),
-                                   verbatimTextOutput("senti"),
-                                   verbatimTextOutput("senti_agg"),
-                                   htmlOutput("regression_equation"),
-                                   verbatimTextOutput("regression_result")
+                                   tabsetPanel(
+                                     tabPanel("regression",
+                                              verbatimTextOutput("testi_table"),
+                                              verbatimTextOutput("senti"),
+                                              verbatimTextOutput("senti_agg"),
+                                              htmlOutput("regression_equation"),
+                                              verbatimTextOutput("regression_result")),
+                                     tabPanel("Quantile Regression",
+                                              plotOutput("plot_dens_Qreg"),
+                                              verbatimTextOutput("regression_result_Qreg")
+                                              
+                                     )
+                                   )
                                  )
-                                 ))
+                        ))
   )#close tabsetPanel
 )#close fluidpage
-
-
-
-
-
-
-
-
-
-

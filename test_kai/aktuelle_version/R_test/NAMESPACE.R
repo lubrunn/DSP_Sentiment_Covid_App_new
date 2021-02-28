@@ -6,4 +6,5 @@
 #' @import tidyr
 #' @import imputeTS
 #' @import glue
+#' @import quantreg
 NULL
