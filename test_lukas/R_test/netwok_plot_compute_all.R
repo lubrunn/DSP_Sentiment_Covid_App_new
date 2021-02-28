@@ -13,8 +13,8 @@ library(glue)
 library(shinyjs)
 library(shinyhelper)
 library(htmltools)
-setwd("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/cleaned/En_NoFilter")
-all_files <- list.files()
+
+all_files <- list.files("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/cleaned/En_NoFilter")
 
 
 
@@ -37,7 +37,7 @@ ui <- fluidPage(
       numericInput("n_all", "Miimum Number of Tweets that have word pairs",
                    min = 50, value = 50),
       numericInput("n_subset", "Miimum Number of Times words need to appear in subsample",
-                   min = 50, value = 50),
+                   min = 0, value = 0),
       numericInput("min_corr", "Minimum Word Correlation", value = 0.15, min = 0.15, max = 1,
                    step = 0.01),
       actionButton("button", "Render Plot") %>%
@@ -131,19 +131,19 @@ server <- function(session, output, input){
   
   # if button is clicked compute correlations und plot the plot
   observeEvent(input$button,{
+    
     # disable the button after computation started so no new computation can
     # be startedd
     disable("button")
     
     # read in the data
-    network <- readr::read_csv(input$dataset_load,
-                          
+    df <- readr::read_csv(input$dataset_load,      
                           col_types = cols(.default = "c",created_at = "c",
                                            retweets_count = "i",
-                                           likes_count = "i", tweet_length = "i")) %>%
+                                           likes_count = "i", tweet_length = "i")) 
     
     # unneest the words
-    
+    network <-  df %>%
       select(doc_id, text, created_at) %>%
       tidytext::unnest_tokens(word, text) %>%
       left_join(subset(df, select = c(doc_id, text, retweets_count, likes_count, long_tweet,
@@ -161,7 +161,7 @@ server <- function(session, output, input){
           tweet_length >= input$long
       ) %>%
       # if list provided to specify tweets to look at then extract only those tweets
-      { if (input$search_term!= "") filter(., grepl(paste(tomatch, collapse="|"), text)) else . } %>%
+      { if (input$search_term!= "") filter(., grepl(paste(input$search_term, collapse="|"), text)) else . } %>%
       { if (input$username != "") filter(., grepl(paste(input$username, collapse="|"), username)) else . } %>%
       # count number of words
       group_by(word) %>%
