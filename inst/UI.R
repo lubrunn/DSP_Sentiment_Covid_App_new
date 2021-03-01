@@ -122,7 +122,19 @@ twitter_main_panel <- function(){
                       twitter_desc_panel(),
                       mainPanel(
                         tabsetPanel(
-                          tabPanel("Descriptives"),
+                          tabPanel("Descriptives",
+                                   conditionalPanel(
+                                     condition = "input.plot_type == 'histo'",
+                                     plotOutput("histo_plot") %>%
+                                       shinycssloaders::withSpinner()
+
+                                   ),
+                                   conditionalPanel(
+                                     condition = "input.plot_type == 'sum_stats'",
+                                     "text",
+                                     plotOutput('sum_stats_plot') %>%
+                                       shinycssloaders::withSpinner()#, height = "800px")
+                                   )),
                           tabPanel("Exploratory")
                         ))),
              tabPanel("Sentiment"),
@@ -239,6 +251,16 @@ tab_panel_twitter_desc <- tabsetPanel(
   twitter_tab_expl
 
 )
+
+
+
+
+#############################################################################
+################### database
+############################################################################
+### connect to database
+
+
 
 
 
