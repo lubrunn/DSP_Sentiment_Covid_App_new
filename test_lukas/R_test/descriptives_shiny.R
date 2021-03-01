@@ -9,8 +9,8 @@ library(tidyverse)
 
 ### connect to database
 old_wd <- getwd()
-setwd("C:/Users/lukas/OneDrive - UT Cloud/Data/SQLiteStudio/databases")
-con <- DBI::dbConnect(RSQLite::SQLite(), "test.db")
+setwd("C:/Users/lukas/OneDrive - UT Cloud/Data")
+con <- DBI::dbConnect(RSQLite::SQLite(), "SQLiteStudio/databasestest.db")
 setwd(old_wd)
 
 ui <- fluidPage(
@@ -37,9 +37,9 @@ ui <- fluidPage(
       selectInput("plot_type", "What kind of plot would you like to see?", choices = c("Time Series"="sum_stats",
                                                                                        "Histogram" = "histo"),
                   selected = "sum_stats"),
-      
-      
-      
+
+
+
       selectInput("value", "Which value would you like to show",
                   choices = c(
                     "Sentiment" = "sentiment",
@@ -62,7 +62,7 @@ ui <- fluidPage(
 
         sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 1000, value = 100),
 
-       
+
         # add switch whether to use logarithmic scale
         shinyWidgets::switchInput(inputId = "log_scale", label = "Logarithmic Scale",
                                   value = F,
@@ -107,18 +107,18 @@ ui <- fluidPage(
 )
 
 server <- function(session, input, output){
-  
-  
+
+
   ### for histogram less choices
   observeEvent(input$plot_type,{
-    
+
     if (input$plot_type == "histo"){
       if (input$value %in% c("sentiment_rt", "sentiment_likes", "sentiment_length")){
         selected_value <-"sentiment"
       } else {
           selected_value <- input$value
       }
-    
+
     updateSelectInput(session = session, "value",
       choices = c("Sentiment" = "sentiment",
                   "Retweets" = "rt",
@@ -126,7 +126,7 @@ server <- function(session, input, output){
                   "Tweet Length" = "tweet_length"
       ), selected = selected_value)
     } else {
-      
+
       updateSelectInput(session = session, "value",
                         choices = c(
                           "Sentiment" = "sentiment",
@@ -208,7 +208,7 @@ server <- function(session, input, output){
         col_val <- "sentiment_rd"
       } else{
         Sys.sleep(0.2)
-      } 
+      }
 
 
 
@@ -235,8 +235,8 @@ server <- function(session, input, output){
   })
 
   data <- reactive({
-  
-    
+
+
 
     df_need <- DBI::dbGetQuery(con, querry())
     df_need
@@ -250,7 +250,7 @@ output$sum_stats_plot <- renderPlot({
 
 
   if(input$plot_type == "sum_stats"){
-    
+
     df$created_at <- as.Date(df$created_at)
   df %>%
     ggplot(aes(x = created_at,
