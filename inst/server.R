@@ -478,7 +478,7 @@ server <- function(input, output, session) {
                 Are you sure it is set correctly?"
       }
 
-      path_outputs <- list(a = con, b = output_str)
+      path_outputs <- list(a = con, b = output_str, c = "correct_path")
       path_outputs
 
 
@@ -499,7 +499,7 @@ server <- function(input, output, session) {
   ### for histogram less choices
   observeEvent(input$plot_type,{
 
-    if (input$plot_type == "histo"){
+    if (input$plot_type_desc == "histo"){
       if (input$value %in% c("sentiment_rt", "sentiment_likes", "sentiment_length")){
         selected_value <-"sentiment"
       } else {
@@ -556,7 +556,7 @@ server <- function(input, output, session) {
       long <- 0
     }
     #browser()
-    if (input$plot_type == "sum_stats"){
+    if (input$plot_type_desc == "sum_stats"){
 
       if (input$value == "N"){
         metric <- "N"
@@ -568,7 +568,7 @@ server <- function(input, output, session) {
 
 
 
-      table_name <- glue("{input$plot_type}_{tolower(input$lang)}_all")
+      table_name <- glue("{input$plot_type_desc}_{tolower(input$lang)}_all")
       # browser()
       glue("SELECT created_at, {metric} as value FROM {table_name}  WHERE created_at >= '{input$dates[1]}'
       and created_at <= '{input$dates[2]}'
@@ -576,7 +576,7 @@ server <- function(input, output, session) {
          tweet_length = {long}" )
 
 
-    } else if (input$plot_type == "histo"){
+    } else if (input$plot_type_decs == "histo"){
       #browser()
       if (input$value == "length"){
         tb_metric <- "len"
@@ -601,7 +601,7 @@ server <- function(input, output, session) {
 
 
 
-      table_name <- glue("{input$plot_type}_{tb_metric}_{tolower(input$lang)}")
+      table_name <- glue("{input$plot_type_desc}_{tb_metric}_{tolower(input$lang)}")
 
       if (table_name %in% c("histo_rt_en", "histo_likes_en", "histo_len_en")){
         date_col <- "date"
@@ -621,7 +621,7 @@ server <- function(input, output, session) {
 
   })
 
-  data <- reactive({
+  data_desc <- reactive({
 
 
     con <- path_setter()
@@ -635,10 +635,10 @@ server <- function(input, output, session) {
 
   output$sum_stats_plot <- renderPlot({
 
-    df <- data()
+    df <- data_desc()
 
 
-    if(input$plot_type == "sum_stats"){
+    if(input$plot_type_desc == "sum_stats"){
 
       df$created_at <- as.Date(df$created_at)
       df %>%
@@ -666,7 +666,7 @@ server <- function(input, output, session) {
 
 
   output$histo_plot <- renderPlot({
-    df <- data()
+    df <- data_desc()
 
     #freezeReactiveValue(input, "plot_type")
 
@@ -674,7 +674,7 @@ server <- function(input, output, session) {
 
 
 
-    if (input$plot_type == "histo"){
+    if (input$plot_type_desc == "histo"){
 
       df %>%
         # {if (input$log_scale == T) {} else {
@@ -694,4 +694,98 @@ server <- function(input, output, session) {
   })
 
 
+  ######################################################
+  ########################## Word Frequencies ###########
+  #######################################################
+
+  data_expl <- reactive({
+    if (input$lang == "EN"){
+      lang <- "En"
+    } else {
+      lang <- "De"
+    }
+
+    if (input$comp != "") {
+      folder <- file.path("Companies", input$comp)
+    } else {
+      folder <- glue("{lang}_NoFilter")
+    }
+
+
+    if (input$long == T){
+      long <- "long_only"
+      tweet_length_filter <- 81
+    } else{
+      long <- "all"
+      tweet_length_filter <- 0
+    }
+
+    correct_path <- path_setter()[[3]]
+    if (correct_path == "correct_path"){
+      Sys.sleep(0.2)
+    } else{
+      return()
+    }
+
+    # go into specified folder and load dataframe
+    file_name <- glue("term_freq_{lang}_NoFilter_{input$dates[1]}_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
+
+
+    if (input$ngram_sel == "Unigram"){
+      subfolder <- "uni"
+    } else {
+      subfolder <- "bi"
+    }
+ # browser()
+    file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
+    #browser()
+    df <- readr::read_csv(file_path, col_types = cols(date_variable = "D"))
+    #%>%
+    # filter(between(date_variable, input$dates[1], input$dates[2]))
+
+
+
+    df <- df %>%
+
+      filter(
+        emo == F | emo == T &
+          retweets_count >= input$rt &
+          likes_count >= input$likes &
+          tweet_length >= tweet_length_filter) %>%
+      {if (input$emo == T) filter(., emo == F) else .} %>%
+      select(-emo) %>%
+      pivot_wider(names_from = word, values_from = N) %>%
+      select(-c(date_variable, language_variable, retweets_count,
+                likes_count, tweet_length)) %>%
+      colSums(na.rm = T) %>%
+      data.frame() %>%
+      rename("n" = ".") %>%
+      rownames_to_column("words")
+
+
+
+
+  })
+
+  #### freq_plot
+  output$freq_plot <- renderPlot(
+    # dynamically change height of plot
+    height = function() input$n * 30 + 400,
+
+    {
+      df <- data_expl()
+
+
+      if (input$plot_type_expl == "Frequency Plot"){
+        df %>%
+          #filter(X1 != "num_tweets") %>%
+          top_n(input$n) %>%
+          arrange(desc(n)) %>%
+          ggplot(aes(reorder(x = words, n), y = n)) +
+          geom_col() +
+          coord_flip()
+
+
+      }
+    })
 }
