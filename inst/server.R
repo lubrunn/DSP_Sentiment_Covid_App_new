@@ -497,7 +497,7 @@ server <- function(input, output, session) {
   ############################### twitter descriptive ###########################
   ###############################################################################
   ### for histogram less choices
-  observeEvent(input$plot_type,{
+  observeEvent(input$plot_type_desc,{
 
     if (input$plot_type_desc == "histo"){
       if (input$value %in% c("sentiment_rt", "sentiment_likes", "sentiment_length")){
@@ -576,7 +576,7 @@ server <- function(input, output, session) {
          tweet_length = {long}" )
 
 
-    } else if (input$plot_type_decs == "histo"){
+    } else if (input$plot_type_desc == "histo"){
       #browser()
       if (input$value == "length"){
         tb_metric <- "len"
@@ -788,4 +788,15 @@ server <- function(input, output, session) {
 
       }
     })
+
+
+  output$wordcloud <- wordcloud2::renderWordcloud2({
+    df <- data_expl()
+    if (input$plot_type_expl == "Word Cloud"){
+      df %>% top_n(input$n) %>%
+        wordcloud2::wordcloud2(size = 1,shape = 'star',
+                               color = "random-light", backgroundColor = "grey")
+    }
+  })
+
 }
