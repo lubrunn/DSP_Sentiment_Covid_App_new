@@ -102,7 +102,7 @@ tabs_custom <- tabsetPanel(
 
 dir_setter_panel <- function() {
   tabPanel("Select Working Directory",
-           sidebarPanel(
+           fluidRow(column(4,
 
              tags$p(),
              tags$p("Please choose the directory containing the folder containig \n
@@ -111,13 +111,23 @@ dir_setter_panel <- function() {
              ),
 
            ),
-           mainPanel(
+           column(8,
              tags$h4("Selected folder"),
              tags$p(HTML("Please check that you picked the correct folder otherwise \n
                            the App will be not work.")),
              textOutput("directorypath"),
-             tags$hr()
-           ))
+             tags$hr())
+           ),
+
+
+           fluidRow(column(12, align = "center",
+              tags$hr(),
+              tags$p(),
+             imageOutput("twitter_logo")
+           )
+        )
+
+  )
 }
 
 
