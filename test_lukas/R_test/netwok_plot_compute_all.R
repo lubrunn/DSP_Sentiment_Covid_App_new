@@ -20,10 +20,10 @@ all_files <- list.files("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/cleaned
 
 
 ui <- fluidPage(
-  
- 
+  theme = shinythemes::shinytheme("darkly"),
+
   sidebarLayout(
-    
+
     sidebarPanel(
       shinyDirButton("directory", "Folder select", "Please select a folder"),
       useShinyjs(),
@@ -48,12 +48,12 @@ ui <- fluidPage(
                easyClose = FALSE,
                fade = TRUE,
                size = "s")
-      
-      
-     
-      
+
+
+
+
     ),
-    
+
     mainPanel(
       forceNetworkOutput("plot"),
       verbatimTextOutput("directorypath")
@@ -70,21 +70,21 @@ server <- function(session, output, input){
     cat("\ninput$directory value:\n\n")
     print(input$directory)
   })
-  
+
   output$directorypath <- renderPrint(
     path_setter()
-    
+
   )
-  
+
   path_setter <- reactive({
     #browser()
     if (is.integer(input$directory)) {
       setwd(volumes)
-      
+
       cat(glue("No directory has been selected. Current directory {getwd()})"))
-      
+
     } else {
-      
+
       path1 <- parseDirPath(volumes, input$directory)
       if (input$lang == "EN"){
         path2 <- "Twitter/cleaned/En_NoFilter"
@@ -99,13 +99,13 @@ server <- function(session, output, input){
         cat(glue("Current path selection does not contain needed data. \n
                  Resetting directory to {getwd()}"))
       }
-      
-      
-      
-      
+
+
+
+
     }
   })
-  
+
   # if no directory selected disable button
   # this is for the inital disabling if the file does not exist in the home folder
   observe({
@@ -114,46 +114,46 @@ server <- function(session, output, input){
 
       disable("button")
     }
-    
-    
+
+
   })
-  
-  
-  
+
+
+
   # then if the file exists witch the button on, when it does not, turn it off again
   observeEvent(input$directory,{
     #browser()
     toggleState("button", file.exists(input$dataset_load))
   })
-  
-  
-  
-  
+
+
+
+
   # if button is clicked compute correlations und plot the plot
   observeEvent(input$button,{
-    
+
     # disable the button after computation started so no new computation can
     # be startedd
     disable("button")
-    
+
     # read in the data
-    df <- readr::read_csv(input$dataset_load,      
+    df <- readr::read_csv(input$dataset_load,
                           col_types = cols(.default = "c",created_at = "c",
                                            retweets_count = "i",
-                                           likes_count = "i", tweet_length = "i")) 
-    
+                                           likes_count = "i", tweet_length = "i"))
+
     # unneest the words
     network <-  df %>%
       select(doc_id, text, created_at) %>%
       tidytext::unnest_tokens(word, text) %>%
       left_join(subset(df, select = c(doc_id, text, retweets_count, likes_count, long_tweet,
                                       tweet_length, username))) %>%
-    
+
     # filter out uncommon words
       group_by(word) %>%
       filter(n() >= input$n_all) %>%
       ungroup() %>%
-      
+
       # filter out according to user
       filter(
         retweets_count >= input$rt &
@@ -166,66 +166,66 @@ server <- function(session, output, input){
       # count number of words
       group_by(word) %>%
       filter(n() >= input$n_subset) %>%
-    
+
       # compute word correlations
       widyr::pairwise_cor(word, doc_id, sort = TRUE) %>%
-    
+
       # create network
       # filter out words with too low correaltion as baseline and even more if user
       # want it
       filter(correlation > 0.15) %>% # fix in order to avoid overcrowed plot
       filter(correlation > input$min_corr) %>% # optional
       graph_from_data_frame(directed = FALSE)
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
     # Create networkD3 object.
     network.D3 <- igraph_to_networkD3(g = network)
     # Define node size.
     # network.D3$nodes <- network.D3$nodes %>% mutate(Degree = (1E-2)*V(network)$degree)
     # Degine color group (I will explore this feature later).
     network.D3$nodes <- network.D3$nodes %>% mutate(Group = 1)
-    
+
     # degree is number of adjacent edges --> here we set the size of nodes proportional to the degree
     # i.e. the more adjacent words a node has the bigger it will appear
     deg <- degree(network, mode="all")
     network.D3$nodes$size <- deg * 3
-    
-    
-   
-    
-    
-    
+
+
+
+
+
+
     # render the network plot
     output$plot <- renderForceNetwork({
-      
+
       if (is.null(network.D3)) return()
-      
+
       # adjust colors of nodes, first is rest, second is main node for word (with group 2)
       ColourScale <- 'd3.scaleOrdinal()
             .range(["#ff2a00" ,"#694489"]);'
-      
+
       # doc: https://www.rdocumentation.org/packages/networkD3/versions/0.4/topics/forceNetwork
       forceNetwork(
-        Links = network.D3$links, 
-        Nodes = network.D3$nodes, 
-        Source = 'source', 
+        Links = network.D3$links,
+        Nodes = network.D3$nodes,
+        Source = 'source',
         Target = 'target',
         NodeID = 'name',
-        Group = 'Group', 
+        Group = 'Group',
         opacity = 0.8,
         #Value = 'Width',
-        #Nodesize = 'Degree', 
+        #Nodesize = 'Degree',
         Nodesize = "size", # size of nodes, is column name or column number of network.D3$nodes df
         radiusCalculation = JS("Math.sqrt(d.nodesize)+2"), # radius of nodes (not sure whats difference to nodesize but has different effect)
         # We input a JavaScript function.
-        #linkWidth = JS("function(d) { return Math.sqrt(d.value); }"), 
+        #linkWidth = JS("function(d) { return Math.sqrt(d.value); }"),
         linkWidth = 1, # width of the linkgs
         fontSize = 30, # font size of words
-        zoom = TRUE, 
+        zoom = TRUE,
         opacityNoHover = 100,
         linkDistance = 100, # length of links
         charge =  -70, # the more negative the furher away nodes,
@@ -236,13 +236,13 @@ server <- function(session, output, input){
         width = 200,
         height = 350
       )
-      
-      
-      
+
+
+
     })
     enable("button")
-  }) 
-  
+  })
+
 }
 
 shinyApp(ui, server)
@@ -267,7 +267,7 @@ all possible bigrams:
 - compute correlation of appearances of bigrams were trump is in place 1
 - plot according to coor
 
-  
+
 
 '
 
