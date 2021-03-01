@@ -1,25 +1,16 @@
 #' Stock Calculations
 #'
 
+
 #german stock dataset filtered according to selected date
 #' @export
 #' @rdname stock_calculations
 stock_dataset_DE <- function(stock,date1,date2){
-  symbols <- COMPONENTS_DE()[["Symbol"]][COMPONENTS_DE()[["Company.Name"]] %in% stock]
-  all <- NULL
-  for (s in symbols) {
-    plotting <- do.call(paste0(sub("\\..*", "", s)), list())
-    plotting <- plotting[plotting$Close. != "-",]
-    plotting[c("Open","High","Low","Close.","Adj.Close..")] <- sapply(plotting[c("Open","High","Low","Close.","Adj.Close..")],as.numeric)
-    plotting$Date <- as.Date(plotting$Date, "%b %d, %Y")
-    plotting["Volume"] <- as.numeric(gsub(",","",plotting$Volume))
-    plotting$name <- s
-    all <- rbind(all,plotting)
-    plotting <- NULL
-  }
-  all %>%
-    filter(Date >= date1 & Date <= date2)
+  symbols <- c(COMPONENTS_DE()[["Symbol"]],"GDAXI")[c(COMPONENTS_DE()[["Company.Name"]],"GDAXI") %in% stock]
+  data <- filter(load_all_stocks_DE(),name %in% symbols)
+  data %>% filter(Dates >= date1 & Dates <= date2)
 }
+
 
 #' @export
 #' @rdname stock_calculations
@@ -51,3 +42,25 @@ create_hover_info_DE <- function(hoverinput,stockdata){
                   "<b> Price: </b>", point$Close., "<br/>")))
   )
 }
+
+#' @export
+#' @rdname stock_calculations
+missing_date_imputer <- function(df,df_column){
+  
+  df = df[!(df[df_column] == "-"),]  
+  
+  df[df_column] = as.numeric(gsub(",","",df[,5]))
+  
+  df = df[c("Date",df_column)]  
+  
+  date_vector <- as.data.frame(seq(min(df$Date), max(df$Date), by="days"))
+  colnames(date_vector)[1]<-"Date"
+  
+  final <- left_join(date_vector,df, by = "Date")
+  
+  final[glue("{df_column}")] <- sapply(final[glue("{df_column}")],na_kalman)
+  return(final)
+}
+
+
+

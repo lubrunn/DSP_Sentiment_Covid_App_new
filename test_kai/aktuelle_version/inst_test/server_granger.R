@@ -403,13 +403,13 @@ server <- function(input, output, session) {
     model <- lm(reformulate(".",input$regression_outcome), data = final_regression_df())
     summary(model)
   })
-  
+
   #Qregression
   regression_result_Qreg <- reactive({
     model <- rq(reformulate(".",input$regression_outcome),tau = 0.5,data = final_regression_df())
     summary(model)
   })
-  
+
 
   output$testi_table <- renderPrint ({
     head(dataset())
@@ -434,12 +434,15 @@ server <- function(input, output, session) {
 
 
   output$plot_dens_Qreg <- renderPlot({
-    
+
     density_plot_reg(dataset())
   })
-  
+
   output$regression_result_Qreg <- renderPrint({
     regression_result_Qreg()})
+
+
+
 
 
 
