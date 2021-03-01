@@ -30,11 +30,12 @@ df_need %>%
 
 
 
-  mutate(log_metric = log(likes_count + 0.0001),
+  mutate(log_metric = log(retweets_count + 0.0001),
     bins = cut_interval(log_metric, n = 100)) %>%
 ggplot(aes(bins, n)) +
   geom_col() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  geom_density()
 
 
 
@@ -67,4 +68,12 @@ df_need %>%
 
 
 
-a
+
+
+
+###### boxplot
+box_data <- rep(df_need$retweets_count, df_need$n) %>% data.frame() %>% rename(metric = ".")
+ggplot(box_data) +
+  geom_boxplot(aes(metric))
+
+
