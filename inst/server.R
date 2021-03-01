@@ -753,7 +753,7 @@ server <- function(input, output, session) {
  # browser()
     file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
     #browser()
-    df <- readr::read_csv(file_path, col_types = cols(date_variable = "D"))
+    df <- readr::read_csv(file_path, col_types = readr::cols(date_variable = "D"))
     #%>%
     # filter(between(date_variable, input$dates[1], input$dates[2]))
 
@@ -774,7 +774,7 @@ server <- function(input, output, session) {
       colSums(na.rm = T) %>%
       data.frame() %>%
       rename("n" = ".") %>%
-      rownames_to_column("words")
+      tibble::rownames_to_column("words")
 
 
 
