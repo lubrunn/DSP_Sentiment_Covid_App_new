@@ -6,7 +6,6 @@ group by retweets_count
 
 
 
-
 old_wd <- getwd()
 setwd("C:/Users/lukas/OneDrive - UT Cloud/Data/SQLiteStudio/databases")
 con <- DBI::dbConnect(RSQLite::SQLite(), "test.db")
