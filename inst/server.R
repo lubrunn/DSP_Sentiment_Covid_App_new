@@ -443,6 +443,47 @@ server <- function(input, output, session) {
 
 
 
+  ############################################################################
+  ################# Directory ###############################################
+  ###########################################################################
+  # selecting directory
+  # find home direcoty of user
+  volumes <- c(Home = fs::path_home(), "R Installation" = R.home(), shinyFiles::getVolumes()())
+  # allow for searching directories
+  shinyFiles::shinyDirChoose(input, "directory", roots = volumes, session = session, restrictions = system.file(package = "base"), allowDirCreate = FALSE)
+  observe({
+    cat("\ninput$directory value:\n\n")
+    print(input$directory)
+  })
+  path_setter <- reactive({
+    #browser()
+    if (is.integer(input$directory)) {
+      setwd(volumes)
+
+      cat(glue("No directory has been selected. Current directory {getwd()})"))
+
+    } else {
+
+      path <- shinyFiles::parseDirPath(volumes, input$directory)
+      setwd(path)
+      file_needed <- "SQLiteStudio"
+      if(dir.exists(file_needed)) {
+        #setwd(file_path)
+        glue("Current path {getwd()}")
+      } else {
+        #setwd(file_path)
+        "Current path selection does not seem correct. \n
+                Are you sure it is set correctly?"
+      }
+
+
+
+
+    }
+  })
+  output$directorypath <- renderText({
+    path_setter()
+  })
 
 
 
