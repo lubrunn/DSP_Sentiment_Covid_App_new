@@ -1,7 +1,7 @@
-querry_str <- "SELECT likes_count, sum(N) as  n  FROM histo_rt_en  WHERE date >= '2018-11-30' and date <= '2021-02-13'
+querry_str <- "SELECT retweets_count, sum(N) as  n  FROM histo_rt_en  WHERE date >= '2018-11-30' and date <= '2021-02-13'
 and retweets_count_filter = 0 and likes_count_filter = 0 and
 tweet_length_filter = 0
-group by likes_count
+group by retweets_count
 "
 
 
