@@ -209,7 +209,7 @@ twitter_desc_conditional_histo <- conditionalPanel(
 
     #condition = "input.plot_type == 'Frequency Plot'",
     # keep for both because bigram also makes senese with wordcloud
-    condition = "input.plot_type == 'histo'",
+    condition = "input.plot_type_desc == 'histo'",
 
     sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 1000, value = 100),
 
@@ -230,7 +230,7 @@ tiwtter_desc_conditional_sum_stats <- conditionalPanel(
 
   #condition = "input.plot_type == 'Frequency Plot'",
   # keep for both because bigram also makes senese with wordcloud
-  condition = "input.plot_type == 'sum_stats'",
+  condition = "input.plot_type_desc == 'sum_stats'",
   radioButtons("metric", "Select a metric",
                choiceNames = c("Mean", "Standard deviation", "Median"),
                choiceValues = c("mean", "std", "median"))
