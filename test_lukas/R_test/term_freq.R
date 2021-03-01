@@ -1,4 +1,4 @@
-setwd("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/term_freq")
+setwd("C:/Users/lukas/OneDrive - UT Cloud/Data")
 library(readr)
 library(glue)
 library(tidyverse)
@@ -118,7 +118,7 @@ server <- function(session, input, output){
       subfolder <- "bi"
     }
 
-    file_path <- file.path(folder, subfolder, file_name)
+    file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
     #browser()
     df <- readr::read_csv(file_path, col_types = cols(date_variable = "D"))
     #%>%
