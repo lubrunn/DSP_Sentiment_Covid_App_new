@@ -95,6 +95,11 @@ tabs_custom <- tabsetPanel(
 )
 
 
+
+#################################################################################
+################################### directory ###################################
+#################################################################################
+
 dir_setter_panel <- function() {
   tabPanel("Select Working Directory",
            sidebarPanel(
@@ -116,13 +121,27 @@ dir_setter_panel <- function() {
 }
 
 
+###############################################################################
+######################### twitter #############################################
+###############################################################################
+
+# the main panel for twitter containing all sub panels and main panels
 twitter_main_panel <- function(){
   navbarMenu("Twitter",
-             tabPanel("Descriptives",
+
+             ###### tab panel for descriptive
+             tabPanel("Descriptives Main",
+                      # sidebar panel for descriptive
                       twitter_desc_panel(),
-                      mainPanel(
-                        tabsetPanel(
-                          tabPanel("Descriptives",
+
+
+
+
+
+                      ########## main panels for Descritpive reiter
+                       mainPanel(
+                        tabsetPanel(id = "tabselected",
+                          tabPanel("Descriptives Output", value = 1,
                                    conditionalPanel(
                                      condition = "input.plot_type == 'histo'",
                                      plotOutput("histo_plot") %>%
@@ -135,8 +154,16 @@ twitter_main_panel <- function(){
                                      plotOutput('sum_stats_plot') %>%
                                        shinycssloaders::withSpinner()#, height = "800px")
                                    )),
-                          tabPanel("Exploratory")
-                        ))),
+                          ##### main panel for exploratory
+                          tabPanel("Exploratory Output", value = 2)
+                                    ))
+                      ),
+             ################### tab panel descirptive end
+
+
+
+
+             # andere reiter
              tabPanel("Sentiment"),
              tabPanel("Daily Analysis"),
              tabPanel("Going deeper"))
@@ -144,15 +171,15 @@ twitter_main_panel <- function(){
 }
 
 
+##### main sidebar panel including both tabsetpanels
 twitter_desc_panel <- function(){
   sidebarPanel(
     tab_panel_twitter_desc
 )
 }
 
-
-twitter_desc_conditional_histo <- function(){
-  conditionalPanel(
+### conditional panels for the histogram plots in the descriptive panel
+twitter_desc_conditional_histo <- conditionalPanel(
 
     #condition = "input.plot_type == 'Frequency Plot'",
     # keep for both because bigram also makes senese with wordcloud
@@ -170,9 +197,20 @@ twitter_desc_conditional_histo <- function(){
 
 
   )
-}
 
 
+### conditional sidebar panel for the time series
+tiwtter_desc_conditional_sum_stats <- conditionalPanel(
+
+  #condition = "input.plot_type == 'Frequency Plot'",
+  # keep for both because bigram also makes senese with wordcloud
+  condition = "input.plot_type == 'sum_stats'",
+  radioButtons("metric", "Select a metric",
+               choiceNames = c("Mean", "Standard deviation", "Median"),
+               choiceValues = c("mean", "std", "median"))
+)
+
+#### sidebar layout for descriptives
 tiwtter_tab_desc <- tabPanel( "Descriptives",
                               radioButtons("lang", "Select Language", choices = c("EN", "DE")),
                               selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
@@ -207,20 +245,13 @@ tiwtter_tab_desc <- tabPanel( "Descriptives",
                                           selected = "rt"),
 
 
-                              twitter_desc_conditional_histo(),
+                              twitter_desc_conditional_histo,
+                              tiwtter_desc_conditional_sum_stats
 
-                              conditionalPanel(
 
-                                #condition = "input.plot_type == 'Frequency Plot'",
-                                # keep for both because bigram also makes senese with wordcloud
-                                condition = "input.plot_type == 'sum_stats'",
-                                radioButtons("metric", "Select a metric",
-                                             choiceNames = c("Mean", "Standard deviation", "Median"),
-                                             choiceValues = c("mean", "std", "median"))
-                              )
                             )
 
-
+######### side bar panel for frequency analysis
 twitter_tab_expl <-  tabPanel("Exploratory",
                               radioButtons("lang", "Select Language", choices = c("EN", "DE")),
                               selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
@@ -245,10 +276,24 @@ twitter_tab_expl <-  tabPanel("Exploratory",
                                 radioButtons("ngram_sel", "Would like to to see single words or bigrams?", choices = c("Unigram", "Bigram"))
                               )
 )
+
+
+################  sidebar tabs
 tab_panel_twitter_desc <- tabsetPanel(
   id = "tiwtter_filter_tabs",
-  tiwtter_tab_desc,
+
+  conditionalPanel(
+    condition = "input.tabselected==1",
+    tiwtter_tab_desc
+  ),
+
+
+
+conditionalPanel(
+  condition = "input.tabselected==2",
   twitter_tab_expl
+)
+
 
 )
 
