@@ -104,7 +104,7 @@ ui <- fluidPage(
   #titlePanel("Sentiment_Covid_App"),
   navbarPage("APP",
              tabPanel("Select a Working Directojieeeeeeeeeeeeeeeeeeevory",
-                      sidebarPanel(
+                      sideba#rPanel(
 
                         tags$p(),
                         tags$p("Please choose the direcbysbyfdbydrbfdtory containing the folder containig \n
