@@ -16,15 +16,15 @@ parameter_tabsi <- tabsetPanel(
            radioButtons("minRetweet_stocks1", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
            radioButtons("tweet_length_stock1","Tweet larger than median length:",
                         choices = c("yes","no"),selected = "no",inline=T)
-           
-           
+
+
   ),
   tabPanel("yes",
            selectInput("industry", "Industry", choices = c("Consumer Cyclical","Financial Services")),
-           
+
            radioButtons("language2","Language of tweets ?",
                         choices = c("en","de"),inline=T),
-           
+
            selectizeInput("aggregation2", "Aggregation", choices = c("Mean","Mean weighted by retweets",
                                                                      "Mean weighted by likes", "Mean weighted by length"),
                           select = "Mean"),
@@ -32,9 +32,9 @@ parameter_tabsi <- tabsetPanel(
            radioButtons("minRetweet_stocks2", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
            radioButtons("tweet_length_stock2","Tweet larger than median length:",
                         choices = c("yes","no"),selected = "no",inline=T)
-           
+
   )
-  
+
 )
 
 
@@ -50,16 +50,16 @@ parameter_tabs <- tabsetPanel(
            radioButtons("minLikes", "Select minimum number of likes", choices = c("0","10","50","100","200"),selected = "0",inline=T),
            radioButtons("tweet_length","Tweet larger than median length:",
                         choices = c("yes","no"),inline=T)
-           
-           
+
+
   ),
   tabPanel("Stocks",
            radioButtons("industry_sentiment","Sentiment by industry ?",
                         choices = c("yes","no"),selected = "no",inline=T),
            parameter_tabsi
-           
+
   )
-  
+
 )
 
 
@@ -81,19 +81,170 @@ tabs_custom <- tabsetPanel(
                        min = min(as.Date(ADS()[["Date"]], "%b %d, %Y")),
                        max = max(as.Date(ADS()[["Date"]], "%b %d, %Y")),
                        step = 1,timeFormat = "%F")
-           
-           
-           
+
+
+
   ),
   tabPanel("Filter sentiment input",
            selectInput("Sentiment_type", "Type of Sentiment:", choices = c("NoFilter","Stocks"),
                        selected = "NoFilter"),
            parameter_tabs
-           
+
   )
-  
+
 )
 
+
+dir_setter_panel <- function() {
+  tabPanel("Select Working Directory",
+           sidebarPanel(
+
+             tags$p(),
+             tags$p("Please choose the directory containing the folder containig \n
+               the data called 'Data'."),
+             shinyFiles::shinyDirButton("directory", "Folder select", "Please select a folder"
+             ),
+
+           ),
+           mainPanel(
+             tags$h4("Selected folder"),
+             tags$p(HTML("Please check that you picked the correct folder otherwise \n
+                           the App will be not work.")),
+             textOutput("directorypath"),
+             tags$hr()
+           ))
+}
+
+
+twitter_main_panel <- function(){
+  navbarMenu("Twitter",
+             tabPanel("Descriptives",
+                      twitter_desc_panel(),
+                      mainPanel(
+                        tabsetPanel(
+                          tabPanel("Descriptives"),
+                          tabPanel("Exploratory")
+                        ))),
+             tabPanel("Sentiment"),
+             tabPanel("Daily Analysis"),
+             tabPanel("Going deeper"))
+
+}
+
+
+twitter_desc_panel <- function(){
+  sidebarPanel(
+    tab_panel_twitter_desc
+)
+}
+
+
+twitter_desc_conditional_histo <- function(){
+  conditionalPanel(
+
+    #condition = "input.plot_type == 'Frequency Plot'",
+    # keep for both because bigram also makes senese with wordcloud
+    condition = "input.plot_type == 'histo'",
+
+    sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 1000, value = 100),
+
+
+    # add switch whether to use logarithmic scale
+    shinyWidgets::switchInput(inputId = "log_scale", label = "Logarithmic Scale",
+                              value = F,
+                              size = "small",
+                              handleWidth = 100
+    )
+
+
+  )
+}
+
+
+tab_panel_twitter_desc <- tabsetPanel(
+  id = "tiwtter_filter_tabs",
+  tabPanel( "Descriptives",
+            radioButtons("lang", "Select Language", choices = c("EN", "DE")),
+            selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
+
+            dateRangeInput("dates", "Select date range:", start = "2018-11-30", end = "2021-02-19",
+                           min = "2018-11-30", max = "2021-02-19", format = "yyyy-mm-dd"),
+            radioButtons("rt", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
+                         inline = T),
+            radioButtons("likes", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
+                         inline = T),
+            #switchInput(inputId = "long", value = TRUE),
+            shinyWidgets::materialSwitch(inputId = "long", label = "Long Tweets only?", value = F),
+
+
+            selectInput("plot_type", "What kind of plot would you like to see?", choices = c("Time Series"="sum_stats",
+                                                                                             "Histogram" = "histo"),
+                        selected = "sum_stats"),
+
+
+
+            selectInput("value", "Which value would you like to show",
+                        choices = c(
+                          "Sentiment" = "sentiment",
+                          "Retweets Weighted Sentiment" = "sentiment_rt",
+                          "Likes Weighted Sentiment" = "sentiment_likes",
+                          "Length Weighted Sentiment" = "sentiment_tweet_length",
+                          "Retweets" = "rt",
+                          "Likes"="likes",
+                          "Tweet Length" = "tweet_length",
+                          "Number of Tweets" = "N"
+                        ),
+                        selected = "rt"),
+
+
+            twitter_desc_conditional_histo(),
+
+            conditionalPanel(
+
+              #condition = "input.plot_type == 'Frequency Plot'",
+              # keep for both because bigram also makes senese with wordcloud
+              condition = "input.plot_type == 'sum_stats'",
+              radioButtons("metric", "Select a metric",
+                           choiceNames = c("Mean", "Standard deviation", "Median"),
+                           choiceValues = c("mean", "std", "median"))
+            )
+
+
+
+
+  ),
+  tabPanel("Exploratory",
+    radioButtons("lang", "Select Language", choices = c("EN", "DE")),
+    selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
+
+    dateRangeInput("dates", "Select date range:", start = "2018-11-30", end = "2021-02-13",
+                   min = "2018-11-30", max = "2018-12-09", format = "yyyy-mm-dd"),
+    radioButtons("rt", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
+                 inline = T),
+    radioButtons("likes", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
+                 inline = T),
+    #switchInput(inputId = "long", value = TRUE),
+    shinyWidgets::materialSwitch(inputId = "long", label = "Long Tweets only?", value = F),
+    shinyWidgets::materialSwitch(inputId = "emo", label = "Remove Emoji Words?", value = F),
+    selectInput("plot_type", "What kind of plot would you like to see?", choices = c("Frequency Plot", "Word Cloud")),
+    sliderInput("n", "Number of words to show", min = 5, max = 5000, value = 15),
+
+    conditionalPanel(
+
+      #condition = "input.plot_type == 'Frequency Plot'",
+      # keep for both because bigram also makes senese with wordcloud
+      condition = "true == true",
+      radioButtons("ngram_sel", "Would like to to see single words or bigrams?", choices = c("Unigram", "Bigram"))
+    )
+  )
+)
+
+
+
+
+# #### word freq tab
+# tab_panel_twitter_expl <-
+# )
 
 
 
@@ -103,7 +254,8 @@ ui <- fluidPage(
   shinythemes::themeSelector(),
   #titlePanel("Sentiment_Covid_App"),
   navbarPage("APP",
-             tabPanel("Twitter"),
+             dir_setter_panel(),
+              twitter_main_panel(),
              tabPanel("Sentiment"),
              tabPanel("Stocks",
                       sidebarPanel(
@@ -175,7 +327,7 @@ ui <- fluidPage(
                                      tabPanel("Quantile Regression",
                                               plotOutput("plot_dens_Qreg"),
                                               verbatimTextOutput("regression_result_Qreg")
-                                              
+
                                      )
                                    )
                                  )
