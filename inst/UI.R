@@ -161,82 +161,83 @@ twitter_desc_conditional_histo <- function(){
 }
 
 
+tiwtter_tab_desc <- tabPanel( "Descriptives",
+                              radioButtons("lang", "Select Language", choices = c("EN", "DE")),
+                              selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
+
+                              dateRangeInput("dates", "Select date range:", start = "2018-11-30", end = "2021-02-19",
+                                             min = "2018-11-30", max = "2021-02-19", format = "yyyy-mm-dd"),
+                              radioButtons("rt", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
+                                           inline = T),
+                              radioButtons("likes", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
+                                           inline = T),
+                              #switchInput(inputId = "long", value = TRUE),
+                              shinyWidgets::materialSwitch(inputId = "long", label = "Long Tweets only?", value = F),
+
+
+                              selectInput("plot_type", "What kind of plot would you like to see?", choices = c("Time Series"="sum_stats",
+                                                                                                               "Histogram" = "histo"),
+                                          selected = "sum_stats"),
+
+
+
+                              selectInput("value", "Which value would you like to show",
+                                          choices = c(
+                                            "Sentiment" = "sentiment",
+                                            "Retweets Weighted Sentiment" = "sentiment_rt",
+                                            "Likes Weighted Sentiment" = "sentiment_likes",
+                                            "Length Weighted Sentiment" = "sentiment_tweet_length",
+                                            "Retweets" = "rt",
+                                            "Likes"="likes",
+                                            "Tweet Length" = "tweet_length",
+                                            "Number of Tweets" = "N"
+                                          ),
+                                          selected = "rt"),
+
+
+                              twitter_desc_conditional_histo(),
+
+                              conditionalPanel(
+
+                                #condition = "input.plot_type == 'Frequency Plot'",
+                                # keep for both because bigram also makes senese with wordcloud
+                                condition = "input.plot_type == 'sum_stats'",
+                                radioButtons("metric", "Select a metric",
+                                             choiceNames = c("Mean", "Standard deviation", "Median"),
+                                             choiceValues = c("mean", "std", "median"))
+                              )
+                            )
+
+
+twitter_tab_expl <-  tabPanel("Exploratory",
+                              radioButtons("lang", "Select Language", choices = c("EN", "DE")),
+                              selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
+
+                              dateRangeInput("dates", "Select date range:", start = "2018-11-30", end = "2021-02-13",
+                                             min = "2018-11-30", max = "2018-12-09", format = "yyyy-mm-dd"),
+                              radioButtons("rt", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
+                                           inline = T),
+                              radioButtons("likes", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
+                                           inline = T),
+                              #switchInput(inputId = "long", value = TRUE),
+                              shinyWidgets::materialSwitch(inputId = "long", label = "Long Tweets only?", value = F),
+                              shinyWidgets::materialSwitch(inputId = "emo", label = "Remove Emoji Words?", value = F),
+                              selectInput("plot_type", "What kind of plot would you like to see?", choices = c("Frequency Plot", "Word Cloud")),
+                              sliderInput("n", "Number of words to show", min = 5, max = 5000, value = 15),
+
+                              conditionalPanel(
+
+                                #condition = "input.plot_type == 'Frequency Plot'",
+                                # keep for both because bigram also makes senese with wordcloud
+                                condition = "true == true",
+                                radioButtons("ngram_sel", "Would like to to see single words or bigrams?", choices = c("Unigram", "Bigram"))
+                              )
+)
 tab_panel_twitter_desc <- tabsetPanel(
   id = "tiwtter_filter_tabs",
-  tabPanel( "Descriptives",
-            radioButtons("lang", "Select Language", choices = c("EN", "DE")),
-            selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
+  tiwtter_tab_desc,
+  twitter_tab_expl
 
-            dateRangeInput("dates", "Select date range:", start = "2018-11-30", end = "2021-02-19",
-                           min = "2018-11-30", max = "2021-02-19", format = "yyyy-mm-dd"),
-            radioButtons("rt", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
-                         inline = T),
-            radioButtons("likes", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
-                         inline = T),
-            #switchInput(inputId = "long", value = TRUE),
-            shinyWidgets::materialSwitch(inputId = "long", label = "Long Tweets only?", value = F),
-
-
-            selectInput("plot_type", "What kind of plot would you like to see?", choices = c("Time Series"="sum_stats",
-                                                                                             "Histogram" = "histo"),
-                        selected = "sum_stats"),
-
-
-
-            selectInput("value", "Which value would you like to show",
-                        choices = c(
-                          "Sentiment" = "sentiment",
-                          "Retweets Weighted Sentiment" = "sentiment_rt",
-                          "Likes Weighted Sentiment" = "sentiment_likes",
-                          "Length Weighted Sentiment" = "sentiment_tweet_length",
-                          "Retweets" = "rt",
-                          "Likes"="likes",
-                          "Tweet Length" = "tweet_length",
-                          "Number of Tweets" = "N"
-                        ),
-                        selected = "rt"),
-
-
-            twitter_desc_conditional_histo(),
-
-            conditionalPanel(
-
-              #condition = "input.plot_type == 'Frequency Plot'",
-              # keep for both because bigram also makes senese with wordcloud
-              condition = "input.plot_type == 'sum_stats'",
-              radioButtons("metric", "Select a metric",
-                           choiceNames = c("Mean", "Standard deviation", "Median"),
-                           choiceValues = c("mean", "std", "median"))
-            )
-
-
-
-
-  ),
-  tabPanel("Exploratory",
-    radioButtons("lang", "Select Language", choices = c("EN", "DE")),
-    selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
-
-    dateRangeInput("dates", "Select date range:", start = "2018-11-30", end = "2021-02-13",
-                   min = "2018-11-30", max = "2018-12-09", format = "yyyy-mm-dd"),
-    radioButtons("rt", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
-                 inline = T),
-    radioButtons("likes", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
-                 inline = T),
-    #switchInput(inputId = "long", value = TRUE),
-    shinyWidgets::materialSwitch(inputId = "long", label = "Long Tweets only?", value = F),
-    shinyWidgets::materialSwitch(inputId = "emo", label = "Remove Emoji Words?", value = F),
-    selectInput("plot_type", "What kind of plot would you like to see?", choices = c("Frequency Plot", "Word Cloud")),
-    sliderInput("n", "Number of words to show", min = 5, max = 5000, value = 15),
-
-    conditionalPanel(
-
-      #condition = "input.plot_type == 'Frequency Plot'",
-      # keep for both because bigram also makes senese with wordcloud
-      condition = "true == true",
-      radioButtons("ngram_sel", "Would like to to see single words or bigrams?", choices = c("Unigram", "Bigram"))
-    )
-  )
 )
 
 
