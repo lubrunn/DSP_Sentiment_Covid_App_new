@@ -490,7 +490,21 @@ server <- function(input, output, session) {
   })
 
 
+  ###############################################################################
+  ##################### twitter logo directory page ############################
+  ###############################################################################
 
+  output$twitter_logo <- renderImage({
+
+    filename <- "C:/Users/lukas/OneDrive - UT Cloud/Data/images/twitter_image.png"
+
+
+
+    list(src = filename,
+         alt = "This is the Twitter Logo",
+         contentType = "Images/png",
+         height = 400, width = 400)
+  }, deleteFile = F)
 
 
   ###############################################################################
@@ -798,5 +812,10 @@ server <- function(input, output, session) {
                                color = "random-light", backgroundColor = "grey")
     }
   })
+
+
+
+
+
 
 }
