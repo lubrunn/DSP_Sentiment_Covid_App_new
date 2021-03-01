@@ -103,8 +103,40 @@ ui <- fluidPage(
   shinythemes::themeSelector(),
   #titlePanel("Sentiment_Covid_App"),
   navbarPage("APP",
-             tabPanel("Twitter"),
-             tabPanel("Sentiment"),
+             tabPanel("Select a Working Directojieeeeeeeeeeeeeeeeeeevory",
+                      sidebarPanel(
+
+                        tags$p(),
+                        tags$p("Please choose the direcbysbyfdbydrbfdtory containing the folder containig \n
+               the data called 'Data'."),
+                        shinyFiles::shinyDirButton("directory", "Folder bydfbfybyfbdfbselect", "Please select a folder"
+                        ),
+
+                      ),
+                      mainPanel(
+                        tags$h4("Selected folder"),
+                        tags$p(HTML("Please check thatdfbdbvfdbyfb you picked the correct folder otherwise \n
+                           the App will be not work.")),
+                        textOutput("directorypath"),
+                        tags$hr()
+                      )),
+             navbarMenu("Twitter",
+                        tabPanel("Descriptives",
+                                 sidebarPanel(
+                                   selectInput("comp", "Select a Company or look at unfiltered tweets",
+                                               choices = c("Adidas", "Nike"))
+
+
+                                 ),
+                                 mainPanel(
+                                   tabsetPanel(
+                                     tabPanel("Descriptives"),
+                                     tabPanel("Exploratory")
+                                   ))),
+                        tabPanel("Sentiment"),
+                        tabPanel("Daily Analysis"),
+                        tabPanel("Going deeper")),
+
              tabPanel("Stocks",
                       sidebarPanel(
                         radioButtons("country_stocks","Which country?",c("Germany","USA"),selected = "Germany"),
