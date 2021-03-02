@@ -154,22 +154,31 @@ twitter_main_panel <- function(){
                       ########## main panels for Descritpive reiter
                        mainPanel(
                         tabsetPanel(id = "tabselected",
-                          tabPanel("Descriptives Output", value = 1,
-                                   conditionalPanel(
-                                     condition = "input.plot_type_desc == 'histo'",
-                                     plotOutput("histo_plot") %>%
-                                       shinycssloaders::withSpinner()
 
-                                   ),
-                                   conditionalPanel(
+                          ### panel with histograms and summary table
+                          tabPanel("Time Series Sentiment & Other Metrics", value = 1,
+
+
                                      condition = "input.plot_type_desc == 'sum_stats'",
                                      "text",
                                      plotOutput('sum_stats_plot') %>%
                                        shinycssloaders::withSpinner()#, height = "800px")
-                                   )),
-                          ##### main panel for exploratory
-                          tabPanel("Exploratory Output", value = 2,
-                                   mainPanel(
+                                   ),
+
+                          # tab with time series
+                          tabPanel("Distributions", value = 2,
+
+                                  tableOutput("sum_stats_table") %>%
+                                    shinycssloaders::withSpinner(),
+
+                                   plotOutput("histo_plot") %>%
+                                     shinycssloaders::withSpinner()
+
+
+                          ),
+                          ##### main panel with wod frequency and raw tweets
+                          tabPanel("Exploratory Output", value = 3,
+                                  # mainPanel(
                                      conditionalPanel(
                                        condition = "input.plot_type_expl == 'Frequency Plot'",
                                        plotOutput("freq_plot")
@@ -181,7 +190,7 @@ twitter_main_panel <- function(){
                                        wordcloud2::wordcloud2Output('wordcloud', height = "800px")
                                      )
 
-                                   ))
+                                   )
                                     ))
                       ),
              ################### tab panel descirptive end
@@ -209,7 +218,7 @@ twitter_desc_conditional_histo <- conditionalPanel(
 
     #condition = "input.plot_type == 'Frequency Plot'",
     # keep for both because bigram also makes senese with wordcloud
-    condition = "input.plot_type_desc == 'histo'",
+  condition = "input.tabselected==2",
 
     sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 1000, value = 100),
 
@@ -226,11 +235,11 @@ twitter_desc_conditional_histo <- conditionalPanel(
 
 
 ### conditional sidebar panel for the time series
-tiwtter_desc_conditional_sum_stats <- conditionalPanel(
+twitter_desc_conditional_sum_stats <- conditionalPanel(
 
   #condition = "input.plot_type == 'Frequency Plot'",
   # keep for both because bigram also makes senese with wordcloud
-  condition = "input.plot_type_desc == 'sum_stats'",
+  condition = "input.tabselected==1",
   radioButtons("metric", "Select a metric",
                choiceNames = c("Mean", "Standard deviation", "Median"),
                choiceValues = c("mean", "std", "median"))
@@ -240,7 +249,7 @@ tiwtter_desc_conditional_sum_stats <- conditionalPanel(
 twitter_tab_desc <- tabPanel( "Descriptives",
 
 
-                              ####### both
+                              ####### all three
                               radioButtons("lang", "Select Language", choices = c("EN", "DE")),
                               selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
 
@@ -257,10 +266,8 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
                               ##### only descr
                               conditionalPanel(
-                                condition = "input.tabselected==1",
-                                selectInput("plot_type_desc", "What kind of plot would you like to see?", choices = c("Time Series"="sum_stats",
-                                                                                                                 "Histogram" = "histo"),
-                                            selected = "sum_stats"),
+                                condition = "input.tabselected==1 || input.tabselected==2",
+
 
 
 
@@ -277,13 +284,18 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                             ),
                                             selected = "rt"),
 
+                                # additional elemtns for time series analysis
+                                twitter_desc_conditional_sum_stats,
 
-                                twitter_desc_conditional_histo,
-                                tiwtter_desc_conditional_sum_stats
+                                ## additional elements for histogram
+                                twitter_desc_conditional_histo
+
+
+
                               ),
 
                             conditionalPanel(
-                              condition = "input.tabselected==2",
+                              condition = "input.tabselected==3",
                               shinyWidgets::materialSwitch(inputId = "emo", label = "Remove Emoji Words?", value = F),
                               selectInput("plot_type_expl", "What kind of plot would you like to see?", choices = c("Frequency Plot", "Word Cloud")),
                               sliderInput("n", "Number of words to show", min = 5, max = 5000, value = 15),
