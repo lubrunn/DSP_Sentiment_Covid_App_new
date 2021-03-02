@@ -511,9 +511,9 @@ server <- function(input, output, session) {
   ############################### twitter descriptive ###########################
   ###############################################################################
   ### for histogram less choices
-  observeEvent(input$plot_type_desc,{
+  observeEvent(input$tabselected,{
 
-    if (input$plot_type_desc == "histo"){
+    if (input$tabselected == 2){
       if (input$value %in% c("sentiment_rt", "sentiment_likes", "sentiment_length")){
         selected_value <-"sentiment"
       } else {
@@ -559,18 +559,21 @@ server <- function(input, output, session) {
     DBI::dbDisconnect(con)
   })
 
-
+ long <- reactive({
+   if (input$long == T){
+     long <- 81
+   } else{
+     long <- 0
+   }
+   long
+ })
 
 
   querry <- reactive({
+    long <- long()
 
-    if (input$long == T){
-      long <- 81
-    } else{
-      long <- 0
-    }
     #browser()
-    if (input$plot_type_desc == "sum_stats"){
+    if (input$tabselected == 1){
 
       if (input$value == "N"){
         metric <- "N"
@@ -582,7 +585,7 @@ server <- function(input, output, session) {
 
 
 
-      table_name <- glue("{input$plot_type_desc}_{tolower(input$lang)}_all")
+      table_name <- glue("sum_stats_{tolower(input$lang)}")
       # browser()
       glue("SELECT created_at, {metric} as value FROM {table_name}  WHERE created_at >= '{input$dates[1]}'
       and created_at <= '{input$dates[2]}'
@@ -590,7 +593,7 @@ server <- function(input, output, session) {
          tweet_length = {long}" )
 
 
-    } else if (input$plot_type_desc == "histo"){
+    } else if (input$tabselected == 2){
       #browser()
       if (input$value == "length"){
         tb_metric <- "len"
@@ -615,7 +618,7 @@ server <- function(input, output, session) {
 
 
 
-      table_name <- glue("{input$plot_type_desc}_{tb_metric}_{tolower(input$lang)}")
+      table_name <- glue("histo_{tb_metric}_{tolower(input$lang)}")
 
       if (table_name %in% c("histo_rt_en", "histo_likes_en", "histo_len_en")){
         date_col <- "date"
@@ -623,36 +626,61 @@ server <- function(input, output, session) {
         date_col <- "created_at"
       }
 
-      glue("SELECT {col_val}, sum(N) as  n  FROM {table_name}  WHERE {date_col} >=  '{input$dates[1]}'
+      glue("SELECT {col_val}, sum(N) as n  FROM {table_name}  WHERE {date_col} >=  '{input$dates[1]}'
       and {date_col} <= '{input$dates[2]}'
       and retweets_count_filter = {input$rt} and likes_count_filter = {input$likes} and
       tweet_length_filter = {long}
-      group by {col_val}")
+           group by {col_val}")
 
-    }
+
+    } #if closed
+    }) #reactive closed
+
+    querry_sum_stats_table <- reactive({
+      req(input$tabselected == 2)
+      if (input$value == "tweet_length"){
+        metric <- glue("{input$metric}_length")
+      } else{
+        metric <- glue("{input$metric}_{input$value}")
+      }
+
+      long <- long()
+
+      table_name <- glue("sum_stats_{tolower(input$lang)}")
+
+      glue("SELECT *  FROM {table_name}  WHERE created_at >= '{input$dates[1]}'
+      and created_at <= '{input$dates[2]}'
+         and retweets_count = {input$rt} and likes_count = {input$likes} and
+         tweet_length = {long}" )
+
+
+    })
     #browser()
 
 
-  })
 
+
+
+  ## get data from querry
   data_desc <- reactive({
 
 
     con <- path_setter()
     con <- con[[1]]
     df_need <- DBI::dbGetQuery(con, querry())
-    df_need
+
+   df_need
   })
 
 
 
-
+    #### time series plots
   output$sum_stats_plot <- renderPlot({
 
     df <- data_desc()
 
 
-    if(input$plot_type_desc == "sum_stats"){
+    if(input$tabselected == 1){
 
       df$created_at <- as.Date(df$created_at)
       df %>%
@@ -663,13 +691,14 @@ server <- function(input, output, session) {
 
   })
 
-
+  ### disable log scale option for sentiment because as negative values
   observeEvent(input$value, {
     #browser()
     if (input$value == "sentiment") {
       shinyWidgets::updateSwitchInput(session = session,
                                       "log_scale",
-                                      disabled = T)
+                                      disabled = T,
+                                      value = F)
     } else {
       shinyWidgets::updateSwitchInput(session = session,
                                       "log_scale",
@@ -678,7 +707,7 @@ server <- function(input, output, session) {
   })
 
 
-
+  # histogram output
   output$histo_plot <- renderPlot({
     df <- data_desc()
 
@@ -688,9 +717,10 @@ server <- function(input, output, session) {
 
 
 
-    if (input$plot_type_desc == "histo"){
+    if (input$tabselected == 2){
 
       df %>%
+
         # {if (input$log_scale == T) {} else {
         #          mutate(bins = cut_interval(.[[1]], n = input$bins))
         #        }
@@ -706,6 +736,21 @@ server <- function(input, output, session) {
 
     }
   })
+
+  get_data_sum_stats_tabls <- reactive({
+    con <- path_setter()
+    con <- con[[1]]
+    df_need <- DBI::dbGetQuery(con,  querry_sum_stats_table())
+
+    df_need
+  })
+
+  ######## sum stats table
+  output$sum_stats_table <- function(){
+     # browser()
+    df_need <- get_data_sum_stats_tabls()
+    sum_stats_table_creator(input$value, df_need)
+  }
 
 
   ######################################################
