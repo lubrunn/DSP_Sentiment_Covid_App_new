@@ -733,28 +733,30 @@ server <- function(input, output, session) {
 
   ######################################## histogram output
   output$histo_plot <- renderPlot({
-    df <- data_histo()
+   #  df <- data_histo()
+   #
+   # df %>%
+   #      group_by(.[[2]]) %>% summarise(N = sum(N)) %>%
+   #     mutate(metric = case_when(input$log_scale == T ~ log(as.numeric(.[[1]])+ 0.0001),
+   #                                input$log_scale == F ~ as.numeric(.[[1]])),
+   #             bins = cut_interval(metric, n = input$bins)) %>%
+   #
+   #      ggplot(aes(bins, N)) +
+   #      geom_col() +
+   #      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+   #
+   req(input$value)
+   df <- data_histo()
 
-    #freezeReactiveValue(input, "plot_type")
-
-    # if sentiment then disable log button because has negative values
-
-
-
-      df %>%
-        group_by(.[[2]]) %>% summarise(N = sum(N)) %>%
-        # {if (input$log_scale == T) {} else {
-        #          mutate(bins = cut_interval(.[[1]], n = input$bins))
-        #        }
-        # }
-
-        mutate(metric = case_when(input$log_scale == T ~ log(as.numeric(.[[1]])+ 0.0001),
+     df %>%   group_by(.[[2]]) %>% summarise(N = sum(N)) %>%
+       mutate(metric = case_when(input$log_scale == T ~ log(as.numeric(.[[1]])+ 0.0001),
                                   input$log_scale == F ~ as.numeric(.[[1]])),
                bins = cut_interval(metric, n = input$bins)) %>%
 
         ggplot(aes(bins, N)) +
         geom_col() +
         theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
 
 
   })
