@@ -570,31 +570,31 @@ server <- function(input, output, session) {
  })
 
 
-  querry_time_series <- reactive({
-    long <- long()
-
-    #browser()
-    if (input$tabselected == 1){
-
-      if (input$value == "N"){
-        metric <- "N"
-      } else if (input$value == "tweet_length"){
-        metric <- glue("{input$metric}_length")
-      } else{
-        metric <- glue("{input$metric}_{input$value}")
-      }
-
-
-
-      table_name <- glue("sum_stats_{tolower(input$lang)}")
-      # browser()
-      glue("SELECT created_at, {metric} as value FROM {table_name}  WHERE created_at >= '{input$dates[1]}'
-      and created_at <= '{input$dates[2]}'
-         and retweets_count = {input$rt} and likes_count = {input$likes} and
-         tweet_length = {long}" )
-
-
-    }})
+  # querry_time_series <- reactive({
+  #   long <- long()
+  #
+  #   #browser()
+  #   if (input$tabselected == 1){
+  #
+  #     if (input$value == "N"){
+  #       metric <- "N"
+  #     } else if (input$value == "tweet_length"){
+  #       metric <- glue("{input$metric}_length")
+  #     } else{
+  #       metric <- glue("{input$metric}_{input$value}")
+  #     }
+  #
+  #
+  #
+  #     table_name <- glue("sum_stats_{tolower(input$lang)}")
+  #     # browser()
+  #     glue("SELECT created_at, {metric} as value FROM {table_name}  WHERE created_at >= '{input$dates[1]}'
+  #     and created_at <= '{input$dates[2]}'
+  #        and retweets_count = {input$rt} and likes_count = {input$likes} and
+  #        tweet_length = {long}" )
+  #
+  #
+  #   }})
   querry_histo <- reactive({
     if (input$long == T){
       long_name <- "long_only"
@@ -604,7 +604,7 @@ server <- function(input, output, session) {
     long
     lang <- lang_converter()
 
-    glue("histo_{input$value}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
+    glue("histo_{input$value[1]}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
      # old sql
       #browser()
       # if (input$value == "length"){
@@ -650,11 +650,7 @@ server <- function(input, output, session) {
 
     querry_sum_stats_table <- reactive({
 
-      if (input$value == "tweet_length"){
-        metric <- glue("{input$metric}_length")
-      } else{
-        metric <- glue("{input$metric}_{input$value}")
-      }
+
 
       long <- long()
 
@@ -673,22 +669,22 @@ server <- function(input, output, session) {
 
 
 
-  ## get data from querry
-  data_time_series <- reactive({
-
-
-
-    con <- path_setter()
-
-
-    con <- con[[1]]
-
-    string_value <- is.null(con)
-    req(!string_value)
-    df_need <- DBI::dbGetQuery(con, querry_time_series())
-
-   df_need
-  })
+  # ## get data from querry
+  # data_time_series <- reactive({
+  #
+  #
+  #
+  #   con <- path_setter()
+  #
+  #
+  #   con <- con[[1]]
+  #
+  #   string_value <- is.null(con)
+  #   req(!string_value)
+  #   df_need <- DBI::dbGetQuery(con, querry_time_series())
+  #
+  #  df_need
+  # })
 
   data_histo <- reactive({
 
@@ -709,25 +705,20 @@ server <- function(input, output, session) {
 
     #### time series plots
   output$sum_stats_plot <- renderPlot({
+    req(input$value)
+    df <- get_data_sum_stats_tables()
 
-    df <- data_time_series()
+    time_series_plotter(df, input$metric, input$value)
 
 
-    if(input$tabselected == 1){
 
-      df$created_at <- as.Date(df$created_at)
-      df %>%
-        ggplot(aes(x = created_at,
-                   y = value)) +
-        geom_line()
-    }
 
   })
 
   ### disable log scale option for sentiment because as negative values
   observeEvent(input$value, {
     #browser()
-    if (input$value == "sentiment") {
+    if (input$value[1] == "sentiment") {
       shinyWidgets::updateSwitchInput(session = session,
                                       "log_scale",
                                       disabled = T,
@@ -768,7 +759,7 @@ server <- function(input, output, session) {
 
   })
 
-  get_data_sum_stats_tabls <- reactive({
+  get_data_sum_stats_tables <- reactive({
     con <- path_setter()
     con <- con[[1]]
     string_value <- is.null(con)
@@ -781,7 +772,7 @@ server <- function(input, output, session) {
   ######## sum stats table
   output$sum_stats_table <- function(){
      # browser()
-    df_need <- get_data_sum_stats_tabls()
+    df_need <- get_data_sum_stats_tables()
     sum_stats_table_creator(df_need)
   }
 
