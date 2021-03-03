@@ -544,14 +544,14 @@ server <- function(input, output, session) {
 
   # avoid that date range upper value can be lower than lower value
   # Update the dateRangeInput if start date changes
-  observeEvent(input$dates[1], {
-    end_date = input$dates[2]
-    # If end date is earlier than start date, update the end date to be the same as the new start date
-    if (input$dates[2] < input$dates[1]) {
-      end_date = input$dates[1]
-    }
-    updateDateRangeInput(session,"dates", start=input$dates[1], end=end_date, min=input$dates[1] )
-  })
+  # observeEvent(input$dates[1], {
+  #   end_date = input$dates[2]
+  #   # If end date is earlier than start date, update the end date to be the same as the new start date
+  #   if (input$dates[2] < input$dates[1]) {
+  #     end_date = input$dates[1]
+  #   }
+  #   updateDateRangeInput(session,"dates", start=input$dates[1], end=end_date, min=input$dates[1] )
+  # })
 
 
   ######## disconnect from database after exit
@@ -685,7 +685,7 @@ server <- function(input, output, session) {
   #
   #  df_need
   # })
-
+############################### data retriever for histogram
   data_histo <- reactive({
 
     lang <- lang_converter()
@@ -703,7 +703,7 @@ server <- function(input, output, session) {
 
 
 
-    #### time series plots
+    ######################### time series plot for retweets etc.
   output$sum_stats_plot <- renderPlot({
     req(input$value)
     df <- get_data_sum_stats_tables()
@@ -715,7 +715,7 @@ server <- function(input, output, session) {
 
   })
 
-  ### disable log scale option for sentiment because as negative values
+  ##################### disable log scale option for sentiment because as negative values
   observeEvent(input$value, {
     #browser()
     if (input$value[1] == "sentiment") {
@@ -731,7 +731,7 @@ server <- function(input, output, session) {
   })
 
 
-  # histogram output
+  ######################################## histogram output
   output$histo_plot <- renderPlot({
     df <- data_histo()
 
@@ -759,6 +759,10 @@ server <- function(input, output, session) {
 
   })
 
+
+
+
+############################# get data for sum stats table
   get_data_sum_stats_tables <- reactive({
     con <- path_setter()
     con <- con[[1]]
@@ -769,7 +773,7 @@ server <- function(input, output, session) {
     df_need
   })
 
-  ######## sum stats table
+  ################################# sum stats table
   output$sum_stats_table <- function(){
      # browser()
     df_need <- get_data_sum_stats_tables()
@@ -777,15 +781,22 @@ server <- function(input, output, session) {
   }
 
 
+  ###### number of tweets display
+  output$number_tweets_info <- renderText({
+    df_need <- get_data_sum_stats_tables()
+
+   glue("For current selection: {round(mean(df_need$N))} tweets on average per day")
+  })
+
+
   ######################################################
   ########################## Word Frequencies ###########
   #######################################################
- lang_converter <- reactive({if (input$lang == "EN"){
-    lang <- "En"
-  } else {
-    lang <- "De"
-  }
+ lang_converter <- reactive({
+
+  lang <- stringr::str_to_title(input$lang)
  })
+
   data_expl <- reactive({
 
     lang <- lang_converter()
@@ -805,86 +816,84 @@ server <- function(input, output, session) {
     }
 
     correct_path <- path_setter()[[3]]
-    if (correct_path == "correct_path"){
-      Sys.sleep(0.2)
-    } else{
-      return()
-    }
+    # if (correct_path == "correct_path"){
+    #   Sys.sleep(0.2)
+    # } else{
+    #   return()
+    # }
 
     # go into specified folder and load dataframe
     file_name <- glue("term_freq_{lang}_NoFilter_{input$dates[1]}_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
 
 
     if (input$ngram_sel == "Unigram"){
-      subfolder <- "uni"
+      subfolder <- "uni_appended"
+      add_on <- "uni"
     } else {
-      subfolder <- "bi"
+      subfolder <- "bi_appended"
+      add_on <- "bi"
     }
+
+    file_name <- glue("{add_on}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
+
  # browser()
     file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
-    #browser()
-    df <- readr::read_csv(file_path, col_types = readr::cols(date_variable = "D"))
+    # read file
+    readr::read_csv(file_path, col_types = readr::cols(date_variable = "D"))
     #%>%
     # filter(between(date_variable, input$dates[1], input$dates[2]))
 
 
 
-    df <- df %>%
 
-      filter(
-        emo == F | emo == T &
-          retweets_count >= input$rt &
-          likes_count >= input$likes &
-          tweet_length >= tweet_length_filter) %>%
-      {if (input$emo == T) filter(., emo == F) else .} %>%
-      select(-emo) %>%
-      pivot_wider(names_from = word, values_from = N) %>%
-      select(-c(date_variable, language_variable, retweets_count,
-                likes_count, tweet_length)) %>%
-      colSums(na.rm = T) %>%
-      data.frame() %>%
-      rename("n" = ".") %>%
-      tibble::rownames_to_column("words")
 
 
 
 
   })
 
-  #### freq_plot
+  ######################### freq_plot
   output$freq_plot <- renderPlot(
     # dynamically change height of plot
-    height = function() input$n * 30 + 400,
+    #height = function() input$n * 30 + 400,
 
     {
       df <- data_expl()
 
-
+   # browser()
       if (input$plot_type_expl == "Frequency Plot"){
-        df %>%
-          #filter(X1 != "num_tweets") %>%
-          top_n(input$n) %>%
-          arrange(desc(n)) %>%
-          ggplot(aes(reorder(x = words, n), y = n)) +
-          geom_col() +
-          coord_flip()
+        df <- word_freq_data_wrangler(df, input$dates[1], input$dates[2],
+                                                  input$emo, emoji_words, input$word_freq_filter)
 
+        df <- df_filterer(df, input$n)
+
+        term_freq_bar_plot(df)
 
       }
     })
 
-
+################## wordcloud
   output$wordcloud <- wordcloud2::renderWordcloud2({
-    df <- data_expl()
+  req(input$plot_type_expl == "Word Cloud")
+
     if (input$plot_type_expl == "Word Cloud"){
-      df %>% top_n(input$n) %>%
-        wordcloud2::wordcloud2(size = 1,shape = 'star',
-                               color = "random-light", backgroundColor = "grey")
+      df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
+                                    input$emo, emoji_words, input$word_freq_filter)
+
+      df <- df_filterer(df, input$n)
+
+      word_cloud_plotter(df, input$size_wordcloud)
     }
   })
 
 
-
+############################## time series bigram plot
+  output$word_freq_time_series <- renderPlot({
+    df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
+                                  input$emo, emoji_words, input$word_freq_filter)
+#browser()
+     word_filter_time_series_plotter(df)
+  })
 
 
 

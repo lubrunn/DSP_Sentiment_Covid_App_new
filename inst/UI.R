@@ -162,7 +162,13 @@ twitter_main_panel <- function(){
 
 
                                     # first time series plot
-
+                                    textOutput("number_tweets_info"),
+                                   tags$head(tags$style("#number_tweets_info{color: black;
+                                 font-size: 20px;
+                                 font-style: bold;
+                                 }"
+                                   )
+                                   ),
                                      plotOutput('sum_stats_plot'),
 
                                    # seconds time series plot
@@ -180,14 +186,15 @@ twitter_main_panel <- function(){
                                   # mainPanel(
                                      conditionalPanel(
                                        condition = "input.plot_type_expl == 'Frequency Plot'",
-                                       plotOutput("freq_plot")
+                                       plotOutput("freq_plot", height = "800px")
                                        #uiOutput("plot.ui")
                                      ),
                                      conditionalPanel(
                                        condition = "input.plot_type_expl == 'Word Cloud'",
                                        "text",
-                                       wordcloud2::wordcloud2Output('wordcloud', height = "800px")
-                                     )
+                                       wordcloud2::wordcloud2Output('wordcloud', height = "800px", width = "auto")
+                                     ),
+                                  plotOutput("word_freq_time_series")
 
                                    )
                                     ))
@@ -244,8 +251,13 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                               radioButtons("lang", "Select Language", choices = c("EN", "DE")),
                               selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
 
-                              dateRangeInput("dates", "Select date range:", start = "2018-11-30", end = "2021-02-19",
-                                             min = "2018-11-30", max = "2021-02-19", format = "yyyy-mm-dd"),
+                              shinyWidgets::airDatepickerInput("dates", "Date range:",
+                                                               range = TRUE,
+                                                               value = c("2018-11-30", "2021-02-19"),
+                                                               maxDate = "2021-02-19", minDate = "2018-11-30",
+                                                               clearButton = T, update_on = "close"),
+
+
                               radioButtons("rt", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
                                            inline = T),
                               radioButtons("likes", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
@@ -279,6 +291,18 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                 twitter_desc_conditional_sum_stats,
 
                                 ## additional elements for histogram
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
                                 tags$hr(),
                                 tags$h3("Histogram"),
                                 sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 1000, value = 100),
@@ -298,7 +322,7 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                               condition = "input.tabselected==3",
                               shinyWidgets::materialSwitch(inputId = "emo", label = "Remove Emoji Words?", value = F),
                               selectInput("plot_type_expl", "What kind of plot would you like to see?", choices = c("Frequency Plot", "Word Cloud")),
-                              sliderInput("n", "Number of words to show", min = 5, max = 5000, value = 15),
+                              sliderInput("n", "Number of words to show", min = 5, max = 200, value = 15),
 
                               conditionalPanel(
 
@@ -306,7 +330,21 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                 # keep for both because bigram also makes senese with wordcloud
                                 condition = "true == true",
                                 radioButtons("ngram_sel", "Would like to to see single words or bigrams?", choices = c("Unigram", "Bigram"))
-                              )
+                              ),
+
+                              # word search bigrams
+                              conditionalPanel(
+                                condition = "input.ngram_sel == 'Bigram'",
+                                shinyWidgets::searchInput("word_freq_filter", "Enter your search term",
+                                                          placeholder = "Placeholder",
+                                                          value = "",
+                                                          btnSearch = icon("search"),
+                                                          btnReset = icon("remove"))
+                              ),
+                              conditionalPanel(
+                                condition = "input.word_freq_filter != '' & input.plot_type_expl == 'Word Cloud'",
+                                sliderInput("size_wordcloud", "Change the size of the wordcloud", min = 1, max = 5, value = 1)
+                              ),
                             )
 
                             )

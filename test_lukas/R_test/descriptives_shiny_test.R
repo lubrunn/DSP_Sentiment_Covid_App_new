@@ -134,6 +134,19 @@ DBI::dbDisconnect(con)
 
 
 
-## testing to get multiple lines in plot
+## testing local database
+
+querry_str <- "select * from cleaned_en where text like '%trump%' and date < '2019-05-05'"
+
+
+con <- DBI::dbConnect(RSQLite::SQLite(), "C:/Users/lukas/Documents/SQLiteStudio/databases/test.db")
+
+time1 <- Sys.time()
+df_need <- DBI::dbGetQuery(con, querry_str)
+print(Sys.time() -  time1)
+
+
+#disconnect
+DBI::dbDisconnect(con)
 
 
