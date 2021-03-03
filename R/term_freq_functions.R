@@ -25,7 +25,7 @@ word_freq_data_wrangler <- function(df, input_date1, input_date2,
 
 
 
-browser()
+
 
 df <-  df %>%
   filter(between(date, as.Date(input_date1), as.Date(input_date2)))  %>%
@@ -81,12 +81,10 @@ term_freq_bar_plot <- function(df){
 
 #'@export
 #'@rdname term_freq_computers
-word_filter_time_series_plotter <- function(df, search_term, input_emo, input_rt, input_likes, tweet_length_filter){
-word_freq_data_wrangler(df, input_date1, input_date2, input_rt,
-                                          input_likes, tweet_length_filter,
-                                          input_n, input_emo, emoji_words, search_term) %>%
+word_filter_time_series_plotter <- function(df){
 
 
+df %>%
    group_by(date) %>%
     summarise(n = sum(N)) %>%
 
