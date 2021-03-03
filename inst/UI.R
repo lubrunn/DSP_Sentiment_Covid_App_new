@@ -162,7 +162,13 @@ twitter_main_panel <- function(){
 
 
                                     # first time series plot
-
+                                    textOutput("number_tweets_info"),
+                                   tags$head(tags$style("#number_tweets_info{color: black;
+                                 font-size: 20px;
+                                 font-style: bold;
+                                 }"
+                                   )
+                                   ),
                                      plotOutput('sum_stats_plot'),
 
                                    # seconds time series plot
@@ -180,13 +186,13 @@ twitter_main_panel <- function(){
                                   # mainPanel(
                                      conditionalPanel(
                                        condition = "input.plot_type_expl == 'Frequency Plot'",
-                                       plotOutput("freq_plot")
+                                       plotOutput("freq_plot", height = "800px")
                                        #uiOutput("plot.ui")
                                      ),
                                      conditionalPanel(
                                        condition = "input.plot_type_expl == 'Word Cloud'",
                                        "text",
-                                       wordcloud2::wordcloud2Output('wordcloud', height = "800px")
+                                       wordcloud2::wordcloud2Output('wordcloud', height = "800px", width = "auto")
                                      ),
                                   plotOutput("word_freq_time_series")
 
