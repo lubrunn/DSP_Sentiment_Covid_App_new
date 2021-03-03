@@ -716,12 +716,24 @@ server <- function(input, output, session) {
     req(input$value)
 
     df <- get_data_sum_stats_tables()
-browser()
+
     time_series_plotter(df, input$metric, input$value)
+
  })
 
 
-  ##### remove option for
+####### block metric selection if chosen number of tweets
+  observeEvent(input$metric,{
+   # browser()
+    if (input$metric == "N"){
+      shinyjs::disable("value")
+    } else {
+      shinyjs::enable("value")
+    }
+  })
+
+
+
 
   ##################### disable log scale option for sentiment because as negative values
   observeEvent(input$value, {
