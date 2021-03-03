@@ -569,7 +569,7 @@ server <- function(input, output, session) {
  })
 
 
-  querry <- reactive({
+  querry_time_series <- reactive({
     long <- long()
 
     #browser()
@@ -593,51 +593,56 @@ server <- function(input, output, session) {
          tweet_length = {long}" )
 
 
-    } else if (input$tabselected == 2){
+    }})
+  querry_histo <- reactive({
+    long <- long()
+
+
+     # old sql
       #browser()
-      if (input$value == "length"){
-        tb_metric <- "len"
-        col_value <- input$value
+      # if (input$value == "length"){
+      #   tb_metric <- "len"
+      #   col_value <- input$value
+      #
+      # } else if(input$value == "rt") {
+      #
+      #   tb_metric <- input$value
+      #   col_val <- "retweets_count"
+      #
+      # } else if(input$value == "likes") {
+      #   tb_metric <- input$value
+      #   col_val <- "likes_count"
+      # } else if(input$value == "sentiment"){
+      #   tb_metric <- input$value
+      #   col_val <- "sentiment_rd"
+      # } else{
+      #   Sys.sleep(0.2)
+      # }
+      #
+      #
+      #
+      #
+      #
+      # table_name <- glue("histo_{tb_metric}_{tolower(input$lang)}")
+      #
+      # if (table_name %in% c("histo_rt_en", "histo_likes_en", "histo_len_en")){
+      #   date_col <- "date"
+      # } else{
+      #   date_col <- "created_at"
+      # }
+      #
+      # glue("SELECT {col_val}, sum(N) as n  FROM {table_name}  WHERE {date_col} >=  '{input$dates[1]}'
+      # and {date_col} <= '{input$dates[2]}'
+      # and retweets_count_filter = {input$rt} and likes_count_filter = {input$likes} and
+      # tweet_length_filter = {long}
+      #      group by {col_val}")
 
-      } else if(input$value == "rt") {
 
-        tb_metric <- input$value
-        col_val <- "retweets_count"
-
-      } else if(input$value == "likes") {
-        tb_metric <- input$value
-        col_val <- "likes_count"
-      } else if(input$value == "sentiment"){
-        tb_metric <- input$value
-        col_val <- "sentiment_rd"
-      } else{
-        Sys.sleep(0.2)
-      }
-
-
-
-
-
-      table_name <- glue("histo_{tb_metric}_{tolower(input$lang)}")
-
-      if (table_name %in% c("histo_rt_en", "histo_likes_en", "histo_len_en")){
-        date_col <- "date"
-      } else{
-        date_col <- "created_at"
-      }
-
-      glue("SELECT {col_val}, sum(N) as n  FROM {table_name}  WHERE {date_col} >=  '{input$dates[1]}'
-      and {date_col} <= '{input$dates[2]}'
-      and retweets_count_filter = {input$rt} and likes_count_filter = {input$likes} and
-      tweet_length_filter = {long}
-           group by {col_val}")
-
-
-    } #if closed
+     #if closed
     }) #reactive closed
 
     querry_sum_stats_table <- reactive({
-      req(input$tabselected == 2)
+
       if (input$value == "tweet_length"){
         metric <- glue("{input$metric}_length")
       } else{
@@ -662,14 +667,24 @@ server <- function(input, output, session) {
 
 
   ## get data from querry
-  data_desc <- reactive({
+  data_time_series <- reactive({
 
 
     con <- path_setter()
     con <- con[[1]]
-    df_need <- DBI::dbGetQuery(con, querry())
+    df_need <- DBI::dbGetQuery(con, querry_time_series())
 
    df_need
+  })
+
+  data_histo <- reactive({
+
+
+    con <- path_setter()
+    con <- con[[1]]
+    df_need <- DBI::dbGetQuery(con, querry_histo())
+
+    df_need
   })
 
 
@@ -677,7 +692,7 @@ server <- function(input, output, session) {
     #### time series plots
   output$sum_stats_plot <- renderPlot({
 
-    df <- data_desc()
+    df <- data_time_series()
 
 
     if(input$tabselected == 1){
@@ -709,7 +724,7 @@ server <- function(input, output, session) {
 
   # histogram output
   output$histo_plot <- renderPlot({
-    df <- data_desc()
+    df <- data_histo()
 
     #freezeReactiveValue(input, "plot_type")
 
