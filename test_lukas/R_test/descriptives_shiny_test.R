@@ -132,3 +132,8 @@ print(Sys.time() -  time1)
 #disconnect
 DBI::dbDisconnect(con)
 
+
+
+## testing to get multiple lines in plot
+
+
