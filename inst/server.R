@@ -685,7 +685,7 @@ server <- function(input, output, session) {
   #
   #  df_need
   # })
-
+############################### data retriever for histogram
   data_histo <- reactive({
 
     lang <- lang_converter()
@@ -703,7 +703,7 @@ server <- function(input, output, session) {
 
 
 
-    #### time series plots
+    ######################### time series plot for retweets etc.
   output$sum_stats_plot <- renderPlot({
     req(input$value)
     df <- get_data_sum_stats_tables()
@@ -715,7 +715,7 @@ server <- function(input, output, session) {
 
   })
 
-  ### disable log scale option for sentiment because as negative values
+  ##################### disable log scale option for sentiment because as negative values
   observeEvent(input$value, {
     #browser()
     if (input$value[1] == "sentiment") {
@@ -731,7 +731,7 @@ server <- function(input, output, session) {
   })
 
 
-  # histogram output
+  ######################################## histogram output
   output$histo_plot <- renderPlot({
     df <- data_histo()
 
@@ -759,6 +759,10 @@ server <- function(input, output, session) {
 
   })
 
+
+
+
+############################# get data for sum stats table
   get_data_sum_stats_tables <- reactive({
     con <- path_setter()
     con <- con[[1]]
@@ -769,12 +773,20 @@ server <- function(input, output, session) {
     df_need
   })
 
-  ######## sum stats table
+  ################################# sum stats table
   output$sum_stats_table <- function(){
      # browser()
     df_need <- get_data_sum_stats_tables()
     sum_stats_table_creator(df_need)
   }
+
+
+  ###### number of tweets display
+  output$number_tweets_info <- renderText({
+    df_need <- get_data_sum_stats_tables()
+
+   glue("For current selection: {round(mean(df_need$N))} tweets on average per day")
+  })
 
 
   ######################################################
@@ -840,7 +852,7 @@ server <- function(input, output, session) {
 
   })
 
-  #### freq_plot
+  ######################### freq_plot
   output$freq_plot <- renderPlot(
     # dynamically change height of plot
     #height = function() input$n * 30 + 400,
@@ -860,7 +872,7 @@ server <- function(input, output, session) {
       }
     })
 
-
+################## wordcloud
   output$wordcloud <- wordcloud2::renderWordcloud2({
   req(input$plot_type_expl == "Word Cloud")
 
@@ -875,7 +887,7 @@ server <- function(input, output, session) {
   })
 
 
-#### time series bigram plot
+############################## time series bigram plot
   output$word_freq_time_series <- renderPlot({
     df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
                                   input$emo, emoji_words, input$word_freq_filter)
