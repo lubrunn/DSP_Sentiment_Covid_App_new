@@ -556,6 +556,7 @@ server <- function(input, output, session) {
 
   ######## disconnect from database after exit
   cancel.onSessionEnded <- session$onSessionEnded(function() {
+    con <- path_setter[[1]][1]
     DBI::dbDisconnect(con)
   })
 
@@ -676,8 +677,14 @@ server <- function(input, output, session) {
   data_time_series <- reactive({
 
 
+
     con <- path_setter()
+
+
     con <- con[[1]]
+
+    string_value <- is.null(con)
+    req(!string_value)
     df_need <- DBI::dbGetQuery(con, querry_time_series())
 
    df_need
@@ -686,10 +693,14 @@ server <- function(input, output, session) {
   data_histo <- reactive({
 
     lang <- lang_converter()
+    a <- path_setter()
 
-
-
-    df_need <- readr::read_csv(file.path(glue("Twitter/plot_data/{lang}_NoFilter/appended/{querry_histo()}")))[,1:3]
+  file_path <- file.path(glue("Twitter/plot_data/{lang}_NoFilter/appended/{querry_histo()}"))
+  exists <- file.exists(file_path)
+  shinyFeedback::feedbackDanger("histo_plot", !exists, "Please make sure you picked the correct path. The \n
+                                file cannot be found in the current directory")
+  req(exists)
+    df_need <- readr::read_csv(file_path)[,1:3]
 
     df_need
   })
@@ -760,6 +771,8 @@ server <- function(input, output, session) {
   get_data_sum_stats_tabls <- reactive({
     con <- path_setter()
     con <- con[[1]]
+    string_value <- is.null(con)
+    req(!string_value)
     df_need <- DBI::dbGetQuery(con,  querry_sum_stats_table())
 
     df_need
