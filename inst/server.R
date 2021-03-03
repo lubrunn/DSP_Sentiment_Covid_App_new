@@ -780,12 +780,11 @@ server <- function(input, output, session) {
   ######################################################
   ########################## Word Frequencies ###########
   #######################################################
- lang_converter <- reactive({if (input$lang == "EN"){
-    lang <- "En"
-  } else {
-    lang <- "De"
-  }
+ lang_converter <- reactive({
+
+  lang <- stringr::str_to_title(input$lang)
  })
+
   data_expl <- reactive({
 
     lang <- lang_converter()
@@ -805,46 +804,36 @@ server <- function(input, output, session) {
     }
 
     correct_path <- path_setter()[[3]]
-    if (correct_path == "correct_path"){
-      Sys.sleep(0.2)
-    } else{
-      return()
-    }
+    # if (correct_path == "correct_path"){
+    #   Sys.sleep(0.2)
+    # } else{
+    #   return()
+    # }
 
     # go into specified folder and load dataframe
     file_name <- glue("term_freq_{lang}_NoFilter_{input$dates[1]}_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
 
 
     if (input$ngram_sel == "Unigram"){
-      subfolder <- "uni"
+      subfolder <- "uni_appended"
+      add_on <- "uni"
     } else {
-      subfolder <- "bi"
+      subfolder <- "bi_appended"
+      add_on <- "bi"
     }
+
+    file_name <- glue("{add_on}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
+
  # browser()
     file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
-    #browser()
-    df <- readr::read_csv(file_path, col_types = readr::cols(date_variable = "D"))
+    # read file
+    readr::read_csv(file_path, col_types = readr::cols(date_variable = "D"))
     #%>%
     # filter(between(date_variable, input$dates[1], input$dates[2]))
 
 
 
-    df <- df %>%
 
-      filter(
-        emo == F | emo == T &
-          retweets_count >= input$rt &
-          likes_count >= input$likes &
-          tweet_length >= tweet_length_filter) %>%
-      {if (input$emo == T) filter(., emo == F) else .} %>%
-      select(-emo) %>%
-      pivot_wider(names_from = word, values_from = N) %>%
-      select(-c(date_variable, language_variable, retweets_count,
-                likes_count, tweet_length)) %>%
-      colSums(na.rm = T) %>%
-      data.frame() %>%
-      rename("n" = ".") %>%
-      tibble::rownames_to_column("words")
 
 
 
@@ -859,16 +848,14 @@ server <- function(input, output, session) {
     {
       df <- data_expl()
 
-
+   # browser()
       if (input$plot_type_expl == "Frequency Plot"){
-        df %>%
-          #filter(X1 != "num_tweets") %>%
-          top_n(input$n) %>%
-          arrange(desc(n)) %>%
-          ggplot(aes(reorder(x = words, n), y = n)) +
-          geom_col() +
-          coord_flip()
+        df <- word_freq_data_wrangler(df, input$dates[1], input$dates[2],
+                                                  input$emo, emoji_words, input$word_freq_filter)
 
+        df <- df_filterer(df, input$n)
+
+        term_freq_bar_plot(df)
 
       }
     })
@@ -876,10 +863,14 @@ server <- function(input, output, session) {
 
   output$wordcloud <- wordcloud2::renderWordcloud2({
     df <- data_expl()
+
     if (input$plot_type_expl == "Word Cloud"){
-      df %>% top_n(input$n) %>%
-        wordcloud2::wordcloud2(size = 1,shape = 'star',
-                               color = "random-light", backgroundColor = "grey")
+      df <- word_freq_data_wrangler(df, input$dates[1], input$dates[2],
+                                    input$emo, emoji_words, input$word_freq_filter)
+
+      df <- df_filterer(df, input$n)
+
+      word_cloud_plotter(df, input$size_wordcloud)
     }
   })
 
