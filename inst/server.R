@@ -595,9 +595,15 @@ server <- function(input, output, session) {
 
     }})
   querry_histo <- reactive({
-    long <- long()
+    if (input$long == T){
+      long_name <- "long_only"
+    } else{
+      long_name <- "all"
+    }
+    long
+    lang <- lang_converter()
 
-
+    glue("histo_{input$value}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
      # old sql
       #browser()
       # if (input$value == "length"){
@@ -679,10 +685,11 @@ server <- function(input, output, session) {
 
   data_histo <- reactive({
 
+    lang <- lang_converter()
 
-    con <- path_setter()
-    con <- con[[1]]
-    df_need <- DBI::dbGetQuery(con, querry_histo())
+
+
+    df_need <- readr::read_csv(file.path(glue("Twitter/plot_data/{lang}_NoFilter/appended/{querry_histo()}")))[,1:3]
 
     df_need
   })
@@ -732,10 +739,8 @@ server <- function(input, output, session) {
 
 
 
-    if (input$tabselected == 2){
-
       df %>%
-
+        group_by(.[[2]]) %>% summarise(N = sum(N)) %>%
         # {if (input$log_scale == T) {} else {
         #          mutate(bins = cut_interval(.[[1]], n = input$bins))
         #        }
@@ -743,13 +748,13 @@ server <- function(input, output, session) {
 
         mutate(metric = case_when(input$log_scale == T ~ log(as.numeric(.[[1]])+ 0.0001),
                                   input$log_scale == F ~ as.numeric(.[[1]])),
-               bins = cut_interval(metric, n = input$bins))%>%
+               bins = cut_interval(metric, n = input$bins)) %>%
 
-        ggplot(aes(bins, n)) +
+        ggplot(aes(bins, N)) +
         geom_col() +
         theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-    }
+
   })
 
   get_data_sum_stats_tabls <- reactive({
@@ -771,14 +776,15 @@ server <- function(input, output, session) {
   ######################################################
   ########################## Word Frequencies ###########
   #######################################################
-
+ lang_converter <- reactive({if (input$lang == "EN"){
+    lang <- "En"
+  } else {
+    lang <- "De"
+  }
+ })
   data_expl <- reactive({
-    if (input$lang == "EN"){
-      lang <- "En"
-    } else {
-      lang <- "De"
-    }
 
+    lang <- lang_converter()
     if (input$comp != "") {
       folder <- file.path("Companies", input$comp)
     } else {
