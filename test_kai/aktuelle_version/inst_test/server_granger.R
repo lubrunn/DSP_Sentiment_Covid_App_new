@@ -465,7 +465,7 @@ server <- function(input, output, session) {
            adf.test(data[[2]], k = 2)$p.value > 0.1) {
       data[1] <- c(diff(data[[1]], 1), NA)
       data[2] <- c(diff(data[[2]], 1), NA)
-      #data[4] <- c(diff(data[[4]],1),NA)
+      data[3] <- c(diff(data[[3]],1),NA)
       #data[5] <- c(diff(data[[5]],1),NA)
 
       data <- drop_na(data)
