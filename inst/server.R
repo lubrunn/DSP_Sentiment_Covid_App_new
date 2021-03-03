@@ -544,14 +544,14 @@ server <- function(input, output, session) {
 
   # avoid that date range upper value can be lower than lower value
   # Update the dateRangeInput if start date changes
-  observeEvent(input$dates[1], {
-    end_date = input$dates[2]
-    # If end date is earlier than start date, update the end date to be the same as the new start date
-    if (input$dates[2] < input$dates[1]) {
-      end_date = input$dates[1]
-    }
-    updateDateRangeInput(session,"dates", start=input$dates[1], end=end_date, min=input$dates[1] )
-  })
+  # observeEvent(input$dates[1], {
+  #   end_date = input$dates[2]
+  #   # If end date is earlier than start date, update the end date to be the same as the new start date
+  #   if (input$dates[2] < input$dates[1]) {
+  #     end_date = input$dates[1]
+  #   }
+  #   updateDateRangeInput(session,"dates", start=input$dates[1], end=end_date, min=input$dates[1] )
+  # })
 
 
   ######## disconnect from database after exit
@@ -843,7 +843,7 @@ server <- function(input, output, session) {
   #### freq_plot
   output$freq_plot <- renderPlot(
     # dynamically change height of plot
-    height = function() input$n * 30 + 400,
+    #height = function() input$n * 30 + 400,
 
     {
       df <- data_expl()
@@ -862,10 +862,10 @@ server <- function(input, output, session) {
 
 
   output$wordcloud <- wordcloud2::renderWordcloud2({
-    df <- data_expl()
+  req(input$plot_type_expl == "Word Cloud")
 
     if (input$plot_type_expl == "Word Cloud"){
-      df <- word_freq_data_wrangler(df, input$dates[1], input$dates[2],
+      df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
                                     input$emo, emoji_words, input$word_freq_filter)
 
       df <- df_filterer(df, input$n)
@@ -875,7 +875,13 @@ server <- function(input, output, session) {
   })
 
 
-
+#### time series bigram plot
+  output$word_freq_time_series <- renderPlot({
+    df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
+                                  input$emo, emoji_words, input$word_freq_filter)
+#browser()
+     word_filter_time_series_plotter(df)
+  })
 
 
 
