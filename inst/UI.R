@@ -249,8 +249,10 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
                               ####### all three
                               radioButtons("lang", "Select Language", choices = c("EN", "DE")),
-                              selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
 
+                              selectInput("comp","Choose a company (optional)",
+                                             c("adidas", "NIKE"),
+                                             selected = "",multiple = TRUE),
                               shinyWidgets::airDatepickerInput("dates", "Date range:",
                                                                range = TRUE,
                                                                value = c("2018-11-30", "2021-02-19"),
