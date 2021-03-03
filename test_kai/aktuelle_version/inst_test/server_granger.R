@@ -441,9 +441,107 @@ server <- function(input, output, session) {
   output$regression_result_Qreg <- renderPrint({
     regression_result_Qreg()})
 
+###############################################################################
+########################   VAR    #############################################
+###############################################################################
+
+
+  output$datensatz_var <- renderPrint ({
+    head(final_regression_df())
+  })
+
+  forecast_data <- reactive({
+    final_regression_df()[1:(nrow(final_regression_df())-input$ahead),]
+  })
+  actual_values <- reactive({
+    final_regression_df()[((nrow(final_regression_df())+1)-input$ahead):nrow(final_regression_df()),1]
+  })
+
+
+  ## detect non-stationarity and correct it
+  stationary <- reactive({
+    data <- forecast_data()
+    while (adf.test(data[[1]], k = 2)$p.value > 0.1 |
+           adf.test(data[[2]], k = 2)$p.value > 0.1) {
+      data[1] <- c(diff(data[[1]], 1), NA)
+      data[2] <- c(diff(data[[2]], 1), NA)
+      #data[4] <- c(diff(data[[4]],1),NA)
+      #data[5] <- c(diff(data[[5]],1),NA)
+
+      data <- drop_na(data)
+    }
+    data
+  })
+  #optimal lags
+  optlags_var <- reactive({
+    VARselect(stationary(),lag.max = 10, type = "none")$selection[["SC(n)"]]
+  })
+
+  #fit var model
+  var_model <- reactive({
+    VAR(stationary(), p=optlags_var(), type = "none")
+  })
+
+  #test for autocorrelation: rejection = bad (means presence of correlated errors)
+  serial_test <- reactive({
+    serial.test(var_model(),lags.pt=10, type="PT.asymptotic")
+  })
+
+  #forecast
+  forecast_var <- reactive({
+    fcast <- predict(var_model(), n.ahead = input$ahead)
+     x <- fcast$fcst[[1]]
+     x <- x[,1]
+     x <- cumsum(x) + forecast_data()[nrow(forecast_data()),1]
+     x
+  })
+
+  #plot the actual vs. the predicted forecast
+  output$plot_forecast <- renderPlot({
+    plot1 <- data.frame(company$Dates[(nrow(forecast_data())+1):(nrow(forecast_data())+input$ahead)],#Dates
+                        forecast_var(),                                                              #forecasted values
+                        actual_values())#actual values
+    colnames(plot1) <- c("a","b","c")
+    ggplot(plot1) +
+      geom_line(aes(a,b),color="red")+
+      geom_line(aes(a,c),color="gold")+
+      labs(x="Date",y="StockPrice",title = "forecasted vs. actual")
+
+  })
+
+  output$accuracy_var <- renderUI({
+    str1 <- paste("The RMSE is: ",sqrt(mean((forecast_var()-actual_values())^2)))
+    str2 <- paste("The MAE is: ",mean(abs(forecast_var()-actual_values())))
+    HTML(paste(str1,str2, sep = '<br/>'))
+
+  })
+
+
+  output$plot_forecast2 <- renderPlot({
+
+    plot2 <- data.frame(company$Dates,
+                       c(forecast_data()[[1]],forecast_var()),
+                       final_regression_df()[1])
+    colnames(plot2) <- c("a","b","c")
+    ggplot(plot2) +
+      geom_line(aes(a,b))+
+      geom_line(aes(a,c))+
+      labs(x="Date",y="StockPrice",title = "forecasted vs. actual, full series")
+
+  })
 
 
 
+
+
+  output$serial_test <- renderPrint({
+    serial_test()
+  })
+
+
+  output$var <- renderPrint({
+    var_model()
+  })
 
 
 }
