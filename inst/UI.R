@@ -187,7 +187,8 @@ twitter_main_panel <- function(){
                                        condition = "input.plot_type_expl == 'Word Cloud'",
                                        "text",
                                        wordcloud2::wordcloud2Output('wordcloud', height = "800px")
-                                     )
+                                     ),
+                                  plotOutput("word_freq_time_series")
 
                                    )
                                     ))
@@ -306,7 +307,16 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                 # keep for both because bigram also makes senese with wordcloud
                                 condition = "true == true",
                                 radioButtons("ngram_sel", "Would like to to see single words or bigrams?", choices = c("Unigram", "Bigram"))
-                              )
+                              ),
+
+                              conditionalPanel(
+                                condition = "input.ngram_sel == 'Bigram'",
+                                textInput("word_freq_filter", "Only show Bigrams containing this word:", value = "")
+                              ),
+                              conditionalPanel(
+                                condition = "input.word_freq_filter != '' & input.plot_type_expl == 'Word Cloud'",
+                                sliderInput("size_wordcloud", "Change the size of the wordcloud", min = 1, max = 5, value = 1)
+                              ),
                             )
 
                             )
