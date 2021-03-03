@@ -273,7 +273,7 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                               "Tweet Length" = "tweet_length",
                                               "Number of Tweets" = "N"
                                             ),
-                                            selected = "rt"),
+                                            selected = "sentiment", multiple = T),
 
                                 # additional elemtns for time series analysis
                                 twitter_desc_conditional_sum_stats,
