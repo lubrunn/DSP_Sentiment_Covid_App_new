@@ -1,5 +1,6 @@
 
-
+#'@export
+#'@rdname time_series_plot
 time_series_plotter <- function(df, filter_type, selected_metrics){
 
 df <-     df %>%
@@ -23,19 +24,28 @@ df <-     df %>%
           !created_at, names_to = "metric", values_to = "value"
           #,names_prefix = "mean_"
         )
-    ) %>%
+    )  %>%
     separate(col = metric, into = c("type", "metric"), sep = "_", remove = F, extra = "merge") %>%
+  mutate(metric = stringr::str_replace(metric, "length", "tweet_length")) %>%
+
+  bind_rows(
+    df %>% select(created_at, N) %>% pivot_longer(N,
+                                                  names_to = "metric", values_to = "value"
+    ) %>% mutate(type = "mean")
+  ) %>%
 
     filter(type == filter_type & metric %in% selected_metrics)
 
 
-
+##### plot
+# if only one selected just plot
 if (length(selected_metrics) == 1){
     df %>%
     ggplot() +
     geom_line(aes(x = as.Date(created_at), y = value, color = metric))
 
-  } else {
+  } else { # if mutliple selected set up loop and append all needed parts then plot and use metric as grouping aes
+
     df_all <- NULL
     for (metric_value in selected_metrics){
 
@@ -59,3 +69,5 @@ if (length(selected_metrics) == 1){
 
 
 }
+
+#time_series_plotter(df_need,filter_type, selected_metrics = selected_metrics)
