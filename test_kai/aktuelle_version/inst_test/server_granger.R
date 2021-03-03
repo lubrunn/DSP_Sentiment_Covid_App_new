@@ -484,7 +484,7 @@ server <- function(input, output, session) {
 
   #test for autocorrelation: rejection = bad (means presence of correlated errors)
   serial_test <- reactive({
-    serial.test(var_model(),lags.pt=10, type="PT.asymptotic")
+    serial.test(var_model(), type="BG",lags.bg = optlags_var())
   })
 
   #forecast
@@ -540,7 +540,7 @@ server <- function(input, output, session) {
 
 
   output$var <- renderPrint({
-    var_model()
+    optlags_var()
   })
 
 
