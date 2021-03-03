@@ -157,25 +157,25 @@ twitter_main_panel <- function(){
 
                           ### panel with histograms and summary table
                           tabPanel("Time Series Sentiment & Other Metrics", value = 1,
+                                    #summary statistics table
+                                   tableOutput("sum_stats_table") %>%
+                                     shinycssloaders::withSpinner(),
 
 
-                                     condition = "input.plot_type_desc == 'sum_stats'",
-                                     "text",
-                                     plotOutput('sum_stats_plot') %>%
-                                       shinycssloaders::withSpinner()#, height = "800px")
-                                   ),
+                                    # first time series plot
 
-                          # tab with time series
-                          tabPanel("Distributions", value = 2,
+                                     plotOutput('sum_stats_plot'),
 
-                                  tableOutput("sum_stats_table") %>%
-                                    shinycssloaders::withSpinner(),
+                                   # seconds time series plot
+                                   plotOutput('sum_stats_plot2'),
 
+                                   # histogram
                                    plotOutput("histo_plot") %>%
                                      shinycssloaders::withSpinner()
 
 
-                          ),
+                                   ),
+
                           ##### main panel with wod frequency and raw tweets
                           tabPanel("Exploratory Output", value = 3,
                                   # mainPanel(
@@ -212,26 +212,18 @@ twitter_main_panel <- function(){
 #     tab_panel_twitter_desc
 # )
 # }
-
-### conditional panels for the histogram plots in the descriptive panel
-twitter_desc_conditional_histo <- conditionalPanel(
-
-    #condition = "input.plot_type == 'Frequency Plot'",
-    # keep for both because bigram also makes senese with wordcloud
-  condition = "input.tabselected==2",
-
-    sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 1000, value = 100),
-
-
-    # add switch whether to use logarithmic scale
-    shinyWidgets::switchInput(inputId = "log_scale", label = "Logarithmic Scale",
-                              value = F,
-                              size = "small",
-                              handleWidth = 100
-    )
-
-
-  )
+#
+# ### conditional panels for the histogram plots in the descriptive panel
+# twitter_desc_conditional_histo <- conditionalPanel(
+#
+#     #condition = "input.plot_type == 'Frequency Plot'",
+#     # keep for both because bigram also makes senese with wordcloud
+#   condition = "input.tabselected==1",
+#
+#     )
+#
+#
+#   )
 
 
 ### conditional sidebar panel for the time series
@@ -266,7 +258,7 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
                               ##### only descr
                               conditionalPanel(
-                                condition = "input.tabselected==1 || input.tabselected==2",
+                                condition = "input.tabselected==1",
 
 
 
@@ -288,7 +280,16 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                 twitter_desc_conditional_sum_stats,
 
                                 ## additional elements for histogram
-                                twitter_desc_conditional_histo
+                                tags$hr(),
+                                tags$h3("Histogram"),
+                                sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 1000, value = 100),
+
+
+                                # add switch whether to use logarithmic scale
+                                shinyWidgets::switchInput(inputId = "log_scale", label = "Logarithmic Scale",
+                                                          value = F,
+                                                          size = "small",
+                                                          handleWidth = 100)
 
 
 
