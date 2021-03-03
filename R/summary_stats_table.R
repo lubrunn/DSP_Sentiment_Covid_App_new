@@ -14,42 +14,107 @@
 
 
 
-#input = "sentiment_likes"
+#input = "rt"
 #'@export
-#'@rdname sum_stats_table_ccreator
+#'@rdname sum_stats_table_creator
 
 ## setup dataframe for average summary statistics
-sum_stats_table_creator <- function(input, df_need){
-if(!grepl("senti", input)){
-sum_stats <- df_need %>%
-  select(-c(likes_count, retweets_count, tweet_length, language, created_at)) %>%
-
+sum_stats_table_creator <- function(df_need){
+df_need <-   df_need %>%
+  select(!contains("sentiment_")) %>%
+  select(starts_with(c("mean", "std", "q"))) %>%
   summarise_all(mean) %>%
-   select(contains(input) & !contains("senti"), N) %>%
-  round(2)
 
-} else if (input == "sentiment") {
-  sum_stats <- df_need %>%
-    select(-c(likes_count, retweets_count, tweet_length, language, created_at)) %>%
+  cbind(
+    df_need%>%
+      select(!contains("sentiment_"))  %>% summarise_at(vars(starts_with("max")), max)
+  ) %>%
+  cbind(
+    df_need %>%
+      select(!contains("sentiment_")) %>% summarise_at(vars(starts_with("min")), min)
+  ) %>%
+  cbind(
+    df_need %>%
+      select(N) %>%
 
-    summarise_all(mean) %>%
-    select(matches(input) & !matches("rt|likes|length"), N) %>%
-    round(2)
-} else {
-  sum_stats <- df_need %>%
-    select(-c(likes_count, retweets_count, tweet_length, language, created_at)) %>%
+      summarise(std_N = sd(N),
+                mean_N = mean(N),
+                min_N = min(N),
+                max_N = max(N))
+  ) %>%
+  round(2) %>%
+  pivot_longer(everything(),
+               names_to = c(".value", "variable"),
+               #prefix = "mean",
+               names_pattern = "(.+)_(.+)")
 
-    summarise_all(mean) %>%
-    select(matches(input), N) %>%
-    round(2)
+
+
+  ### convert column names
+  names(df_need) <- names(df_need) %>% toupper()
+
+  # convert variable names
+  df_need[,1] <- c("Retweets", "Likes", "Tweet Length", "Sentiment", "N")
+
+  return(knitr::kable(df_need, caption = glue("Summary Statistics for the selected Metric")) %>%
+           kableExtra::kable_styling(c("striped","hover"), full_width = T,
+                                     position = "center",
+                                     font_size = 16))
+
 }
 
-### convert column names
-names(sum_stats) <- mgsub::mgsub(names(sum_stats), c("_", input), c("", "")) %>% stringr::str_to_title()
 
-return(knitr::kable(sum_stats, caption = glue("Summary Statistics for the selected Metric")) %>%
-         kableExtra::kable_styling("striped", full_width = T,
-                                   position = "center",
-                                   font_size = 16))
 
-}
+
+
+
+# a = data.frame(mean_rt = c(5,11), mean_senti = c(10,19), sd_rt = c(3,4), sd_senti= c(2,1), max_rt = c(10, 11), max_senti = c(100, 200),
+#                min_rt = c(2,3), min_senti = c(2,3))
+#
+#
+# a %>%
+#   select(starts_with(c("mean", "sd", "q"))) %>%
+#   summarise_all(mean) %>%
+#
+#   cbind(
+#     a %>% summarise_at(vars(starts_with("max")), max)
+#   ) %>%
+#   cbind(
+#     a %>% summarise_at(vars(starts_with("min")), min)
+#   ) %>%
+#   pivot_longer(everything(),
+#                names_to = c(".value", "variable"),
+#                #prefix = "mean",
+#                names_pattern = "(.+)_(.+)")
+#
+#
+#
+#
+# b <- df_need %>%
+#   select(!contains("sentiment_")) %>%
+#   select(starts_with(c("mean", "std", "q"))) %>%
+#   summarise_all(mean) %>%
+#
+#   cbind(
+#     df_need%>%
+#       select(!contains("sentiment_"))  %>% summarise_at(vars(starts_with("max")), max)
+#   ) %>%
+#   cbind(
+#     df_need %>%
+#       select(!contains("sentiment_")) %>% summarise_at(vars(starts_with("min")), min)
+#   ) %>%
+#   cbind(
+#     df_need %>%
+#       select(N) %>%
+#
+#       summarise(std_N = sd(N),
+#                 mean_N = mean(N),
+#                 min_N = min(N),
+#                 max_N = max(N))
+#   ) %>%
+#   pivot_longer(everything(),
+#                names_to = c(".value", "variable"),
+#                #prefix = "mean",
+#                names_pattern = "(.+)_(.+)")
+#
+#
