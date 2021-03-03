@@ -441,7 +441,7 @@ server <- function(input, output, session) {
   output$regression_result_Qreg <- renderPrint({
     regression_result_Qreg()})
 
-
+#################################################################################################### twitter
 
   ############################################################################
   ################# Directory ###############################################
@@ -653,13 +653,21 @@ server <- function(input, output, session) {
 
 
       long <- long()
-
+#browser()
+      if (is.null(input$comp)){
       table_name <- glue("sum_stats_{tolower(input$lang)}")
 
       glue("SELECT *  FROM {table_name}  WHERE created_at >= '{input$dates[1]}'
       and created_at <= '{input$dates[2]}'
          and retweets_count = {input$rt} and likes_count = {input$likes} and
          tweet_length = {long}" )
+      } else { #if company is chosen
+        glue("SELECT *  FROM sum_stats_companies_all  WHERE created_at >= '{input$dates[1]}'
+      and created_at <= '{input$dates[2]}'
+         and retweets_count = {input$rt} and likes_count = {input$likes} and
+         tweet_length = {long} and company  = '{input$comp}' and
+             language = '{tolower(input$lang)}'" )
+      }
 
 
     })
@@ -706,14 +714,14 @@ server <- function(input, output, session) {
     ######################### time series plot for retweets etc.
   output$sum_stats_plot <- renderPlot({
     req(input$value)
+
     df <- get_data_sum_stats_tables()
-
+browser()
     time_series_plotter(df, input$metric, input$value)
+ })
 
 
-
-
-  })
+  ##### remove option for
 
   ##################### disable log scale option for sentiment because as negative values
   observeEvent(input$value, {
@@ -896,6 +904,8 @@ server <- function(input, output, session) {
 #browser()
      word_filter_time_series_plotter(df)
   })
+
+######################################################################### add companies choice
 
 
 
