@@ -782,7 +782,7 @@ server <- function(input, output, session) {
   output$sum_stats_table <- function(){
      # browser()
     df_need <- get_data_sum_stats_tabls()
-    sum_stats_table_creator(input$value, df_need)
+    sum_stats_table_creator(df_need)
   }
 
 
