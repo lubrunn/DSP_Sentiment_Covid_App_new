@@ -158,8 +158,7 @@ twitter_main_panel <- function(){
                           ### panel with histograms and summary table
                           tabPanel("Time Series Sentiment & Other Metrics", value = 1,
                                     #summary statistics table
-                                   tableOutput("sum_stats_table") %>%
-                                     shinycssloaders::withSpinner(),
+                                   tableOutput("sum_stats_table"),
 
 
                                     # first time series plot
