@@ -16,15 +16,15 @@ parameter_tabsi <- tabsetPanel(
            radioButtons("minRetweet_stocks1", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
            radioButtons("tweet_length_stock1","Tweet larger than median length:",
                         choices = c("yes","no"),selected = "no",inline=T)
-           
-           
+
+
   ),
   tabPanel("yes",
            selectInput("industry", "Industry", choices = c("Consumer Cyclical","Financial Services")),
-           
+
            radioButtons("language2","Language of tweets ?",
                         choices = c("en","de"),inline=T),
-           
+
            selectizeInput("aggregation2", "Aggregation", choices = c("Mean","Mean weighted by retweets",
                                                                      "Mean weighted by likes", "Mean weighted by length"),
                           select = "Mean"),
@@ -32,9 +32,9 @@ parameter_tabsi <- tabsetPanel(
            radioButtons("minRetweet_stocks2", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
            radioButtons("tweet_length_stock2","Tweet larger than median length:",
                         choices = c("yes","no"),selected = "no",inline=T)
-           
+
   )
-  
+
 )
 
 
@@ -50,16 +50,16 @@ parameter_tabs <- tabsetPanel(
            radioButtons("minLikes", "Select minimum number of likes", choices = c("0","10","50","100","200"),selected = "0",inline=T),
            radioButtons("tweet_length","Tweet larger than median length:",
                         choices = c("yes","no"),inline=T)
-           
-           
+
+
   ),
   tabPanel("Stocks",
            radioButtons("industry_sentiment","Sentiment by industry ?",
                         choices = c("yes","no"),selected = "no",inline=T),
            parameter_tabsi
-           
+
   )
-  
+
 )
 
 
@@ -81,17 +81,17 @@ tabs_custom <- tabsetPanel(
                        min = min(as.Date(ADS()[["Date"]], "%b %d, %Y")),
                        max = max(as.Date(ADS()[["Date"]], "%b %d, %Y")),
                        step = 1,timeFormat = "%F")
-           
-           
-           
+
+
+
   ),
   tabPanel("Filter sentiment input",
            selectInput("Sentiment_type", "Type of Sentiment:", choices = c("NoFilter","Stocks"),
                        selected = "NoFilter"),
            parameter_tabs
-           
+
   )
-  
+
 )
 
 
@@ -174,18 +174,25 @@ ui <- fluidPage(
                                               verbatimTextOutput("regression_result")),
                                      tabPanel("Quantile Regression",
                                               plotOutput("plot_dens_Qreg"),
-                                              verbatimTextOutput("regression_result_Qreg"))))),
-                        tabPanel("XGBOOST forecast",
-                                 sidebarPanel(
-                                   tabs_custom
-                                 ),
+                                              verbatimTextOutput("regression_result_Qreg")
+
+                                     )
+                                   )
+                                 )
+                         ),
+                        tabPanel("VAR-forecasting",
+                                  sidebarPanel(
+                                    tabs_custom_var,
+                                    numericInput("ahead", "choose how many days to forecast", value = 5, min = 1, max = 25)
+                                  ),
                                  mainPanel(
-                                   tabsetPanel(
-                                     tabPanel("regression",
-                                              verbatimTextOutput("testi_table"),
-                                                                          ))))
-                      
-                        
-                      )
-  )#close tabsetPanel
+                                   verbatimTextOutput("datensatz_var"),
+                                   plotOutput("plot_forecast"),
+                                   htmlOutput("accuracy_var"),
+                                   plotOutput("plot_forecast2"),
+                                   verbatimTextOutput("serial_test"),
+                                   verbatimTextOutput("var")
+                                 ))#close tabpanel VAR forecasting
+                        )#close Navbarmenu
+  )#close Navbarpage
 )#close fluidpage
