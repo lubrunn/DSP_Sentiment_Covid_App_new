@@ -12,8 +12,8 @@ emoji_words <- c(
   "black",
   "button",
   "exo",
-  "sad",
-  
+  "sad"
+
 )
 
 
