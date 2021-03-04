@@ -113,8 +113,8 @@ dir_setter_panel <- function() {
            ),
            column(8,
              tags$h4("Selected folder"),
-             tags$p(HTML("Please check that you picked the correct folder otherwise \n
-                           the App will be not work.")),
+             tags$p(HTML("Please check that you picked the correct folder containing \n
+             the 'Data' folder. otherwise the App will not work.")),
              textOutput("directorypath"),
              tags$hr())
            ),
@@ -194,7 +194,17 @@ twitter_main_panel <- function(){
                                        "text",
                                        wordcloud2::wordcloud2Output('wordcloud', height = "800px", width = "auto")
                                      ),
-                                  plotOutput("word_freq_time_series")
+                                  tags$hr(),
+                                  tags$br(),
+                                  tags$br(),
+                                  tags$br(),
+                                  tags$br(),
+                                  conditionalPanel(
+                                    condition = "input.ngram_sel == 'Bigram'",
+                                    tags$h4("Number of Bigrams containing the choosen word (if no word selected shows all tweets in current selection)"),
+                                    plotOutput("word_freq_time_series")
+                                  )
+
 
                                    )
                                     ))
