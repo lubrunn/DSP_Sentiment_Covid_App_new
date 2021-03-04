@@ -861,11 +861,7 @@ long <- long()
   data_expl <- reactive({
 
     lang <- lang_converter()
-    if (input$comp != "") {
-      folder <- file.path("Companies", input$comp)
-    } else {
-      folder <- glue("{lang}_NoFilter")
-    }
+
 
 
     if (input$long == T){
@@ -884,7 +880,6 @@ long <- long()
     # }
 
     # go into specified folder and load dataframe
-    file_name <- glue("term_freq_{lang}_NoFilter_{input$dates[1]}_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
 
 
     if (input$ngram_sel == "Unigram"){
@@ -895,12 +890,22 @@ long <- long()
       add_on <- "bi"
     }
 
-    file_name <- glue("{add_on}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
 
- # browser()
+    if (!is.null(input$comp)) {
+      folder <- file.path("Companies")
+      file_name <- glue("term_freq_{input$comp}_all_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
+    } else {
+      folder <- glue("{lang}_NoFilter")
+      file_name <- glue("{add_on}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
+    }
+
+
+
+
+
     file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
     # read file
-    readr::read_csv(file_path, col_types = readr::cols(date_variable = "D"))
+    readr::read_csv(file_path, col_types = readr::cols(date = "D"))
     #%>%
     # filter(between(date_variable, input$dates[1], input$dates[2]))
 
@@ -921,10 +926,13 @@ long <- long()
     {
       df <- data_expl()
 
-   # browser()
+
       if (input$plot_type_expl == "Frequency Plot"){
         df <- word_freq_data_wrangler(df, input$dates[1], input$dates[2],
-                                                  input$emo, emoji_words, input$word_freq_filter)
+                                      input$emo, emoji_words,
+                                      input$word_freq_filter,
+                                      tolower(input$lang),
+                                      input$comp)
 
         df <- df_filterer(df, input$n)
 
@@ -939,7 +947,10 @@ long <- long()
 
     if (input$plot_type_expl == "Word Cloud"){
       df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
-                                    input$emo, emoji_words, input$word_freq_filter)
+                                    input$emo, emoji_words,
+                                    input$word_freq_filter,
+                                    tolower(input$lang),
+                                    input$comp)
 
       df <- df_filterer(df, input$n)
 
@@ -951,8 +962,10 @@ long <- long()
 ############################## time series bigram plot
   output$word_freq_time_series <- renderPlot({
     df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
-                                  input$emo, emoji_words, input$word_freq_filter)
-#browser()
+                                  input$emo, emoji_words,
+                                  input$word_freq_filter, input$lang,
+                                  input$comp)
+
      word_filter_time_series_plotter(df)
   })
 
