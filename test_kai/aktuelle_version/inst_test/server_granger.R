@@ -632,7 +632,7 @@ server <- function(input, output, session) {
    })
 
   actual_values <- reactive({
-    final_regression_df_var()[((nrow(final_regression_df_var())+1)-input$ahead):nrow(final_regression_df_var()),2,drop=FALSE]
+    final_regression_df_var()[((nrow(final_regression_df_var())+1)-input$ahead):nrow(final_regression_df_var()),2]
   })
 
    output$serial_test <- renderPrint({
@@ -695,7 +695,7 @@ server <- function(input, output, session) {
   forecast_var <- reactive({
     fcast <- predict(var_model(), n.ahead = input$ahead)
     if (ncol(forecast_data()) == 1) {
-      x <- fcast$pred[1:5]
+      x <- fcast$pred[1:input$ahead]
       x <- cumsum(x) + forecast_data()[nrow(forecast_data()),1]
     }else {
      x <- fcast$fcst[[1]]
@@ -707,7 +707,7 @@ server <- function(input, output, session) {
 
   #plot the actual vs. the predicted forecast
   output$plot_forecast <- renderPlot({
-    plot1 <- data.frame(company$Dates[(nrow(forecast_data())+1):(nrow(forecast_data())+input$ahead)],#Dates
+    plot1 <- data.frame(final_regression_df_var()$Dates[(nrow(forecast_data())+1):(nrow(forecast_data())+input$ahead)],#Dates
                         forecast_var(),                                                              #forecasted values
                         actual_values())#actual values
     colnames(plot1) <- c("a","b","c")
@@ -724,22 +724,22 @@ server <- function(input, output, session) {
     HTML(paste(str1,str2, sep = '<br/>'))
 
   })
-  #
-  #
-  # output$plot_forecast2 <- renderPlot({
-  #
-  #   plot2 <- data.frame(company$Dates,
-  #                      c(forecast_data()[[1]],forecast_var()),
-  #                      final_regression_df()[1])
-  #   colnames(plot2) <- c("a","b","c")
-  #   ggplot(plot2) +
-  #     geom_line(aes(a,b))+
-  #     geom_line(aes(a,c))+
-  #     labs(x="Date",y="StockPrice",title = "forecasted vs. actual, full series")
-  #
-  # })
-  #
-  #
+
+
+  output$plot_forecast2 <- renderPlot({
+
+    plot2 <- data.frame(final_regression_df_var()$Dates,
+                       c(forecast_data()[[1]],forecast_var()),
+                       final_regression_df_var()[2])
+    colnames(plot2) <- c("a","b","c")
+    ggplot(plot2) +
+      geom_line(aes(a,b))+
+      geom_line(aes(a,c))+
+      labs(x="Date",y="StockPrice",title = "forecasted vs. actual, full series")
+
+  })
+
+
   # output$serial_test <- renderPrint({
   #   serial_test()
   # })

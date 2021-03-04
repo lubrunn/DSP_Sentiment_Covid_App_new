@@ -1,3 +1,5 @@
+Sys.setlocale("LC_TIME", "English")
+
 parameter_tabsi_var <- tabsetPanel(
   id = "industry_tab_var",
   type = "hidden",
