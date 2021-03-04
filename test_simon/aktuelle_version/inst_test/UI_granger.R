@@ -180,18 +180,14 @@ ui <- fluidPage(
                                    )
                                  )
                          ),
-                        tabPanel("VAR-forecasting",
+                        tabPanel("XGboost-forecasting",
                                   sidebarPanel(
-                                    tabs_custom_var,
-                                    numericInput("ahead", "choose how many days to forecast", value = 5, min = 1, max = 25)
+                                    tabs_custom_xgb,
+                                   
                                   ),
                                  mainPanel(
-                                   verbatimTextOutput("datensatz_var"),
-                                   plotOutput("plot_forecast"),
-                                   htmlOutput("accuracy_var"),
-                                   plotOutput("plot_forecast2"),
-                                   verbatimTextOutput("serial_test"),
-                                   verbatimTextOutput("var")
+                                   verbatimTextOutput("dataset_xgb")
+                
                                  ))#close tabpanel VAR forecasting
                         )#close Navbarmenu
   )#close Navbarpage
