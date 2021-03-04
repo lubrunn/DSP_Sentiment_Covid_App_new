@@ -894,18 +894,22 @@ long <- long()
     if (!is.null(input$comp)) {
       folder <- file.path("Companies")
       file_name <- glue("term_freq_{input$comp}_all_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
+      file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
+      # read file
+      readr::read_csv(file_path, col_types = readr::cols(date_variable = "D"))
     } else {
       folder <- glue("{lang}_NoFilter")
       file_name <- glue("{add_on}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
+      file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
+      # read file
+      readr::read_csv(file_path, col_types = readr::cols(date = "D"))
     }
 
 
 
 
 
-    file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
-    # read file
-    readr::read_csv(file_path, col_types = readr::cols(date = "D"))
+
     #%>%
     # filter(between(date_variable, input$dates[1], input$dates[2]))
 
