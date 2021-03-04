@@ -150,3 +150,23 @@ print(Sys.time() -  time1)
 DBI::dbDisconnect(con)
 
 
+
+
+
+
+querry_str <- "select * from sum_stats_companies_all where company = 'JohnsonJohnson' and
+retweets_count = 0 and likes_count = 0 and tweet_length = 0 and created_at > '2018-12-01' and
+created_at < '2021-02-01'"
+
+
+con <- DBI::dbConnect(RSQLite::SQLite(), "C:/Users/lukas/OneDrive - UT Cloud/Data/SQLiteStudio/databases/test.db")
+
+time1 <- Sys.time()
+df_need <- DBI::dbGetQuery(con, querry_str)
+print(Sys.time() -  time1)
+
+
+#disconnect
+DBI::dbDisconnect(con)
+
+

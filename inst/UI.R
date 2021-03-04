@@ -239,8 +239,8 @@ twitter_desc_conditional_sum_stats <- conditionalPanel(
   # keep for both because bigram also makes senese with wordcloud
   condition = "input.tabselected==1",
   radioButtons("metric", "Select a metric",
-               choiceNames = c("Mean", "Standard deviation", "Median"),
-               choiceValues = c("mean", "std", "median"))
+               choiceNames = c("Mean", "Standard deviation", "Median", "Number of Tweets"),
+               choiceValues = c("mean", "std", "median", "N"))
 )
 
 #### sidebar layout for descriptives
@@ -249,8 +249,10 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
                               ####### all three
                               radioButtons("lang", "Select Language", choices = c("EN", "DE")),
-                              selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
 
+                              selectInput("comp","Choose a company (optional)",
+                                             c("adidas", "NIKE"),
+                                             selected = "",multiple = TRUE),
                               shinyWidgets::airDatepickerInput("dates", "Date range:",
                                                                range = TRUE,
                                                                value = c("2018-11-30", "2021-02-19"),
@@ -282,8 +284,7 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                               "Length Weighted Sentiment" = "sentiment_tweet_length",
                                               "Retweets" = "rt",
                                               "Likes"="likes",
-                                              "Tweet Length" = "tweet_length",
-                                              "Number of Tweets" = "N"
+                                              "Tweet Length" = "tweet_length"
                                             ),
                                             selected = "sentiment", multiple = T),
 
@@ -305,7 +306,7 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                 tags$br(),
                                 tags$hr(),
                                 tags$h3("Histogram"),
-                                sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 1000, value = 100),
+                                sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 500, value = 50),
 
 
                                 # add switch whether to use logarithmic scale
@@ -425,10 +426,12 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
 Sys.setlocale("LC_TIME", "English")
 ui <- fluidPage(
-  #theme = shinythemes::shinytheme("cosmo"),
-  shinythemes::themeSelector(),
+  shinyjs::useShinyjs(),
+  theme = shinythemes::shinytheme("darkly"),
+  #shinythemes::themeSelector(),
   #titlePanel("Sentiment_Covid_App"),
   navbarPage("APP",
+
              dir_setter_panel(),
               twitter_main_panel(),
              tabPanel("Sentiment"),

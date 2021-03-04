@@ -62,7 +62,7 @@ return(df)
 word_cloud_plotter <- function(df, input_size){
 
   df    %>%
-     wordcloud2a(term_frequency_df, size = input_size,shape = 'star',
+     wordcloud2::wordcloud2(term_frequency_df, size = input_size,shape = 'star',
                                               color = "random-light", backgroundColor = "grey")
 }
 
