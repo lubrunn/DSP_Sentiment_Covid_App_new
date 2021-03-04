@@ -182,6 +182,7 @@ ui <- fluidPage(
                          ),
                         tabPanel("VAR-forecasting",
                                   sidebarPanel(
+                                    tabs_custom_var,
                                     numericInput("ahead", "choose how many days to forecast", value = 5, min = 1, max = 25)
                                   ),
                                  mainPanel(
