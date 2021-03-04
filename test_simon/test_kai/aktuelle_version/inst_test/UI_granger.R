@@ -175,17 +175,17 @@ ui <- fluidPage(
                                      tabPanel("Quantile Regression",
                                               plotOutput("plot_dens_Qreg"),
                                               verbatimTextOutput("regression_result_Qreg"))))),
-                        tabPanel("XGBOOST forecast",
+                        tabPanel("XGboost forecast",
                                  sidebarPanel(
-                                   tabs_custom
+                                   
                                  ),
                                  mainPanel(
                                    tabsetPanel(
-                                     tabPanel("regression",
-                                              verbatimTextOutput("testi_table"),
-                                                                          ))))
-                      
-                        
-                      )
+                                        tabPanel("data",
+                                           verbatimTextOutput("senti_agg")
+                                 ))))
+                                              
+               
+                    )
   )#close tabsetPanel
 )#close fluidpage
