@@ -284,8 +284,7 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                               "Length Weighted Sentiment" = "sentiment_tweet_length",
                                               "Retweets" = "rt",
                                               "Likes"="likes",
-                                              "Tweet Length" = "tweet_length",
-                                              "Number of Tweets" = "N"
+                                              "Tweet Length" = "tweet_length"
                                             ),
                                             selected = "sentiment", multiple = T),
 
@@ -307,7 +306,7 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                 tags$br(),
                                 tags$hr(),
                                 tags$h3("Histogram"),
-                                sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 1000, value = 100),
+                                sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 500, value = 50),
 
 
                                 # add switch whether to use logarithmic scale
@@ -427,11 +426,12 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
 Sys.setlocale("LC_TIME", "English")
 ui <- fluidPage(
-  #theme = shinythemes::shinytheme("cosmo"),
-  shinythemes::themeSelector(),
+  shinyjs::useShinyjs(),
+  theme = shinythemes::shinytheme("darkly"),
+  #shinythemes::themeSelector(),
   #titlePanel("Sentiment_Covid_App"),
   navbarPage("APP",
-             shinyjs::useShinyjs(),
+
              dir_setter_panel(),
               twitter_main_panel(),
              tabPanel("Sentiment"),
