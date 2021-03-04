@@ -7,5 +7,4 @@
 #' @import imputeTS
 #' @import glue
 #' @import quantreg
-#' @import kableExtra
 NULL

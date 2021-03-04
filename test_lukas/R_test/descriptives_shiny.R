@@ -9,8 +9,8 @@ library(tidyverse)
 
 ### connect to database
 old_wd <- getwd()
-setwd("C:/Users/lukas/OneDrive - UT Cloud/Data/SQLiteStudio/databases")
-con <- DBI::dbConnect(RSQLite::SQLite(), "test.db")
+setwd("C:/Users/lukas/OneDrive - UT Cloud/Data")
+con <- DBI::dbConnect(RSQLite::SQLite(), "SQLiteStudio/databasestest.db")
 setwd(old_wd)
 
 ui <- fluidPage(
@@ -36,7 +36,22 @@ ui <- fluidPage(
 
       selectInput("plot_type", "What kind of plot would you like to see?", choices = c("Time Series"="sum_stats",
                                                                                        "Histogram" = "histo"),
-                  selected = "Histogram"),
+                  selected = "sum_stats"),
+
+
+
+      selectInput("value", "Which value would you like to show",
+                  choices = c(
+                    "Sentiment" = "sentiment",
+                    "Retweets Weighted Sentiment" = "sentiment_rt",
+                    "Likes Weighted Sentiment" = "sentiment_likes",
+                    "Length Weighted Sentiment" = "sentiment_tweet_length",
+                    "Retweets" = "rt",
+                    "Likes"="likes",
+                    "Tweet Length" = "tweet_length",
+                    "Number of Tweets" = "N"
+                  ),
+                  selected = "rt"),
 
 
       conditionalPanel(
@@ -47,13 +62,7 @@ ui <- fluidPage(
 
         sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 1000, value = 100),
 
-        selectInput("value", "Which value would you like to show",
-                    choices = c("Sentiment" = "sentiment",
-                                "Retweets" = "rt",
-                                "Likes"="likes",
-                                "Tweet Length" = "tweet_length"
-                    ),
-                    selected = "Sentiment"),
+
         # add switch whether to use logarithmic scale
         shinyWidgets::switchInput(inputId = "log_scale", label = "Logarithmic Scale",
                                   value = F,
@@ -71,20 +80,7 @@ ui <- fluidPage(
         condition = "input.plot_type == 'sum_stats'",
         radioButtons("metric", "Select a metric",
                      choiceNames = c("Mean", "Standard deviation", "Median"),
-                     choiceValues = c("mean", "std", "median")),
-
-        selectInput("value", "Which value would you like to show",
-                    choices = c(
-                                "Sentiment" = "sentiment",
-                                "Retweets Weighted Sentiment" = "sentiment_rt",
-                                "Likes Weighted Sentiment" = "sentiment_likes",
-                                "Length Weighted Sentiment" = "sentiment_tweet_length",
-                                "Retweets" = "rt",
-                                "Likes"="likes",
-                                "Tweet Length" = "tweet_length",
-                                "Number of Tweets" = "N"
-                    ),
-                    selected = "Sentiment")
+                     choiceValues = c("mean", "std", "median"))
       )
 
 
@@ -95,13 +91,15 @@ ui <- fluidPage(
     mainPanel(
       conditionalPanel(
         condition = "input.plot_type == 'histo'",
-        plotOutput("histo_plot")
+        plotOutput("histo_plot") %>%
+          withSpinner()
 
       ),
       conditionalPanel(
         condition = "input.plot_type == 'sum_stats'",
         "text",
-        plotOutput('sum_stats_plot')#, height = "800px")
+        plotOutput('sum_stats_plot') %>%
+          withSpinner()#, height = "800px")
       )
 
     )
@@ -109,6 +107,39 @@ ui <- fluidPage(
 )
 
 server <- function(session, input, output){
+
+
+  ### for histogram less choices
+  observeEvent(input$plot_type,{
+
+    if (input$plot_type == "histo"){
+      if (input$value %in% c("sentiment_rt", "sentiment_likes", "sentiment_length")){
+        selected_value <-"sentiment"
+      } else {
+          selected_value <- input$value
+      }
+
+    updateSelectInput(session = session, "value",
+      choices = c("Sentiment" = "sentiment",
+                  "Retweets" = "rt",
+                  "Likes"="likes",
+                  "Tweet Length" = "tweet_length"
+      ), selected = selected_value)
+    } else {
+
+      updateSelectInput(session = session, "value",
+                        choices = c(
+                          "Sentiment" = "sentiment",
+                          "Retweets Weighted Sentiment" = "sentiment_rt",
+                          "Likes Weighted Sentiment" = "sentiment_likes",
+                          "Length Weighted Sentiment" = "sentiment_tweet_length",
+                          "Retweets" = "rt",
+                          "Likes"="likes",
+                          "Tweet Length" = "tweet_length",
+                          "Number of Tweets" = "N"
+                          ), selected = input$value)
+    } #if clause
+  }) #observeevent
 
   # avoid that date range upper value can be lower than lower value
   # Update the dateRangeInput if start date changes
@@ -143,7 +174,7 @@ server <- function(session, input, output){
       if (input$value == "N"){
         metric <- "N"
       } else if (input$value == "tweet_length"){
-        metric <- glue("{input$metric}_{length}")
+        metric <- glue("{input$metric}_length")
       } else{
         metric <- glue("{input$metric}_{input$value}")
       }
@@ -151,7 +182,7 @@ server <- function(session, input, output){
 
 
       table_name <- glue("{input$plot_type}_{tolower(input$lang)}_all")
-
+     # browser()
       glue("SELECT created_at, {metric} as value FROM {table_name}  WHERE created_at >= '{input$dates[1]}'
       and created_at <= '{input$dates[2]}'
          and retweets_count = {input$rt} and likes_count = {input$likes} and
@@ -159,7 +190,7 @@ server <- function(session, input, output){
 
 
     } else if (input$plot_type == "histo"){
-
+      #browser()
       if (input$value == "length"){
         tb_metric <- "len"
         col_value <- input$value
@@ -175,6 +206,8 @@ server <- function(session, input, output){
       } else if(input$value == "sentiment"){
         tb_metric <- input$value
         col_val <- "sentiment_rd"
+      } else{
+        Sys.sleep(0.2)
       }
 
 
@@ -189,7 +222,7 @@ server <- function(session, input, output){
         date_col <- "created_at"
       }
 
-      querry_str <- glue("SELECT {col_val}, sum(N) as  n  FROM {table_name}  WHERE {date_col} >=  '{input$dates[1]}'
+      glue("SELECT {col_val}, sum(N) as  n  FROM {table_name}  WHERE {date_col} >=  '{input$dates[1]}'
       and {date_col} <= '{input$dates[2]}'
       and retweets_count_filter = {input$rt} and likes_count_filter = {input$likes} and
       tweet_length_filter = {long}
@@ -204,6 +237,7 @@ server <- function(session, input, output){
   data <- reactive({
 
 
+
     df_need <- DBI::dbGetQuery(con, querry())
     df_need
     })
@@ -216,6 +250,7 @@ output$sum_stats_plot <- renderPlot({
 
 
   if(input$plot_type == "sum_stats"){
+
     df$created_at <- as.Date(df$created_at)
   df %>%
     ggplot(aes(x = created_at,

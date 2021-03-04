@@ -441,8 +441,522 @@ server <- function(input, output, session) {
   output$regression_result_Qreg <- renderPrint({
     regression_result_Qreg()})
 
+#################################################################################################### twitter
+
+  ############################################################################
+  ################# Directory ###############################################
+  ###########################################################################
+  # selecting directory
+  # find home direcoty of user
+  volumes <- c(Home = fs::path_home(), "R Installation" = R.home(), shinyFiles::getVolumes()())
+  # allow for searching directories
+  shinyFiles::shinyDirChoose(input, "directory", roots = volumes, session = session, restrictions = system.file(package = "base"), allowDirCreate = FALSE)
+  observe({
+    cat("\ninput$directory value:\n\n")
+    print(input$directory)
+  })
+  path_setter <- reactive({
+    #browser()
+    if (is.integer(input$directory)) {
+      setwd(volumes)
+
+      cat(glue("No directory has been selected. Current directory {getwd()})"))
+
+    } else {
+
+      path <- shinyFiles::parseDirPath(volumes, input$directory)
+      setwd(path)
+      con <- DBI::dbConnect(RSQLite::SQLite(), "SQLiteStudio/databases/test.db")
+
+      file_needed <- "SQLiteStudio"
+      if(dir.exists(file_needed)) {
+        #setwd(file_path)
+        output_str <- glue("Current path {getwd()}")
+      } else {
+        #setwd(file_path)
+        output_str <- "Current path selection does not seem correct. \n
+                Are you sure it is set correctly?"
+      }
+
+      path_outputs <- list(a = con, b = output_str, c = "correct_path")
+      path_outputs
 
 
+    }
+  })
+  output$directorypath <- renderText({
+    path_outputs <- path_setter()
+    path_outputs[[2]][1]
+  })
+
+
+  ###############################################################################
+  ##################### twitter logo directory page ############################
+  ###############################################################################
+
+  output$twitter_logo <- renderImage({
+
+    filename <- "C:/Users/lukas/OneDrive - UT Cloud/Data/images/twitter_image.png"
+
+
+
+    list(src = filename,
+         alt = "This is the Twitter Logo",
+         contentType = "Images/png",
+         height = 400, width = 400)
+  }, deleteFile = F)
+
+
+  ###############################################################################
+  ############################### twitter descriptive ###########################
+  ###############################################################################
+  ### for histogram less choices
+  observeEvent(input$tabselected,{
+
+    if (input$tabselected == 2){
+      if (input$value %in% c("sentiment_rt", "sentiment_likes", "sentiment_length")){
+        selected_value <-"sentiment"
+      } else {
+        selected_value <- input$value
+      }
+
+      updateSelectInput(session = session, "value",
+                        choices = c("Sentiment" = "sentiment",
+                                    "Retweets" = "rt",
+                                    "Likes"="likes",
+                                    "Tweet Length" = "tweet_length"
+                        ), selected = selected_value)
+    } else {
+
+      updateSelectInput(session = session, "value",
+                        choices = c(
+                          "Sentiment" = "sentiment",
+                          "Retweets Weighted Sentiment" = "sentiment_rt",
+                          "Likes Weighted Sentiment" = "sentiment_likes",
+                          "Length Weighted Sentiment" = "sentiment_tweet_length",
+                          "Retweets" = "rt",
+                          "Likes"="likes",
+                          "Tweet Length" = "tweet_length",
+                          "Number of Tweets" = "N"
+                        ), selected = input$value)
+    } #if clause
+  }) #observeevent
+
+  # avoid that date range upper value can be lower than lower value
+  # Update the dateRangeInput if start date changes
+  # observeEvent(input$dates[1], {
+  #   end_date = input$dates[2]
+  #   # If end date is earlier than start date, update the end date to be the same as the new start date
+  #   if (input$dates[2] < input$dates[1]) {
+  #     end_date = input$dates[1]
+  #   }
+  #   updateDateRangeInput(session,"dates", start=input$dates[1], end=end_date, min=input$dates[1] )
+  # })
+
+
+  ######## disconnect from database after exit
+  cancel.onSessionEnded <- session$onSessionEnded(function() {
+    con <- path_setter[[1]][1]
+    DBI::dbDisconnect(con)
+  })
+
+ long <- reactive({
+   if (input$long == T){
+     long <- 81
+   } else{
+     long <- 0
+   }
+   long
+ })
+
+
+  # querry_time_series <- reactive({
+  #   long <- long()
+  #
+  #   #browser()
+  #   if (input$tabselected == 1){
+  #
+  #     if (input$value == "N"){
+  #       metric <- "N"
+  #     } else if (input$value == "tweet_length"){
+  #       metric <- glue("{input$metric}_length")
+  #     } else{
+  #       metric <- glue("{input$metric}_{input$value}")
+  #     }
+  #
+  #
+  #
+  #     table_name <- glue("sum_stats_{tolower(input$lang)}")
+  #     # browser()
+  #     glue("SELECT created_at, {metric} as value FROM {table_name}  WHERE created_at >= '{input$dates[1]}'
+  #     and created_at <= '{input$dates[2]}'
+  #        and retweets_count = {input$rt} and likes_count = {input$likes} and
+  #        tweet_length = {long}" )
+  #
+  #
+  #   }})
+
+
+ ################################### path finder for histo files
+  querry_histo <- reactive({
+    if (input$long == T){
+      long_name <- "long_only"
+    } else{
+      long_name <- "all"
+    }
+
+    lang <- lang_converter()
+
+
+    ### account for case where sentiment is selected
+
+    # replace sentiment with senti because refernced with senti in file
+    value_var <- stringr::str_replace(input$value[1],"sentiment", "senti")
+    # replace tweet_length with long becuase refernced with long in file
+    value_var <- stringr::str_replace(value_var, "tweet_length", "long")
+
+
+
+
+
+
+
+    # for no filter
+    if (is.null(input$comp)){
+    glue("histo_{value_var}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
+    } else { #for chosen company
+      req(!is.null(input$comp))
+
+
+
+
+
+      glue("histo_{value_var}_{input$comp}_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
+
+    }
+     # old sql
+      #browser()
+      # if (input$value == "length"){
+      #   tb_metric <- "len"
+      #   col_value <- input$value
+      #
+      # } else if(input$value == "rt") {
+      #
+      #   tb_metric <- input$value
+      #   col_val <- "retweets_count"
+      #
+      # } else if(input$value == "likes") {
+      #   tb_metric <- input$value
+      #   col_val <- "likes_count"
+      # } else if(input$value == "sentiment"){
+      #   tb_metric <- input$value
+      #   col_val <- "sentiment_rd"
+      # } else{
+      #   Sys.sleep(0.2)
+      # }
+      #
+      #
+      #
+      #
+      #
+      # table_name <- glue("histo_{tb_metric}_{tolower(input$lang)}")
+      #
+      # if (table_name %in% c("histo_rt_en", "histo_likes_en", "histo_len_en")){
+      #   date_col <- "date"
+      # } else{
+      #   date_col <- "created_at"
+      # }
+      #
+      # glue("SELECT {col_val}, sum(N) as n  FROM {table_name}  WHERE {date_col} >=  '{input$dates[1]}'
+      # and {date_col} <= '{input$dates[2]}'
+      # and retweets_count_filter = {input$rt} and likes_count_filter = {input$likes} and
+      # tweet_length_filter = {long}
+      #      group by {col_val}")
+
+
+     #if closed
+    }) #reactive closed
+
+
+
+
+  ##################### summary statistics table data and time series data
+    querry_sum_stats_table <- reactive({
+
+long <- long()
+#browser()
+      if (is.null(input$comp)){
+      table_name <- glue("sum_stats_{tolower(input$lang)}")
+
+      glue("SELECT *  FROM {table_name}  WHERE created_at >= '{input$dates[1]}'
+      and created_at <= '{input$dates[2]}'
+         and retweets_count = {input$rt} and likes_count = {input$likes} and
+         tweet_length = {long}" )
+      } else { #if company is chosen
+        glue("SELECT *  FROM sum_stats_companies_all  WHERE created_at >= '{input$dates[1]}'
+      and created_at <= '{input$dates[2]}'
+         and retweets_count = {input$rt} and likes_count = {input$likes} and
+         tweet_length = {long} and company  = '{input$comp}' and
+             language = '{tolower(input$lang)}'" )
+      }
+
+
+    })
+    #browser()
+
+
+
+
+
+  # ## get data from querry
+  # data_time_series <- reactive({
+  #
+  #
+  #
+  #   con <- path_setter()
+  #
+  #
+  #   con <- con[[1]]
+  #
+  #   string_value <- is.null(con)
+  #   req(!string_value)
+  #   df_need <- DBI::dbGetQuery(con, querry_time_series())
+  #
+  #  df_need
+  # })
+############################### data retriever for histogram
+  data_histo <- reactive({
+
+    lang <- lang_converter()
+    a <- path_setter()
+
+    # for case no company selected
+    if (is.null(input$comp)){
+  file_path <- file.path(glue("Twitter/plot_data/{lang}_NoFilter/appended/{querry_histo()}"))
+  exists <- file.exists(file_path)
+  shinyFeedback::feedbackDanger("histo_plot", !exists, "Please make sure you picked the correct path. The \n
+                                file cannot be found in the current directory")
+  req(exists)
+    df_need <- readr::read_csv(file_path)[,1:3]
+
+    df_need
+    } else { #for case of choosen company
+      file_path <- file.path(glue("Twitter/plot_data/Companies/{input$comp}/{querry_histo()}"))
+      df_need <- readr::read_csv(file_path)[,1:3]
+      df_need
+
+    }
+  })
+
+
+
+    ######################### time series plot for retweets etc.
+  output$sum_stats_plot <- renderPlot({
+    req(input$value)
+
+    df <- get_data_sum_stats_tables()
+
+    time_series_plotter(df, input$metric, input$value)
+
+ })
+
+
+####### block metric selection if chosen number of tweets
+  observeEvent(input$metric,{
+   # browser()
+    if (input$metric == "N"){
+      shinyjs::disable("value")
+    } else {
+      shinyjs::enable("value")
+    }
+  })
+
+
+
+
+  ##################### disable log scale option for sentiment because as negative values
+  observeEvent(input$value, {
+    #browser()
+    if (grepl("sentiment",input$value[1])) {
+      shinyWidgets::updateSwitchInput(session = session,
+                                      "log_scale",
+                                      disabled = T,
+                                      value = F)
+    } else {
+      shinyWidgets::updateSwitchInput(session = session,
+                                      "log_scale",
+                                      disabled = F)
+    }
+  })
+
+
+  ######################################## histogram output
+  output$histo_plot <- renderPlot({
+   #  df <- data_histo()
+   #
+   # df %>%
+   #      group_by(.[[2]]) %>% summarise(N = sum(N)) %>%
+   #     mutate(metric = case_when(input$log_scale == T ~ log(as.numeric(.[[1]])+ 0.0001),
+   #                                input$log_scale == F ~ as.numeric(.[[1]])),
+   #             bins = cut_interval(metric, n = input$bins)) %>%
+   #
+   #      ggplot(aes(bins, N)) +
+   #      geom_col() +
+   #      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+   #
+   req(input$value)
+   df <- data_histo()
+
+     df %>%   group_by(.[[2]]) %>% summarise(N = sum(N)) %>%
+       mutate(metric = case_when(input$log_scale == T ~ log(as.numeric(.[[1]])+ 0.0001),
+                                  input$log_scale == F ~ as.numeric(.[[1]])),
+               bins = cut_interval(metric, n = input$bins)) %>%
+
+        ggplot(aes(bins, N)) +
+        geom_col() +
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+
+  })
+
+
+
+
+############################# get data for sum stats table
+  get_data_sum_stats_tables <- reactive({
+    con <- path_setter()
+    con <- con[[1]]
+    string_value <- is.null(con)
+    req(!string_value)
+    df_need <- DBI::dbGetQuery(con,  querry_sum_stats_table())
+
+    df_need
+  })
+
+  ################################# sum stats table
+  output$sum_stats_table <- function(){
+     # browser()
+    df_need <- get_data_sum_stats_tables()
+    sum_stats_table_creator(df_need)
+  }
+
+
+  ###### number of tweets display
+  output$number_tweets_info <- renderText({
+    df_need <- get_data_sum_stats_tables()
+
+   glue("For current selection: {round(mean(df_need$N))} tweets on average per day")
+  })
+
+
+  ######################################################
+  ########################## Word Frequencies ###########
+  #######################################################
+ lang_converter <- reactive({
+
+  lang <- stringr::str_to_title(input$lang)
+ })
+
+  data_expl <- reactive({
+
+    lang <- lang_converter()
+    if (input$comp != "") {
+      folder <- file.path("Companies", input$comp)
+    } else {
+      folder <- glue("{lang}_NoFilter")
+    }
+
+
+    if (input$long == T){
+      long <- "long_only"
+      tweet_length_filter <- 81
+    } else{
+      long <- "all"
+      tweet_length_filter <- 0
+    }
+
+    correct_path <- path_setter()[[3]]
+    # if (correct_path == "correct_path"){
+    #   Sys.sleep(0.2)
+    # } else{
+    #   return()
+    # }
+
+    # go into specified folder and load dataframe
+    file_name <- glue("term_freq_{lang}_NoFilter_{input$dates[1]}_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
+
+
+    if (input$ngram_sel == "Unigram"){
+      subfolder <- "uni_appended"
+      add_on <- "uni"
+    } else {
+      subfolder <- "bi_appended"
+      add_on <- "bi"
+    }
+
+    file_name <- glue("{add_on}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
+
+ # browser()
+    file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
+    # read file
+    readr::read_csv(file_path, col_types = readr::cols(date_variable = "D"))
+    #%>%
+    # filter(between(date_variable, input$dates[1], input$dates[2]))
+
+
+
+
+
+
+
+
+  })
+
+  ######################### freq_plot
+  output$freq_plot <- renderPlot(
+    # dynamically change height of plot
+    #height = function() input$n * 30 + 400,
+
+    {
+      df <- data_expl()
+
+   # browser()
+      if (input$plot_type_expl == "Frequency Plot"){
+        df <- word_freq_data_wrangler(df, input$dates[1], input$dates[2],
+                                                  input$emo, emoji_words, input$word_freq_filter)
+
+        df <- df_filterer(df, input$n)
+
+        term_freq_bar_plot(df)
+
+      }
+    })
+
+################## wordcloud
+  output$wordcloud <- wordcloud2::renderWordcloud2({
+  req(input$plot_type_expl == "Word Cloud")
+
+    if (input$plot_type_expl == "Word Cloud"){
+      df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
+                                    input$emo, emoji_words, input$word_freq_filter)
+
+      df <- df_filterer(df, input$n)
+
+      word_cloud_plotter(df, input$size_wordcloud)
+    }
+  })
+
+
+############################## time series bigram plot
+  output$word_freq_time_series <- renderPlot({
+    df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
+                                  input$emo, emoji_words, input$word_freq_filter)
+#browser()
+     word_filter_time_series_plotter(df)
+  })
+
+######################################################################### add companies choice
 
 
 

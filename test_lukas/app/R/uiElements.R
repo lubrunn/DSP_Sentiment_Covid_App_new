@@ -1,16 +1,10 @@
 #' UI Elements
 #'
 #'
-<<<<<<< HEAD
-
-#####################################################   Stocks
-
-=======
 
 
 #####################################################   Stocks
 # selectize input for companies
->>>>>>> 343efcd176a7b0b5b88475b73f0910e70ecc135e
 # sliderinput for dates
 #' @export
 #' @rdname uiElements
