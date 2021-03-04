@@ -595,16 +595,45 @@ server <- function(input, output, session) {
   #
   #
   #   }})
+
+
+ ################################### path finder for histo files
   querry_histo <- reactive({
     if (input$long == T){
       long_name <- "long_only"
     } else{
       long_name <- "all"
     }
-    long
+
     lang <- lang_converter()
 
-    glue("histo_{input$value[1]}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
+
+    ### account for case where sentiment is selected
+
+    # replace sentiment with senti because refernced with senti in file
+    value_var <- stringr::str_replace(input$value[1],"sentiment", "senti")
+    # replace tweet_length with long becuase refernced with long in file
+    value_var <- stringr::str_replace(value_var, "tweet_length", "long")
+
+
+
+
+
+
+
+    # for no filter
+    if (is.null(input$comp)){
+    glue("histo_{value_var}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
+    } else { #for chosen company
+      req(!is.null(input$comp))
+
+
+
+
+
+      glue("histo_{value_var}_{input$comp}_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
+
+    }
      # old sql
       #browser()
       # if (input$value == "length"){
@@ -648,11 +677,13 @@ server <- function(input, output, session) {
      #if closed
     }) #reactive closed
 
+
+
+
+  ##################### summary statistics table data and time series data
     querry_sum_stats_table <- reactive({
 
-
-
-      long <- long()
+long <- long()
 #browser()
       if (is.null(input$comp)){
       table_name <- glue("sum_stats_{tolower(input$lang)}")
@@ -699,6 +730,8 @@ server <- function(input, output, session) {
     lang <- lang_converter()
     a <- path_setter()
 
+    # for case no company selected
+    if (is.null(input$comp)){
   file_path <- file.path(glue("Twitter/plot_data/{lang}_NoFilter/appended/{querry_histo()}"))
   exists <- file.exists(file_path)
   shinyFeedback::feedbackDanger("histo_plot", !exists, "Please make sure you picked the correct path. The \n
@@ -707,6 +740,12 @@ server <- function(input, output, session) {
     df_need <- readr::read_csv(file_path)[,1:3]
 
     df_need
+    } else { #for case of choosen company
+      file_path <- file.path(glue("Twitter/plot_data/Companies/{input$comp}/{querry_histo()}"))
+      df_need <- readr::read_csv(file_path)[,1:3]
+      df_need
+
+    }
   })
 
 
@@ -738,7 +777,7 @@ server <- function(input, output, session) {
   ##################### disable log scale option for sentiment because as negative values
   observeEvent(input$value, {
     #browser()
-    if (input$value[1] == "sentiment") {
+    if (grepl("sentiment",input$value[1])) {
       shinyWidgets::updateSwitchInput(session = session,
                                       "log_scale",
                                       disabled = T,
