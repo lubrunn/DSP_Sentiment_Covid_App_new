@@ -180,15 +180,29 @@ ui <- fluidPage(
                                    )
                                  )
                          ),
-                        tabPanel("XGboost-forecasting",
+                        tabPanel("VAR-forecasting",
                                   sidebarPanel(
-                                    tabs_custom_xgb,
-                                   
+
+                                    tabs_custom_var,
+                                    selectInput("correlation_type", "Chose type of correlation:", choices = c("ACF","PACF")),
+                                    uiOutput("correlation_plot_choice"),
+                                    numericInput("number_of_vars","Select number of variables which add AR/MA parts:",min = 1, value=1),
+                                    numeric_features
+                                  #  numericInput("numberARLags", "Number of autoregressive lags:",min=0),
+                                  #  numericInput("numberMA", "Number of autoregressive lags:",min=0)
                                   ),
                                  mainPanel(
-                                   verbatimTextOutput("dataset_xgb")
-                
-                                 ))#close tabpanel VAR forecasting
+                                   tabsetPanel(
+                                     tabPanel("Variable selection",
+                                               verbatimTextOutput("datensatz_var"),
+                                               verbatimTextOutput("summary"),
+                                              conditionalPanel(
+                                                condition = "input.correlation_type == 'ACF'", plotOutput("acf_plot_xgb")),
+                                              conditionalPanel(
+                                                condition = "input.correlation_type == 'PACF'", plotOutput("pacf_plot_xgb"))
+                                              )
+                                   )
+                                 ))
                         )#close Navbarmenu
   )#close Navbarpage
 )#close fluidpage

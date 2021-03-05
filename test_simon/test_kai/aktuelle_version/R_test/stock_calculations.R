@@ -43,5 +43,24 @@ create_hover_info_DE <- function(hoverinput,stockdata){
   )
 }
 
+#' @export
+#' @rdname stock_calculations
+missing_date_imputer <- function(df,df_column){
+  
+  df = df[!(df[df_column] == "-"),]  
+  
+  df[df_column] = as.numeric(gsub(",","",df[,5]))
+  
+  df = df[c("Date",df_column)]  
+  
+  date_vector <- as.data.frame(seq(min(df$Date), max(df$Date), by="days"))
+  colnames(date_vector)[1]<-"Date"
+  
+  final <- left_join(date_vector,df, by = "Date")
+  
+  final[glue("{df_column}")] <- sapply(final[glue("{df_column}")],na_kalman)
+  return(final)
+}
+
 
 

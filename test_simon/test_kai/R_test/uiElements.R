@@ -79,17 +79,4 @@ plot_corona <- function() {
 hover_info_corona <- function() {
   uiOutput("hover_info_corona",style = "pointer-events: none")
 }
-################################################################## Regression
-# selectize input for companies
-#' @export
-#' @rdname uiElements
-selectize_Stocks_reg <- function(components1,components2) {
-  full_components <- rbind(components1,components2)
-  
-  selectInput("Stock_reg","Chose Company",
-              c(full_components[["Company.Name"]]),selected = "adidas ")
-  
-}
-
-
 

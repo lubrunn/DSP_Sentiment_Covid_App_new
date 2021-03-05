@@ -27,6 +27,8 @@ density_plot_reg <- function(filtered_df) {
 
 }
 
+
+
 #' @export
 #' @rdname correlation
 
@@ -46,6 +48,4 @@ pacf_plot_xgb <- function(df,variable){
   ggPacf(var) + ggtitle(paste("Partial autocorrelation Function for",variable))  
   
 }
-
-
 

@@ -3,11 +3,14 @@
 \name{stock_dataset_DE}
 \alias{stock_dataset_DE}
 \alias{create_hover_info_DE}
+\alias{missing_date_imputer}
 \title{Stock Calculations}
 \usage{
 stock_dataset_DE(stock, date1, date2)
 
 create_hover_info_DE(hoverinput, stockdata)
+
+missing_date_imputer(df, df_column)
 }
 \description{
 Stock Calculations
