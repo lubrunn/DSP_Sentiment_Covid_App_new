@@ -3,7 +3,7 @@
 #' @rdname xgboost_prep
 
 split_data <- function(sample,split){
-
+  names(sample)[1] <- "date"
   sample <- sample %>%
     dplyr::mutate(.,
                   months = lubridate::month(date),
@@ -13,8 +13,8 @@ split_data <- function(sample,split){
 
   n_sample <- round(nrow(sample)*split)
   split.at = sample[n_sample,"date"]
-  split = which(sample$date<split.at)
-
+  split = which(aa$date<split.at)
+  out <- NULL
   out$df.train = sample[split,] # Predictor training data set
   out$y.train = sample[split,c(2)] # Outcome for training data set
   out$date.train = sample[split,c(1)] # Date, not a predictor but useful for plotting
@@ -49,7 +49,7 @@ AR_creator <- function(df,variable,lag){
 #' @rdname xgboost_prep
 MA_creator <- function(df,variable,avg_len){
 
-  x <- zoo(df[,"Close."])
+  x <- zoo(df[,variable])
 
   df <- df %>%
     dplyr::mutate(MA = as.data.frame(zoo::rollmean(x, k = avg_len, fill = NA))) %>%
