@@ -49,3 +49,16 @@ pacf_plot_xgb <- function(df,variable){
   
 }
 
+#' @export
+#' @rdname correlation
+
+corr_plot <- function(df){
+  
+  df %>% dplyr::select(-Dates) %>%
+    cor %>%
+    {.[order(abs(.[, 1]), decreasing = TRUE), 
+       order(abs(.[, 1]), decreasing = TRUE)]} %>%
+    corrplot(method = "number", type = "upper", mar = c(0, 0, 1.5, 0),
+             title = "Correlations between Stock and various features")
+  
+}

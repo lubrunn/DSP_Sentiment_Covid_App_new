@@ -700,6 +700,7 @@ observeEvent(input$var_2,{
 })
 
 
+
 df_xgb <- reactive({
   
   req(input$var_1)
@@ -714,41 +715,85 @@ df_xgb <- reactive({
   req(input$number_of_vars)
   
   res <- final_regression_df_var()
-  if(input$number_of_vars == 1){
-    list_var <- list(input$var_1)
-    list_ar <- list(input$num_2)
-    list_ma <- list(input$num_1)
-    
-  }else{
-  list_var <- list(input$var_2,input$var_3)
-  list_ar <- list(input$num_4,input$num_6)
-  list_ma <- list(input$num_3,input$num_5)
-  }
   
-  bb <- mapply(c,list_ar, list_var, SIMPLIFY = T)
-  cc <- mapply(c,list_ma, list_var, SIMPLIFY = T)
+  res <- ARMA_creator(res,input$number_of_vars,input$var_1,input$var_2,
+                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
+                      input$num_5,input$num_6)
   
-  for(i in 1:length(list_var)){
-       cols_ar <- AR_creator(res,bb[2,i],bb[1,i])
-       res <- cbind(res,cols_ar)
-   }
-  for(i in 1:length(list_var)){
-       cols_ma <- MA_creator(res,cc[2,i],cc[1,i])
-       res <- cbind(res,cols_ma)
-   }
-  
-  res
-
 })
+
 
 output$df_xgb1 <- renderPrint ({
   head(df_xgb())
 })
 
+observeEvent(input$reset_arma,{
+  updateNumericInput(session,"number_of_vars",value = 1)
+})
 
 
 
 
+df_xgb_train <- reactive({
+  
+  req(input$var_1)
+  req(input$var_2)
+  req(input$var_3)
+  req(input$num_1)
+  req(input$num_2)
+  req(input$num_3)
+  req(input$num_4)
+  req(input$num_5)
+  req(input$num_6)
+  req(input$number_of_vars)
+  req(input$split_at)
+  
+  res <- final_regression_df_var()
+
+  list_dfs <- split_data(res,input$split_at)
+  
+  res <- ARMA_creator(list_dfs$df.train,input$number_of_vars,input$var_1,input$var_2,
+                     input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
+                     input$num_5,input$num_6)
+})
+
+
+
+
+df_xgb_test <- reactive({
+  
+  req(input$var_1)
+  req(input$var_2)
+  req(input$var_3)
+  req(input$num_1)
+  req(input$num_2)
+  req(input$num_3)
+  req(input$num_4)
+  req(input$num_5)
+  req(input$num_6)
+  req(input$number_of_vars)
+  req(input$split_at)
+  
+  res <- final_regression_df_var()
+  
+  list_dfs <- split_data(res,input$split_at)
+  
+  res <- ARMA_creator(list_dfs$df.test,input$number_of_vars,input$var_1,input$var_2,
+                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
+                      input$num_5,input$num_6)
+})
+
+output$df_xgb1_train <- renderPrint ({
+  head(df_xgb_train())
+})
+
+output$df_xgb1_test <- renderPrint ({
+  head(df_xgb_test())
+})
+
+output$correlation_plot <- renderPlot({
+  corr_plot(final_regression_df_var())
+})
 
 # forecast_data <- reactive({
 #   final_regression_df_var()[1:(nrow(final_regression_df_var())-input$ahead),-1,drop=FALSE]
