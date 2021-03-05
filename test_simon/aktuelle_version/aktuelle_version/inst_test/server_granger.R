@@ -804,10 +804,6 @@ output$random_walk_choice <- renderUI({
 })
 
 
-  
-
-
-
 
 output$rw_hyp <- renderPrint({
   req(input$test_selection)
@@ -825,14 +821,24 @@ output$rw_hyp <- renderPrint({
     
   }
   
-  
+})
+
+
+
+model_xgb_plain<- eventReactive(input$run,{
+  res <- df_xgb_train()
+  model <- model_xgb(res)
+  model
+
 })
 
 
 
 
 
-
+output$model <- renderPrint({
+  model_xgb_plain()
+})
 
 
 # forecast_data <- reactive({
