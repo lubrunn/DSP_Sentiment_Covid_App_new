@@ -21,4 +21,5 @@
 #' @import shinyFeedback
 #' @import wordcloud2
 #' @import fs
+#' @import shinyhelper
 NULL
