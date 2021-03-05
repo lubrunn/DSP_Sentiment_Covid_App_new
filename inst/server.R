@@ -452,6 +452,7 @@ server <- function(input, output, session) {
   # allow for searching directories
   shinyFiles::shinyDirChoose(input, "directory", roots = volumes, session = session, restrictions = system.file(package = "base"), allowDirCreate = FALSE)
   observe({
+
     cat("\ninput$directory value:\n\n")
     print(input$directory)
   })
