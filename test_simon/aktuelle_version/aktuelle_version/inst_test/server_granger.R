@@ -685,13 +685,69 @@ observeEvent(input$Controls_var,{
   updateSelectInput(session, "var_2",
                     choices = names(res))
 })
+# 
+ filter_by_input_df <- reactive({
+   req(input$var_2)
+   res <- final_regression_df_var() %>% dplyr::select(-Dates)
+   res <- names(res)
+   res <- res[!(res %in% input$var_2)]
+   res
+ })
 
-observeEvent(input$Controls_var,{
-  res <- final_regression_df_var() %>% dplyr::select(-Dates)
-  res <- res[!(res %in% input$var2)]
+observeEvent(input$var_2,{
   updateSelectInput(session, "var_3",
-                    choices = names(res))
+                    choices = filter_by_input_df())
 })
+
+
+df_xgb <- reactive({
+  
+  req(input$var_1)
+  req(input$var_2)
+  req(input$var_3)
+  req(input$num_1)
+  req(input$num_2)
+  req(input$num_3)
+  req(input$num_4)
+  req(input$num_5)
+  req(input$num_6)
+  req(input$number_of_vars)
+  
+  res <- final_regression_df_var()
+  if(input$number_of_vars == 1){
+    list_var <- list(input$var_1)
+    list_ar <- list(input$num_2)
+    list_ma <- list(input$num_1)
+    
+  }else{
+  list_var <- list(input$var_2,input$var_3)
+  list_ar <- list(input$num_4,input$num_6)
+  list_ma <- list(input$num_3,input$num_5)
+  }
+  
+  bb <- mapply(c,list_ar, list_var, SIMPLIFY = T)
+  cc <- mapply(c,list_ma, list_var, SIMPLIFY = T)
+  
+  for(i in 1:length(list_var)){
+       cols_ar <- AR_creator(res,bb[2,i],bb[1,i])
+       res <- cbind(res,cols_ar)
+   }
+  for(i in 1:length(list_var)){
+       cols_ma <- MA_creator(res,cc[2,i],cc[1,i])
+       res <- cbind(res,cols_ma)
+   }
+  
+  res
+
+})
+
+output$df_xgb1 <- renderPrint ({
+  head(df_xgb())
+})
+
+
+
+
 
 
 # forecast_data <- reactive({

@@ -10,7 +10,7 @@ numeric_features <- tabsetPanel(
 
   ),
   tabPanel("2",
-           selectInput("var_2", "Select varaible", choices = ""),
+           selectInput("var_2", "Select varaible", choices = ""), #could I use var_1 here?
            numericInput("num_3","Chose length of moving average",min=1,value = 1),
            numericInput("num_4","Chose Autoregressive lags for",min=1,value = 1),
            selectInput("var_3", "Select varaible", choices = ""),

@@ -30,31 +30,30 @@ split_data <- function(sample,split){
 #' @export
 #' @rdname xgboost_prep
 AR_creator <- function(df,variable,lag){
+  names(df)[1] <- "date"
+  df$date <- as.Date(df$date)
 
   xts_object <- df %>%
     tk_xts(silent = TRUE)
 
-  xts_object <-
-    merge.xts(xts_object, lag.xts(xts_object[,variable], k = 1:lag))
-
+  xts_object <- lag.xts(xts_object[,variable], k = 1:lag)
+  
   df <- xts_object %>%
-    tk_tbl()
-
-  df = df[,-c(1)]
-
+    tk_tbl() %>% dplyr::select(-index)
+  names(df)[1] <- paste(variable,".")
+  df <- as.data.frame(df)
   return(df)
 }
 
 #' @export
 #' @rdname xgboost_prep
 MA_creator <- function(df,variable,avg_len){
-
+  avg_len <- as.numeric(avg_len)
   x <- zoo(df[,variable])
 
-  df <- df %>%
-    dplyr::mutate(MA = as.data.frame(zoo::rollmean(x, k = avg_len, fill = NA))) %>%
-    dplyr::ungroup()
-
+  df <- as.data.frame(zoo::rollmean(x, k = avg_len, fill = NA))
+  names(df)[1] <- paste("MA_",variable)
+  
   return(df)
 
 }

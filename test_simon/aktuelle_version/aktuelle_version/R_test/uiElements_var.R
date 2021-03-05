@@ -65,7 +65,7 @@ tabs_custom_var <- tabsetPanel(
            radioButtons("country_regression_var","Which country?",c("Germany","USA"),selected = "Germany"),
            uiOutput("stock_regression_var"),
            radioButtons("regression_outcome_var","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
-           #switchInput("senti_yesno","Include Sentiment?",onLabel="Yes",offLabel="No"),
+           switchInput("senti_yesno","Include Sentiment?",onLabel="Yes",offLabel="No"),
            uiOutput("Controls_var"),
            actionButton("reset_regression_var", "clear selected"),
            #radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),

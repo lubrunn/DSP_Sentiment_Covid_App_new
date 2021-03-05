@@ -103,3 +103,17 @@ get_industry_sentiment <- function(de,industry,retweets_min,tweet_length){
                       "sentiment_weight_length","sentiment_mean"), mean)
 }
 
+#' @export
+#' @rdname numeric_inputs
+
+numeric_inputs_xgb <- function(variables_n){
+  
+  
+ 
+}
+
+
+
+
+
+
