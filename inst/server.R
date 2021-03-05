@@ -520,25 +520,24 @@ server <- function(input, output, session) {
         selected_value <- input$value
       }
 
-      updateSelectInput(session = session, "value",
-                        choices = c("Sentiment" = "sentiment",
-                                    "Retweets" = "rt",
-                                    "Likes"="likes",
-                                    "Tweet Length" = "tweet_length"
-                        ), selected = selected_value)
-    } else {
-
-      updateSelectInput(session = session, "value",
-                        choices = c(
-                          "Sentiment" = "sentiment",
-                          "Retweets Weighted Sentiment" = "sentiment_rt",
-                          "Likes Weighted Sentiment" = "sentiment_likes",
-                          "Length Weighted Sentiment" = "sentiment_tweet_length",
-                          "Retweets" = "rt",
-                          "Likes"="likes",
-                          "Tweet Length" = "tweet_length",
-                          "Number of Tweets" = "N"
-                        ), selected = input$value)
+    #   updateSelectInput(session = session, "value",
+    #                     choices = c("Sentiment" = "sentiment",
+    #                                 "Retweets" = "rt",
+    #                                 "Likes"="likes",
+    #                                 "Tweet Length" = "tweet_length"
+    #                     ), selected = selected_value)
+    # } else {
+    #
+    #   updateSelectInput(session = session, "value",
+    #                     choices = c(
+    #                       "Sentiment" = "sentiment",
+    #                       "Retweets Weighted Sentiment" = "sentiment_rt",
+    #                       "Likes Weighted Sentiment" = "sentiment_likes",
+    #                       "Length Weighted Sentiment" = "sentiment_tweet_length",
+    #                       "Retweets" = "rt",
+    #                       "Likes"="likes",
+    #                       "Tweet Length" = "tweet_length"
+    #                     ), selected = input$value)
     } #if clause
   }) #observeevent
 
@@ -752,24 +751,29 @@ long <- long()
 
     ######################### time series plot for retweets etc.
   output$sum_stats_plot <- renderPlot({
-    req(input$value)
+
+    req(!is.null(input$value) | input$num_tweets_box == T)
 
     df <- get_data_sum_stats_tables()
 
-    time_series_plotter(df, input$metric, input$value)
+ if (input$num_tweets_box == F){
+    time_series_plotter(df, input$metric, input$value, num_tweets = F)
+ } else {
+   time_series_plotter(df, input$metric, input$value, num_tweets = T)
+ }
 
  })
 
 
 ####### block metric selection if chosen number of tweets
-  observeEvent(input$metric,{
-   # browser()
-    if (input$metric == "N"){
-      shinyjs::disable("value")
-    } else {
-      shinyjs::enable("value")
-    }
-  })
+  # observeEvent(input$metric,{
+  #  # browser()
+  #   if (input$metric == "N"){
+  #     shinyjs::disable("value")
+  #   } else {
+  #     shinyjs::enable("value")
+  #   }
+  # })
 
 
 
