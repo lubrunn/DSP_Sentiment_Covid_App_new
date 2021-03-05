@@ -166,6 +166,7 @@ twitter_main_panel <- function(){
                                    tags$head(tags$style("#number_tweets_info{color: black;
                                  font-size: 20px;
                                  font-style: bold;
+                                 color: white
                                  }"
                                    )
                                    ),
