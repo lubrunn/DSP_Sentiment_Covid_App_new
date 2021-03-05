@@ -249,8 +249,9 @@ twitter_desc_conditional_sum_stats <- conditionalPanel(
   # keep for both because bigram also makes senese with wordcloud
   condition = "input.tabselected==1",
   radioButtons("metric", "Select a metric",
-               choiceNames = c("Mean", "Standard deviation", "Median", "Number of Tweets"),
-               choiceValues = c("mean", "std", "median", "N"))
+               choiceNames = c("Mean", "Standard deviation", "Median"),
+               choiceValues = c("mean", "std", "median")),
+  checkboxInput("num_tweets_box", label = "Show the average number of tweets per day", value = F)
 )
 
 #### sidebar layout for descriptives
