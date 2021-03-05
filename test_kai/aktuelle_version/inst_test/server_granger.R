@@ -622,7 +622,7 @@ server <- function(input, output, session) {
 
   #####################################################################################################################
 
-
+##################################################   Validity    ######################################################
   output$datensatz_var <- renderPrint ({
     head(final_regression_df_var())
   })
@@ -632,16 +632,9 @@ server <- function(input, output, session) {
    })
 
   actual_values <- reactive({
-    final_regression_df_var()[((nrow(final_regression_df_var())+1)-input$ahead):nrow(final_regression_df_var()),2,drop=FALSE]
+    final_regression_df_var()[((nrow(final_regression_df_var())+1)-input$ahead):nrow(final_regression_df_var()),2]
   })
 
-   output$serial_test <- renderPrint({
-     tail(stationary())
-   })
-
-   output$var <- renderPrint({
-     forecast_var()
-   })
 
 
   stationary <- reactive({
@@ -655,19 +648,6 @@ server <- function(input, output, session) {
     data
   })
 
-  ## detect non-stationarity and correct it
-  # stationary <- reactive({
-  #   data <- forecast_data()
-  #   while (adf.test(data[[1]], k = 2)$p.value > 0.1 |
-  #          adf.test(data[[2]], k = 2)$p.value > 0.1) {
-  #     data[1] <- c(diff(data[[1]], 1), NA)
-  #     data[2] <- c(diff(data[[2]], 1), NA)
-  #     data[3] <- c(diff(data[[3]], 1), NA)
-  #
-  #     data <- drop_na(data)
-  #   }
-  #   data
-  # })
 
   #optimal lags
   optlags_var <- reactive({
@@ -684,18 +664,21 @@ server <- function(input, output, session) {
     model
   })
 
-
-
-  # #test for autocorrelation: rejection = bad (means presence of correlated errors)
-  # serial_test <- reactive({
-  #   serial.test(var_model(), type="BG",lags.bg = optlags_var())
-  # })
+  #test for autocorrelation: rejection = bad (means presence of correlated errors)
+  serial_test <- reactive({
+    if (ncol(forecast_data()) == 1) {
+      test <- Box.test(var_model()$residuals,type= "Box-Pierce" )
+    } else {
+      test <- serial.test(var_model(), type="BG",lags.bg = optlags_var())
+    }
+    test
+  })
 
   #forecast
   forecast_var <- reactive({
     fcast <- predict(var_model(), n.ahead = input$ahead)
     if (ncol(forecast_data()) == 1) {
-      x <- fcast$pred[1:5]
+      x <- fcast$pred[1:input$ahead]
       x <- cumsum(x) + forecast_data()[nrow(forecast_data()),1]
     }else {
      x <- fcast$fcst[[1]]
@@ -707,7 +690,7 @@ server <- function(input, output, session) {
 
   #plot the actual vs. the predicted forecast
   output$plot_forecast <- renderPlot({
-    plot1 <- data.frame(company$Dates[(nrow(forecast_data())+1):(nrow(forecast_data())+input$ahead)],#Dates
+    plot1 <- data.frame(final_regression_df_var()$Dates[(nrow(forecast_data())+1):(nrow(forecast_data())+input$ahead)],#Dates
                         forecast_var(),                                                              #forecasted values
                         actual_values())#actual values
     colnames(plot1) <- c("a","b","c")
@@ -724,30 +707,115 @@ server <- function(input, output, session) {
     HTML(paste(str1,str2, sep = '<br/>'))
 
   })
-  #
-  #
-  # output$plot_forecast2 <- renderPlot({
-  #
-  #   plot2 <- data.frame(company$Dates,
-  #                      c(forecast_data()[[1]],forecast_var()),
-  #                      final_regression_df()[1])
-  #   colnames(plot2) <- c("a","b","c")
-  #   ggplot(plot2) +
-  #     geom_line(aes(a,b))+
-  #     geom_line(aes(a,c))+
-  #     labs(x="Date",y="StockPrice",title = "forecasted vs. actual, full series")
-  #
-  # })
-  #
-  #
-  # output$serial_test <- renderPrint({
-  #   serial_test()
-  # })
-  #
-  #
-  # output$var <- renderPrint({
-  #   optlags_var()
+
+  output$serial_test <- renderPrint({
+    serial_test()
+  })
+
+  output$var <- renderUI({
+    if (ncol(forecast_data()) == 1) {
+     str1 <- paste("Box-Pierce test statistic to test for autocorrelation in the AR-residuals:")
+     if (serial_test()$p.value > 0.1){
+       str2 <- paste("The hypothesis of serially uncorrelated residuals cannot be rejected.")
+     } else{
+       str2 <- paste("The hypothesis of serially uncorrelated residuals can be rejected.")
+     }
+    } else {
+     str1 <- paste("Breusch-Godfrey LM-statistic to test for autocorrelation in the AR-residuals:")
+     if (serial_test()$serial$p.value > 0.1){
+       str2 <- paste("The hypothesis of serially uncorrelated residuals cannot be rejected.")
+     } else {
+       str2 <- paste("The hypothesis of serially uncorrelated residuals can be rejected.")
+     }
+    }
+    HTML(paste(str1,str2, sep = '<br/>'))
+   })
+
+  output$plot_forecast2 <- renderPlot({
+
+    plot2 <- data.frame(final_regression_df_var()$Dates,
+                       c(forecast_data()[[1]],forecast_var()),
+                       final_regression_df_var()[2])
+    colnames(plot2) <- c("a","b","c")
+    ggplot(plot2) +
+      geom_line(aes(a,b))+
+      geom_line(aes(a,c))+
+      labs(x="Date",y="StockPrice",title = "forecasted vs. actual, full series")
+
+  })
+
+  ##################################################   actual forecast    ######################################################
+  forecast_data_real <- reactive({
+    final_regression_df_var()[,-1,drop=FALSE]
+  })
+
+
+
+  stationary_real <- reactive({
+    data <- forecast_data_real()
+    if (adf.test(data[[1]],k=2)$p.value > 0.1){
+      for (i in 1:ncol(data)){
+        data[i] <- c(diff(data[[i]],1),NA)
+      }
+      data <- drop_na(data)
+    }else{}
+    data
+  })
+
+
+  #optimal lags
+  optlags_var_real <- reactive({
+    VARselect(stationary_real(),lag.max = 10, type = "none")$selection[["SC(n)"]]
+  })
+
+  #fit model
+  var_model_real <- reactive({
+    if (ncol(forecast_data_real()) == 1) {
+      model <- arima(stationary_real(), order = c(optlags_var_real(), 0, 0))
+    } else {
+      model <- VAR(stationary_real(), p = optlags_var_real(), type = "none")
+    }
+    model
+  })
+
+  #test for autocorrelation: rejection = bad (means presence of correlated errors)
+  # serial_test <- reactive({
+  #   if (ncol(forecast_data()) == 1) {
+  #     test <- Box.test(var_model()$residuals,type= "Box-Pierce" )
+  #   } else {
+  #     test <- serial.test(var_model(), type="BG",lags.bg = optlags_var())
+  #   }
+  #   test
   # })
 
+  #forecast
+  forecast_var_real <- reactive({
+    fcast <- predict(var_model_real(), n.ahead = input$ahead)
+    if (ncol(forecast_data_real()) == 1) {
+      x <- fcast$pred[1:input$ahead]
+      x <- cumsum(x) + forecast_data_real()[nrow(forecast_data_real()),1]
+    }else {
+      x <- fcast$fcst[[1]]
+      x <- x[,1]
+      x <- cumsum(x) + forecast_data_real()[nrow(forecast_data_real()),1]
+    }
+    x
+  })
+
+  output$plot_forecast_real <- renderPlot({
+
+    plot2 <- data.frame(c(final_regression_df_var()[["Dates"]],seq(as.Date(tail(final_regression_df_var()$Dates,1))+1,by = "day",length.out = input$ahead)),
+                        c(forecast_data_real()[[1]],forecast_var_real()))
+    colnames(plot2) <- c("a","b")
+    ggplot(plot2) +
+      geom_line(aes(a,b))+
+      labs(x="Date",y="StockPrice",title = "forecasted series")
+
+  })
+
+  # output$testins <- renderPrint({
+  #   c(final_regression_df_var()[["Dates"]],seq(as.Date(tail(final_regression_df_var()$Dates,1)),by = "day",length.out = input$ahead))
+  #   #seq(as.Date(tail(final_regression_df_var()[["Dates"]],1)),by = "day",length.out = input$ahead)
+  # })
 
 }

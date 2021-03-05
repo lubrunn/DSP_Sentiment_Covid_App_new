@@ -1,7 +1,11 @@
 
 #'@export
 #'@rdname time_series_plot
-time_series_plotter <- function(df, filter_type, selected_metrics){
+time_series_plotter <- function(df, filter_type, selected_metrics, num_tweets){
+
+if (num_tweets == T){
+  selected_metrics <- c(selected_metrics, "N")
+}
 
 df <-     df %>%
      select(created_at, contains("mean"), -language) %>%
@@ -26,7 +30,8 @@ df <-     df %>%
         )
     )  %>%
     separate(col = metric, into = c("type", "metric"), sep = "_", remove = F, extra = "merge") %>%
-  mutate(metric = stringr::str_replace(metric, "length", "tweet_length")) %>%
+  # { if (!grepl("tweet_length", selected_metrics)) mutate(.,metric = stringr::str_replace(metric, "length",
+  #                                                                                      "tweet_length")) else .} %>%
 
   bind_rows(
     df %>% select(created_at, N) %>% pivot_longer(N,

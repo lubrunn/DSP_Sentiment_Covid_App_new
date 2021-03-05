@@ -186,13 +186,19 @@ ui <- fluidPage(
                                     numericInput("ahead", "choose how many days to forecast", value = 5, min = 1, max = 25)
                                   ),
                                  mainPanel(
-                                   verbatimTextOutput("datensatz_var"),
-                                   plotOutput("plot_forecast"),
-                                   htmlOutput("accuracy_var"),
-                                   plotOutput("plot_forecast2"),
-                                   verbatimTextOutput("serial_test"),
-                                   verbatimTextOutput("var")
-                                 ))#close tabpanel VAR forecasting
+                                   tabsetPanel(
+                                     tabPanel("Validity",
+                                       #verbatimTextOutput("datensatz_var"),
+                                       plotOutput("plot_forecast"),
+                                       htmlOutput("accuracy_var"),
+                                       verbatimTextOutput("serial_test"),
+                                       htmlOutput("var"),
+                                       plotOutput("plot_forecast2")
+                                     ),#close tabpanel validity
+                                     tabPanel("Actual Forecast",
+                                        verbatimTextOutput("testins"),
+                                        plotOutput("plot_forecast_real"))#close tabpanel actual forecast
+                                    )))#close tabpanel VAR forecasting
                         )#close Navbarmenu
   )#close Navbarpage
 )#close fluidpage
