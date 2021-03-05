@@ -520,25 +520,24 @@ server <- function(input, output, session) {
         selected_value <- input$value
       }
 
-      updateSelectInput(session = session, "value",
-                        choices = c("Sentiment" = "sentiment",
-                                    "Retweets" = "rt",
-                                    "Likes"="likes",
-                                    "Tweet Length" = "tweet_length"
-                        ), selected = selected_value)
-    } else {
-
-      updateSelectInput(session = session, "value",
-                        choices = c(
-                          "Sentiment" = "sentiment",
-                          "Retweets Weighted Sentiment" = "sentiment_rt",
-                          "Likes Weighted Sentiment" = "sentiment_likes",
-                          "Length Weighted Sentiment" = "sentiment_tweet_length",
-                          "Retweets" = "rt",
-                          "Likes"="likes",
-                          "Tweet Length" = "tweet_length",
-                          "Number of Tweets" = "N"
-                        ), selected = input$value)
+    #   updateSelectInput(session = session, "value",
+    #                     choices = c("Sentiment" = "sentiment",
+    #                                 "Retweets" = "rt",
+    #                                 "Likes"="likes",
+    #                                 "Tweet Length" = "tweet_length"
+    #                     ), selected = selected_value)
+    # } else {
+    #
+    #   updateSelectInput(session = session, "value",
+    #                     choices = c(
+    #                       "Sentiment" = "sentiment",
+    #                       "Retweets Weighted Sentiment" = "sentiment_rt",
+    #                       "Likes Weighted Sentiment" = "sentiment_likes",
+    #                       "Length Weighted Sentiment" = "sentiment_tweet_length",
+    #                       "Retweets" = "rt",
+    #                       "Likes"="likes",
+    #                       "Tweet Length" = "tweet_length"
+    #                     ), selected = input$value)
     } #if clause
   }) #observeevent
 
@@ -752,24 +751,29 @@ long <- long()
 
     ######################### time series plot for retweets etc.
   output$sum_stats_plot <- renderPlot({
-    req(input$value)
+
+    req(!is.null(input$value) | input$num_tweets_box == T)
 
     df <- get_data_sum_stats_tables()
 
-    time_series_plotter(df, input$metric, input$value)
+ if (input$num_tweets_box == F){
+    time_series_plotter(df, input$metric, input$value, num_tweets = F)
+ } else {
+   time_series_plotter(df, input$metric, input$value, num_tweets = T)
+ }
 
  })
 
 
 ####### block metric selection if chosen number of tweets
-  observeEvent(input$metric,{
-   # browser()
-    if (input$metric == "N"){
-      shinyjs::disable("value")
-    } else {
-      shinyjs::enable("value")
-    }
-  })
+  # observeEvent(input$metric,{
+  #  # browser()
+  #   if (input$metric == "N"){
+  #     shinyjs::disable("value")
+  #   } else {
+  #     shinyjs::enable("value")
+  #   }
+  # })
 
 
 
@@ -861,11 +865,7 @@ long <- long()
   data_expl <- reactive({
 
     lang <- lang_converter()
-    if (input$comp != "") {
-      folder <- file.path("Companies", input$comp)
-    } else {
-      folder <- glue("{lang}_NoFilter")
-    }
+
 
 
     if (input$long == T){
@@ -884,7 +884,6 @@ long <- long()
     # }
 
     # go into specified folder and load dataframe
-    file_name <- glue("term_freq_{lang}_NoFilter_{input$dates[1]}_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
 
 
     if (input$ngram_sel == "Unigram"){
@@ -895,12 +894,26 @@ long <- long()
       add_on <- "bi"
     }
 
-    file_name <- glue("{add_on}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
 
- # browser()
-    file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
-    # read file
-    readr::read_csv(file_path, col_types = readr::cols(date_variable = "D"))
+    if (!is.null(input$comp)) {
+      folder <- file.path("Companies")
+      file_name <- glue("term_freq_{input$comp}_all_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
+      file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
+      # read file
+      readr::read_csv(file_path, col_types = readr::cols(date_variable = "D"))
+    } else {
+      folder <- glue("{lang}_NoFilter")
+      file_name <- glue("{add_on}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
+      file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
+      # read file
+      readr::read_csv(file_path, col_types = readr::cols(date = "D"))
+    }
+
+
+
+
+
+
     #%>%
     # filter(between(date_variable, input$dates[1], input$dates[2]))
 
@@ -921,10 +934,13 @@ long <- long()
     {
       df <- data_expl()
 
-   # browser()
+
       if (input$plot_type_expl == "Frequency Plot"){
         df <- word_freq_data_wrangler(df, input$dates[1], input$dates[2],
-                                                  input$emo, emoji_words, input$word_freq_filter)
+                                      input$emo, emoji_words,
+                                      input$word_freq_filter,
+                                      tolower(input$lang),
+                                      input$comp)
 
         df <- df_filterer(df, input$n)
 
@@ -939,7 +955,10 @@ long <- long()
 
     if (input$plot_type_expl == "Word Cloud"){
       df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
-                                    input$emo, emoji_words, input$word_freq_filter)
+                                    input$emo, emoji_words,
+                                    input$word_freq_filter,
+                                    tolower(input$lang),
+                                    input$comp)
 
       df <- df_filterer(df, input$n)
 
@@ -951,8 +970,10 @@ long <- long()
 ############################## time series bigram plot
   output$word_freq_time_series <- renderPlot({
     df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
-                                  input$emo, emoji_words, input$word_freq_filter)
-#browser()
+                                  input$emo, emoji_words,
+                                  input$word_freq_filter, input$lang,
+                                  input$comp)
+
      word_filter_time_series_plotter(df)
   })
 

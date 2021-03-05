@@ -1,41 +1,57 @@
-
-
-
-# df <- read_csv("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/term_freq/En_NoFilter/bi_appended/bi_En_NoFilter_rt_0_li_0_lo_all.csv") %>%
-#   filter(between(date, as.Date("2018-11-30"), as.Date("2021-02-19")))
-
-
-##### additional emoji filter words
+##### additional emoji filter words (most emoji words were
+# already marked in preprocess)
 emoji_words <- c(
   "plead",
   "scream",
   "social media",
   "steam",
-  "nose"
+  "nose" ,
+  "box",
+  "circl",
+  "whit",
+  "black",
+  "button",
+  "exo",
+  "sad"
 
 )
 
-# df <- readr::read_csv(file_path, col_types = cols(date_variable = "D")) %>%
-#   filter(between(date_variable, input_date1, input_date2))
 
+
+
+################################################################
+####################### function for preprocessing
 #'@export
 #'@rdname term_freq_computers
 word_freq_data_wrangler <- function(df, input_date1, input_date2,
-                                    input_emo, emoji_words, search_term){
+                                    input_emo, emoji_words,
+                                    search_term, input_lang,
+                                    input_comp){
 
 
+names(df) <- c("date", "language", "word", "N", "retweets_count", "likes_count", "tweet_length", "emo")
 
-
+### stem the search term so it fits better to words we have
+search_term <- corpus::stem_snowball(search_term, algorithm = tolower(input_lang))
 
 df <-  df %>%
-  filter(between(date, as.Date(input_date1), as.Date(input_date2)))  %>%
+  filter(between(date, as.Date(input_date1), as.Date(input_date2)) &
+                   language == tolower(input_lang))  %>%
   {if (input_emo == T) filter(., emo == F &
-                                !grepl(paste(emoji_words, collapse = "|"), word) ) else .} %>%
-  {if (search_term != "") filter(.,grepl(search_term, word)) else .} %>%
+                                !grepl(paste(emoji_words, collapse = "|"), word) ) else .} %>% ##filter out emoji words if chosen
+
+ {if (!is.null(input_comp)) filter(.,!grepl(corpus::stem_snowball(input_comp), word)) else .} %>% #filter out company name if chosen
+
+  {if (search_term != "") filter(.,grepl(search_term, word)) else .} %>% # only keep what contain search term
   select(-emo)
 
 return(df)
 }
+
+
+
+#############################################################
+########################### compute top n
 #
 # word_freq_data_wrangler(df, input_date1, input_date2,
 #                                     input_emo, emoji_words, search_term)
@@ -55,18 +71,20 @@ return(df)
 
 }
 
-
+###################################################################
+############################ wordcloud
 
 #'@export
 #'@rdname term_freq_computers
 word_cloud_plotter <- function(df, input_size){
 
   df    %>%
-     wordcloud2::wordcloud2(term_frequency_df, size = input_size,shape = 'star',
+     wordcloud2::wordcloud2(size = input_size,shape = 'star',
                                               color = "random-light", backgroundColor = "grey")
 }
 
-
+#################################################################
+############################# barplot
 
 # term freq bar plot
 term_freq_bar_plot <- function(df){
@@ -79,6 +97,9 @@ term_freq_bar_plot <- function(df){
 
 }
 
+
+################################################################
+#################### time series of word frequency per day
 #'@export
 #'@rdname term_freq_computers
 word_filter_time_series_plotter <- function(df){
@@ -88,7 +109,7 @@ df %>%
    group_by(date) %>%
     summarise(n = sum(N)) %>%
 
-    arrange(desc(n)) %>%
+
   ggplot() +
   geom_line(aes(date, n))
 
