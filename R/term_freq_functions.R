@@ -109,7 +109,7 @@ df %>%
    group_by(date) %>%
     summarise(n = sum(N)) %>%
 
-    arrange(desc(n)) %>%
+
   ggplot() +
   geom_line(aes(date, n))
 
