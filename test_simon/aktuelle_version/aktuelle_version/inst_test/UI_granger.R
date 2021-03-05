@@ -185,11 +185,18 @@ ui <- fluidPage(
                                     conditionalPanel(condition="input.tabs == 'Variable selection'",       
                                                      tabs_custom_var),
                                     conditionalPanel(condition="input.tabs == 'MA/AR selection'",
+                                    selectInput("rw_tests","Choose test to investigate RW hyp",choices = c("Box–Ljung test","Wald-Wolfowitz runs test",
+                                                                                                           "ADF")),
+                                    uiOutput("random_walk_choice"),
+                                    
                                     selectInput("correlation_type", "Chose type of correlation:", choices = c("ACF","PACF")),
                                     uiOutput("correlation_plot_choice"),
                                     numericInput("number_of_vars","Select number of variables which add AR/MA parts:",min = 1, value=1),
                                     numeric_features,
-                                    actionButton("reset_arma", "clear selected")),
+                                    actionButton("reset_arma", "clear selected"),
+                                    
+                                    
+                                    ),
                                     conditionalPanel(condition="input.tabs == 'Model specification'",       
                                                      numericInput("split_at","select training/test split",min = 0.1, value=0.7,max = 1,
                                                                   step = 0.1)
@@ -205,7 +212,9 @@ ui <- fluidPage(
                                                plotOutput("correlation_plot")
                                               
                                               ),
+                                
                                      tabPanel("MA/AR selection",value = "MA/AR selection",
+                                          verbatimTextOutput("rw_hyp"),
                                           conditionalPanel(
                                                 condition = "input.correlation_type == 'ACF'", plotOutput("acf_plot_xgb")),
                                           conditionalPanel(

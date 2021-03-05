@@ -795,6 +795,46 @@ output$correlation_plot <- renderPlot({
   corr_plot(final_regression_df_var())
 })
 
+
+output$random_walk_choice <- renderUI({
+  res <- final_regression_df_var() %>% dplyr::select(-Dates)
+  input <- selectInput("test_selection","Select variable to test for random walk",
+                       names(res))
+  
+})
+
+
+  
+
+
+
+
+output$rw_hyp <- renderPrint({
+  req(input$test_selection)
+  req(input$rw_tests)
+  res <- final_regression_df_var() %>% dplyr::select(-Dates)
+  res <- res[,input$test_selection]
+  if(input$rw_tests == "Box–Ljung test"){
+    Box.test(res, lag = 12, type = "L")
+    #as.numeric(as.matrix(m$statistic))
+  }else if(input$rw_tests == "Wald-Wolfowitz runs test"){
+    runs.test(res)
+    
+  }else{
+    adf.test(res)
+    
+  }
+  
+  
+})
+
+
+
+
+
+
+
+
 # forecast_data <- reactive({
 #   final_regression_df_var()[1:(nrow(final_regression_df_var())-input$ahead),-1,drop=FALSE]
 # })
