@@ -942,15 +942,20 @@ long <- long()
 
   # if button is clicked compute correlations und plot the plot
   observeEvent(input$button_net,{
+    insertUI("#placeholder", "beforeEnd", ui = networkD3::forceNetworkOutput("network_plot") %>%
+               shinycssloaders::withSpinner())
 
+    #insertUI("#placeholder", "afterEnd", ui = networkD3::forceNetworkOutput('network_plot'))
+
+
+
+    #shinyjs::showElement(id = "loading")
     # disable the button after computation started so no new computation can
     # be startedd
-    disable("button_net")
 
 #    browser()
-
+    disable("button_net")
     lang <- stringr::str_to_title(input$lang_net)
-
 
 
     ### read all files for the dates
@@ -960,15 +965,18 @@ long <- long()
 
     ### set up data for network
     df <- network_plot_filterer(df, input$rt_net, input$likes_net, input$long_net,
-                                      input$sentiment_net, input$search_term_net,
-                                      input$username_net, input$n_net,
-                                      input$corr_net)
-
+                                input$sentiment_net, input$search_term_net,
+                                input$username_net, input$n_net,
+                                input$corr_net)
 
 
 
     # render the network plot
     output$network_plot <- networkD3::renderForceNetwork({
+
+
+
+
       req(input$button_net)
       if (is.null(df)) return()
 
@@ -976,8 +984,20 @@ long <- long()
       network_plot_plotter(df)
 
     })
+    # Hide loading element when done
+    # shinyjs::hideElement(id = 'loading')
     enable("button_net")
+
   })
+
+
+  observeEvent(input$reset_net,{
+      removeUI("#network_plot")
+  })
+
+  # observeEvent(input$button_net, {
+  #
+  # })
 
 
 
