@@ -777,3 +777,124 @@ networkD3::forceNetwork(
 )
 
 Sys.time() - time1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+################################################################## barplot
+######### controls
+number_words <- 20000
+
+# here only combinations were words of interest appear in item1
+# so bigrams without words are ommitted --> in network plot they are kept
+
+
+input_n_all <- 50
+
+input_rt = 0
+input_likes = 0
+input_length = 0
+
+input_search_term <- NULL
+input_username <- NULL
+
+input_n_subset <- 50
+
+input_min_corr <- 0.15
+
+# unneest the words
+network_df <-  df %>%
+  select(doc_id, text, created_at) %>%
+  tidytext::unnest_tokens(word, text)
+
+
+network_df <- network_df %>%
+  left_join(subset(df, select = c(doc_id, text, retweets_count, likes_count,
+                                  tweet_length, username, sentiment)))
+
+network_df <- network_df %>%
+
+  # filter out uncommon words
+  group_by(word) %>%
+  filter(n() >= input_n_all) %>%
+  ungroup()
+
+network_df <- network_df %>%
+
+  # filter out according to user
+  filter(
+    retweets_count >= input_rt &
+      likes_count >= input_likes &
+      tweet_length >= input_length
+  ) %>%
+  # if list provided to specify tweets to look at then extract only those tweets
+  { if (!is.null(input_search_term)) filter(., grepl(paste(input_search_term, collapse="|"), text)) else . } %>%
+  { if (is.null(input_username)) filter(., grepl(paste(input_username, collapse="|"), username)) else . } %>%
+  # count number of words
+  group_by(word) %>%
+  filter(n() >= input_n_subset)
+
+network_df <- network_df %>%
+
+  # compute word correlations
+
+  widyr::pairwise_cor(word, doc_id, sort = TRUE)
+
+
+
+
+
+############ for specific word
+tomatch <- "trump"
+number_words <- 20
+
+
+
+network_df %>%
+  filter(item1 %in% tomatch) %>%
+  group_by(item1) %>%
+  top_n(number_words) %>%
+  ungroup() %>%
+  mutate(item2 = reorder(item2, correlation)) %>%
+  ggplot(aes(item2, correlation)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ item1, scales = "free") +
+  coord_flip()
+
+
+
+########### general
+network_df %>%
+
+  #filter(item1 %in% tomatch) %>%
+  #group_by(item1) %>%
+  top_n(number_words) %>%
+  ungroup() %>%
+  unite(words, item1, item2, sep = " ", remove= F) %>%
+  mutate(words = reorder(words, correlation)) %>%
+  ggplot(aes(words, correlation)) +
+  geom_bar(stat = "identity") +
+#  facet_wrap(~ item1, scales = "free") +
+  coord_flip()
