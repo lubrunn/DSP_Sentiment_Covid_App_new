@@ -21,4 +21,9 @@
 #' @import shinyFeedback
 #' @import wordcloud2
 #' @import fs
+#' @import shinyhelper
+#' @import igraph
+#' @import widyr
+#' @import networkD3
+#' @import igraph
 NULL
