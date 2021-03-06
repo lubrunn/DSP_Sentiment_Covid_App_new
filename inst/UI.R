@@ -221,10 +221,10 @@ twitter_main_panel <- function(){
                         network_sidebar
                       ),
                       mainPanel(
-                      # shinyjs::hidden(div(id = "loading",
-                      #                     networkD3::forceNetworkOutput("network_plot") %>%
-                      #     shinycssloaders::withSpinner()))
-                      tags$div(id = "placeholder")
+                      shinyjs::hidden(div(id = "loading",
+                                          networkD3::forceNetworkOutput("network_plot") %>%
+                          shinycssloaders::withSpinner()))
+                      #tags$div(id = "placeholder")
                       )),
              tabPanel("Daily Analysis"),
              tabPanel("Going deeper"))
