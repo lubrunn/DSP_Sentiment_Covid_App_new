@@ -497,7 +497,9 @@ server <- function(input, output, session) {
 
   output$twitter_logo <- renderImage({
 
-    filename <- "C:/Users/lukas/OneDrive - UT Cloud/Data/images/twitter_image.png"
+    req(path_setter()[[3]][1] == "correct_path")
+
+    filename <- "shiny/images/twitter_image.png"
 
 
 
@@ -921,8 +923,64 @@ long <- long()
      word_filter_time_series_plotter(df)
   })
 
+
+
+###########################################################################
+###########################################################################
+######################### GOING DEEPER ####################################
+###########################################################################
+###########################################################################
+  # path to markdown files for helpers
+  shinyhelper::observe_helpers(help_dir = "shiny/helpers")
+
+
+  ###### network plot
+
+
+
+
+
+  # if button is clicked compute correlations und plot the plot
+  observeEvent(input$button_net,{
+
+    # disable the button after computation started so no new computation can
+    # be startedd
+    disable("button_net")
+
+#    browser()
+
+    lang <- stringr::str_to_title(input$lang_net)
+
+
+
+    ### read all files for the dates
+
+    df <- network_plot_datagetter(lang, input$dates_net[1], input$dates_net[2], input$comp_net)
+
+
+    ### set up data for network
+    df <- network_plot_filterer(df, input$rt_net, input$likes_net, input$long_net,
+                                      input$sentiment_net, input$search_term_net,
+                                      input$username_net, input$n_net,
+                                      input$corr_net)
+
+
+
+
+    # render the network plot
+    output$network_plot <- networkD3::renderForceNetwork({
+      req(input$button_net)
+      if (is.null(df)) return()
+
+
+      network_plot_plotter(df)
+
+    })
+    enable("button_net")
+  })
+
+
+
 ######################################################################### add companies choice
-
-
 
 }
