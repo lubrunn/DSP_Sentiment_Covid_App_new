@@ -71,7 +71,7 @@ tabs_custom <- tabsetPanel(
   tabPanel("Model specifcation",
            radioButtons("country_regression","Which country?",c("Germany","USA"),selected = "Germany"),
            uiOutput("stock_regression"),
-           radioButtons("regression_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
+           radioButtons("regression_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
            uiOutput("Controls"),
            actionButton("reset_regression", "clear selected"),
            #radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
@@ -110,7 +110,7 @@ ui <- fluidPage(
                         radioButtons("country_stocks","Which country?",c("Germany","USA"),selected = "Germany"),
                         #selectize_Stocks(COMPONENTS_DE()),
                         uiOutput("stock_choice"),
-                        radioButtons("stock_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
+                        radioButtons("stock_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
                         actionButton("reset", "clear selected"),
                         checkboxInput("hovering","Enable hover",value = FALSE),
                         sliderinput_dates()
@@ -140,7 +140,7 @@ ui <- fluidPage(
                                    # selectizeInput("Stock_Granger","Choose first argument: Company or Index",
                                    #                c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
                                    #                selected = "Bayer ",multiple = FALSE),
-                                   radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
+                                   radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
                                    selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
                                    sliderInput("date_granger",label="Timeseries",
                                                value = c(min(as.Date(ADS()[["Date"]], "%b %d, %Y")),max(as.Date(ADS()[["Date"]], "%b %d, %Y"))),
@@ -183,7 +183,7 @@ ui <- fluidPage(
                         tabPanel("VAR-forecasting",
                                   sidebarPanel(
                                     tabs_custom_var,
-                                    numericInput("ahead", "choose how many days to forecast", value = 5, min = 1, max = 25)
+                                    numericInput("ahead", "choose how many days to forecast", value = 5, min = 1, max = 100)
                                   ),
                                  mainPanel(
                                    tabsetPanel(
