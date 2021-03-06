@@ -452,6 +452,7 @@ server <- function(input, output, session) {
   # allow for searching directories
   shinyFiles::shinyDirChoose(input, "directory", roots = volumes, session = session, restrictions = system.file(package = "base"), allowDirCreate = FALSE)
   observe({
+
     cat("\ninput$directory value:\n\n")
     print(input$directory)
   })
@@ -466,7 +467,7 @@ server <- function(input, output, session) {
 
       path <- shinyFiles::parseDirPath(volumes, input$directory)
       setwd(path)
-      con <- DBI::dbConnect(RSQLite::SQLite(), "SQLiteStudio/databases/test.db")
+      con <- DBI::dbConnect(RSQLite::SQLite(), "SQLiteStudio/databases/clean_database.db")
 
       file_needed <- "SQLiteStudio"
       if(dir.exists(file_needed)) {
@@ -511,50 +512,12 @@ server <- function(input, output, session) {
   ############################### twitter descriptive ###########################
   ###############################################################################
   ### for histogram less choices
-  observeEvent(input$tabselected,{
 
-    if (input$tabselected == 2){
-      if (input$value %in% c("sentiment_rt", "sentiment_likes", "sentiment_length")){
-        selected_value <-"sentiment"
-      } else {
-        selected_value <- input$value
-      }
-
-    #   updateSelectInput(session = session, "value",
-    #                     choices = c("Sentiment" = "sentiment",
-    #                                 "Retweets" = "rt",
-    #                                 "Likes"="likes",
-    #                                 "Tweet Length" = "tweet_length"
-    #                     ), selected = selected_value)
-    # } else {
-    #
-    #   updateSelectInput(session = session, "value",
-    #                     choices = c(
-    #                       "Sentiment" = "sentiment",
-    #                       "Retweets Weighted Sentiment" = "sentiment_rt",
-    #                       "Likes Weighted Sentiment" = "sentiment_likes",
-    #                       "Length Weighted Sentiment" = "sentiment_tweet_length",
-    #                       "Retweets" = "rt",
-    #                       "Likes"="likes",
-    #                       "Tweet Length" = "tweet_length"
-    #                     ), selected = input$value)
-    } #if clause
-  }) #observeevent
-
-  # avoid that date range upper value can be lower than lower value
-  # Update the dateRangeInput if start date changes
-  # observeEvent(input$dates[1], {
-  #   end_date = input$dates[2]
-  #   # If end date is earlier than start date, update the end date to be the same as the new start date
-  #   if (input$dates[2] < input$dates[1]) {
-  #     end_date = input$dates[1]
-  #   }
-  #   updateDateRangeInput(session,"dates", start=input$dates[1], end=end_date, min=input$dates[1] )
-  # })
 
 
   ######## disconnect from database after exit
   cancel.onSessionEnded <- session$onSessionEnded(function() {
+    req(path_setter())
     con <- path_setter[[1]][1]
     DBI::dbDisconnect(con)
   })
@@ -569,31 +532,7 @@ server <- function(input, output, session) {
  })
 
 
-  # querry_time_series <- reactive({
-  #   long <- long()
-  #
-  #   #browser()
-  #   if (input$tabselected == 1){
-  #
-  #     if (input$value == "N"){
-  #       metric <- "N"
-  #     } else if (input$value == "tweet_length"){
-  #       metric <- glue("{input$metric}_length")
-  #     } else{
-  #       metric <- glue("{input$metric}_{input$value}")
-  #     }
-  #
-  #
-  #
-  #     table_name <- glue("sum_stats_{tolower(input$lang)}")
-  #     # browser()
-  #     glue("SELECT created_at, {metric} as value FROM {table_name}  WHERE created_at >= '{input$dates[1]}'
-  #     and created_at <= '{input$dates[2]}'
-  #        and retweets_count = {input$rt} and likes_count = {input$likes} and
-  #        tweet_length = {long}" )
-  #
-  #
-  #   }})
+
 
 
  ################################### path finder for histo files
@@ -692,7 +631,7 @@ long <- long()
          and retweets_count = {input$rt} and likes_count = {input$likes} and
          tweet_length = {long}" )
       } else { #if company is chosen
-        glue("SELECT *  FROM sum_stats_companies_all  WHERE created_at >= '{input$dates[1]}'
+        glue("SELECT *  FROM sum_stats_companies WHERE created_at >= '{input$dates[1]}'
       and created_at <= '{input$dates[2]}'
          and retweets_count = {input$rt} and likes_count = {input$likes} and
          tweet_length = {long} and company  = '{input$comp}' and
@@ -729,19 +668,23 @@ long <- long()
     lang <- lang_converter()
     a <- path_setter()
 
+
+
     # for case no company selected
     if (is.null(input$comp)){
-  file_path <- file.path(glue("Twitter/plot_data/{lang}_NoFilter/appended/{querry_histo()}"))
+  file_path <- file.path(glue("Twitter/plot_data/{lang}_NoFilter/{querry_histo()}"))
   exists <- file.exists(file_path)
   shinyFeedback::feedbackDanger("histo_plot", !exists, "Please make sure you picked the correct path. The \n
                                 file cannot be found in the current directory")
   req(exists)
-    df_need <- readr::read_csv(file_path)[,1:3]
+    df_need <- data.table::fread(file_path,
+                                 select = 1:3)
 
     df_need
     } else { #for case of choosen company
       file_path <- file.path(glue("Twitter/plot_data/Companies/{input$comp}/{querry_histo()}"))
-      df_need <- readr::read_csv(file_path)[,1:3]
+      df_need <- data.table::fread(file_path,
+                                   select = 1:3)
       df_need
 
     }
@@ -809,18 +752,19 @@ long <- long()
    #      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
    #
    req(input$value)
-   df <- data_histo()
+   # df <- data_histo()
+   #
+   #   df %>%   group_by(.[[2]]) %>% summarise(N = sum(N)) %>%
+   #     mutate(metric = case_when(input$log_scale == T ~ log(as.numeric(.[[1]])+ 0.0001),
+   #                                input$log_scale == F ~ as.numeric(.[[1]])),
+   #             bins = cut_interval(metric, n = input$bins)) %>%
+   #
+   #      ggplot(aes(bins, N)) +
+   #      geom_col() +
+   #      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-     df %>%   group_by(.[[2]]) %>% summarise(N = sum(N)) %>%
-       mutate(metric = case_when(input$log_scale == T ~ log(as.numeric(.[[1]])+ 0.0001),
-                                  input$log_scale == F ~ as.numeric(.[[1]])),
-               bins = cut_interval(metric, n = input$bins)) %>%
-
-        ggplot(aes(bins, N)) +
-        geom_col() +
-        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-
+  histogram_plotter(data_histo(), date_input1 = input$dates[1], date_input2 = input$dates[2],
+                    input_bins = input$bins, input_log = input$log_scale)
 
   })
 
