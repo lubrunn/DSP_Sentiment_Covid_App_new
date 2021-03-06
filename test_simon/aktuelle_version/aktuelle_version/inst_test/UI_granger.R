@@ -182,27 +182,60 @@ ui <- fluidPage(
                          ),
                         tabPanel("VAR-forecasting",
                                   sidebarPanel(
-
-                                    tabs_custom_var,
+                                    conditionalPanel(condition="input.tabs == 'Variable selection'",       
+                                                     tabs_custom_var),
+                                    conditionalPanel(condition="input.tabs == 'MA/AR selection'",
+                                    selectInput("rw_tests","Choose test to investigate RW hyp",choices = c("Box–Ljung test","Wald-Wolfowitz runs test",
+                                                                                                           "ADF")),
+                                    uiOutput("random_walk_choice"),
+                                    
                                     selectInput("correlation_type", "Chose type of correlation:", choices = c("ACF","PACF")),
                                     uiOutput("correlation_plot_choice"),
                                     numericInput("number_of_vars","Select number of variables which add AR/MA parts:",min = 1, value=1),
-                                    numeric_features
-                                  #  numericInput("numberARLags", "Number of autoregressive lags:",min=0),
-                                  #  numericInput("numberMA", "Number of autoregressive lags:",min=0)
+                                    numeric_features,
+                                    actionButton("reset_arma", "clear selected"),
+                                    
+                                    
+                                    ),
+                                    conditionalPanel(condition="input.tabs == 'Model specification'",       
+                                                     numericInput("split_at","select training/test split",min = 0.1, value=0.7,max = 1,
+                                                                  step = 0.1),
+                                                     radioButtons("model_spec","Choose model specification",choices = c("default","custom","hyperparameter_tuning")),
+                                                     model_specification,
+                                                     actionButton("run", "Run Model"),
+                                                     actionButton("pred", "Predict")
+                                                     
+                                                     )
                                   ),
                                  mainPanel(
-                                   tabsetPanel(
-                                     tabPanel("Variable selection",
+                                   tabsetPanel(type = "tabs", id = "tabs",
+                                     tabPanel("Variable selection",value="Variable selection",
+                      
                                                verbatimTextOutput("datensatz_var"),
                                                verbatimTextOutput("summary"),
-                                              conditionalPanel(
+                                               plotOutput("correlation_plot")
+                                              
+                                              ),
+                                
+                                     tabPanel("MA/AR selection",value = "MA/AR selection",
+                                          verbatimTextOutput("rw_hyp"),
+                                          conditionalPanel(
                                                 condition = "input.correlation_type == 'ACF'", plotOutput("acf_plot_xgb")),
-                                              conditionalPanel(
-                                                condition = "input.correlation_type == 'PACF'", plotOutput("pacf_plot_xgb"))
-                                              )
-                                   )
-                                 ))
+                                          conditionalPanel(
+                                                condition = "input.correlation_type == 'PACF'", plotOutput("pacf_plot_xgb")),
+                                          verbatimTextOutput("df_xgb1")
+
+                                     ),
+                                     tabPanel("Model specification",value = "Model specification",
+                                             # verbatimTextOutput("df_xgb1_train"),
+                                              verbatimTextOutput("df_xgb1_test"),
+                                              verbatimTextOutput("model"),
+                                             verbatimTextOutput("stuff")
+                                              #plotOutput("plot_1_xgb")
+                                      )
+                                    )
+                                 )
+                              )
                         )#close Navbarmenu
   )#close Navbarpage
 )#close fluidpage

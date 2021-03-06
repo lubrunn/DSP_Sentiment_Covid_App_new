@@ -700,6 +700,7 @@ observeEvent(input$var_2,{
 })
 
 
+
 df_xgb <- reactive({
   
   req(input$var_1)
@@ -714,36 +715,202 @@ df_xgb <- reactive({
   req(input$number_of_vars)
   
   res <- final_regression_df_var()
-  if(input$number_of_vars == 1){
-    list_var <- list(input$var_1)
-    list_ar <- list(input$num_2)
-    list_ma <- list(input$num_1)
-    
-  }else{
-  list_var <- list(input$var_2,input$var_3)
-  list_ar <- list(input$num_4,input$num_6)
-  list_ma <- list(input$num_3,input$num_5)
-  }
   
-  bb <- mapply(c,list_ar, list_var, SIMPLIFY = T)
-  cc <- mapply(c,list_ma, list_var, SIMPLIFY = T)
+  res <- ARMA_creator(res,input$number_of_vars,input$var_1,input$var_2,
+                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
+                      input$num_5,input$num_6)
   
-  for(i in 1:length(list_var)){
-       cols_ar <- AR_creator(res,bb[2,i],bb[1,i])
-       res <- cbind(res,cols_ar)
-   }
-  for(i in 1:length(list_var)){
-       cols_ma <- MA_creator(res,cc[2,i],cc[1,i])
-       res <- cbind(res,cols_ma)
-   }
-  
-  res
-
 })
+
 
 output$df_xgb1 <- renderPrint ({
   head(df_xgb())
 })
+
+observeEvent(input$reset_arma,{
+  updateNumericInput(session,"number_of_vars",value = 1)
+})
+
+
+
+
+df_xgb_train <- reactive({
+  
+  req(input$var_1)
+  req(input$var_2)
+  req(input$var_3)
+  req(input$num_1)
+  req(input$num_2)
+  req(input$num_3)
+  req(input$num_4)
+  req(input$num_5)
+  req(input$num_6)
+  req(input$number_of_vars)
+  req(input$split_at)
+  
+  res <- final_regression_df_var()
+
+  list_dfs <- split_data(res,input$split_at)
+  
+  res <- ARMA_creator(list_dfs$df.train,input$number_of_vars,input$var_1,input$var_2,
+                     input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
+                     input$num_5,input$num_6)
+})
+
+
+
+
+df_xgb_test <- reactive({
+  
+  req(input$var_1)
+  req(input$var_2)
+  req(input$var_3)
+  req(input$num_1)
+  req(input$num_2)
+  req(input$num_3)
+  req(input$num_4)
+  req(input$num_5)
+  req(input$num_6)
+  req(input$number_of_vars)
+  req(input$split_at)
+  
+  res <- final_regression_df_var()
+  
+  list_dfs <- split_data(res,input$split_at)
+  
+  res <- ARMA_creator(list_dfs$df.test,input$number_of_vars,input$var_1,input$var_2,
+                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
+                      input$num_5,input$num_6)
+})
+
+output$df_xgb1_train <- renderPrint ({
+  head(df_xgb_train())
+})
+
+output$df_xgb1_test <- renderPrint ({
+  head(df_xgb_test())
+})
+
+output$correlation_plot <- renderPlot({
+  corr_plot(final_regression_df_var())
+})
+
+
+output$random_walk_choice <- renderUI({
+  res <- final_regression_df_var() %>% dplyr::select(-Dates)
+  input <- selectInput("test_selection","Select variable to test for random walk",
+                       names(res))
+  
+})
+
+
+
+output$rw_hyp <- renderPrint({
+  req(input$test_selection)
+  req(input$rw_tests)
+  res <- final_regression_df_var() %>% dplyr::select(-Dates)
+  res <- res[,input$test_selection]
+  if(input$rw_tests == "Box–Ljung test"){
+    Box.test(res, lag = 12, type = "L")
+    #as.numeric(as.matrix(m$statistic))
+  }else if(input$rw_tests == "Wald-Wolfowitz runs test"){
+    runs.test(res)
+    
+  }else{
+    adf.test(res)
+    
+  }
+  
+})
+
+
+model_xgbi <- eventReactive(input$run,{
+  req(input$model_spec)
+  
+  if(input$model_spec == "default"){
+    res <- df_xgb_train()
+    model1 <- model_xgb(res)
+    model1
+  }else if(input$model_spec == "custom"){
+    res <- df_xgb_train()
+    model2 <- model_xgb_custom(res,input$mtry,input$trees,input$min_n,input$tree_depth,
+                            input$learn_rate,input$loss_reduction,input$cv,input$sample_size)
+    model2
+  }else{
+    res <- df_xgb_train()
+    model3 <- model_xgb_hyp(res,input$trees_hyp,input$cv_hyp,input$grid_size)  
+    model3
+  }
+})
+
+
+
+output$model <- renderPrint({
+  model_xgbi()
+})
+
+
+observeEvent(input$model_spec, {                         #Observe event from input (model choices)
+  req(input$model_spec)
+  updateTabsetPanel(session, "mod_spec", selected = input$model_spec)
+})
+
+
+prediction_xgb <- eventReactive(input$pred,{
+  # res <- aa
+  #  names(res)[1] <- "date"
+  #  names(res)[2] <- "Close"
+  #  res_train <- res[1:600,]
+  #  res_test <- res[601:813,]
+  # # 
+  res_train <- df_xgb_train()
+  res_test <- df_xgb_test()
+  
+preds <-  model_xgbi() %>%
+    fit(formula = Close ~ .,data = res_train[,c(-1)]) %>%
+    predict(new_data = res_test[,c(-1)])
+preds
+})
+
+output$predictions <- renderPrint({
+  prediction_xgb()
+})
+
+output$stuff <- renderPrint({
+    req(input$split)
+    res <- final_regression_df_var()
+    list_dfs <- split_data(res,input$split_at)
+
+    preds <- prediction_xgb() %>%
+      zoo(seq(from = as.Date(min(list_dfs$date.test)), to = as.Date(max(list_dfs$date.test)), by = "day"))
+
+    ts <- res %>% pull(Close) %>%
+      zoo(seq(from = as.Date(min(list_dfs$date.train)), to = as.Date(max(list_dfs$date.test)), by = "day"))
+
+  ts
+  
+})
+
+
+
+
+
+
+# output$plot_1_xgb <- renderPlot({
+#   req(input$split)
+#   res <- final_regression_df_var()
+#   list_dfs <- split_data(res,input$split_at)
+# 
+#   preds <- prediction_xgb() %>%
+#     zoo(seq(from = as.Date(min(list_dfs$date.test)), to = as.Date(max(list_dfs$date.test)), by = "day"))
+# 
+#   ts <- res %>% pull(Close) %>%
+#     zoo(seq(from = as.Date(min(list_dfs$date.train)), to = as.Date(max(list_dfs$date.test)), by = "day"))
+# 
+#   a <- {cbind(actuals=ts, predicted=preds)} %>% dygraph()
+#   a
+# 
+# })
 
 
 
