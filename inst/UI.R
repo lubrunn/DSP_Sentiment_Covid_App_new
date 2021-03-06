@@ -219,7 +219,11 @@ twitter_main_panel <- function(){
              tabPanel("Going Deeper",
                       sidebarPanel(
                         network_sidebar
-                      ) ),
+                      ),
+                      mainPanel(
+                        networkD3::forceNetworkOutput("network_plot") %>%
+                          shinycssloaders::withSpinner()
+                      )),
              tabPanel("Daily Analysis"),
              tabPanel("Going deeper"))
 
@@ -356,18 +360,20 @@ network_sidebar <- tabPanel( "Network Analysis",
 
 
           ###### language selector
-          radioButtons("lang_net", "Select Language", choices = c("EN", "DE")),
+          radioButtons("lang_net", "Select Language", choiceNames = c("English Tweets", "German Tweets"),
+                       choiceValues = c("en", "de")),
           # company selector
           selectInput("comp_net","Choose a company (optional)",
                       c("adidas", "NIKE"),
                       selected = "",multiple = TRUE),
 
           # datepicker
-          shinyWidgets::airDatepickerInput("dates", "Date range:",
+          shinyWidgets::airDatepickerInput("dates_net", "Date range:",
                                            range = TRUE,
-                                           value = c("2018-11-30", "2021-02-19"),
+                                           value = c("2020-03-01", "2020-03-02"),
                                            maxDate = "2021-02-19", minDate = "2018-11-30",
-                                           clearButton = T, update_on = "close"),
+                                           clearButton = T, update_on = "close",
+                                           multiple = 5),
 
           ##### same but continous choices
           # retweets count
@@ -380,6 +386,10 @@ network_sidebar <- tabPanel( "Network Analysis",
           shinyWidgets::materialSwitch(inputId = "long_net", label = "Long Tweets only?", value = F),
 
 
+          ### filter by sentiment
+          numericInput("sentiment_net", "Choose a minmium sentiment", min = -1, max = 1, value = -1),
+
+
 
           ##### additional
           ######### search terms
@@ -389,13 +399,12 @@ network_sidebar <- tabPanel( "Network Analysis",
 
 
           ######## adjusting plot
-          numericInput("n_all_net", "Minimum number of occurences of a word pair in the entire sample",
+          numericInput("n_net", "Minimum number of occurences of a word pair in the selected sample",
                        min = 50, value = 50),
-          numericInput("n_subset_net", "Minimum number of occurences of a word pair within subsample (if choosing a search term)",
-                       min = 0, value = 0),
-          numericInput("min_corr_net", "Minimum word correlation of word pairs", value = 0.15, min = 0.15, max = 1,
+
+          numericInput("corr_net", "Minimum word correlation of word pairs", value = 0.15, min = 0.15, max = 1,
                        step = 0.01),
-          actionButton("buttonn_rt", "Render Plot") %>%
+          actionButton("button_net", "Render Plot") %>%
           shinyhelper::helper(type = "markdown",
                    title = "Inline Help",
                    content = "network_plot_button",
