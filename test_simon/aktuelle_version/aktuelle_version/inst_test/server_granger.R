@@ -824,21 +824,38 @@ output$rw_hyp <- renderPrint({
 })
 
 
-
-model_xgb_plain<- eventReactive(input$run,{
-  res <- df_xgb_train()
-  model <- model_xgb(res)
-  model
-
+model_xgbi <- eventReactive(input$run,{
+  req(input$model_spec)
+  
+  if(input$model_spec == "default"){
+    res <- df_xgb_train()
+    model1 <- model_xgb(res)
+    model1
+  }else if(input$model_spec == "custom"){
+    res <- df_xgb_train()
+    model2 <- model_xgb_custom(res,input$mtry,input$trees,input$min_n,input$tree_depth,
+                            input$learn_rate,input$loss_reduction,input$cv,input$sample_size)
+    model2
+  }else{
+    res <- df_xgb_train()
+    model3 <- model_xgb_hyp(res,input$trees_hyp,input$cv_hyp,input$grid_size)  
+    model3
+  }
 })
-
-
 
 
 
 output$model <- renderPrint({
-  model_xgb_plain()
+  model_xgbi()
 })
+
+
+observeEvent(input$model_spec, {                         #Observe event from input (model choices)
+  req(input$model_spec)
+  updateTabsetPanel(session, "mod_spec", selected = input$model_spec)
+})
+
+
 
 
 # forecast_data <- reactive({

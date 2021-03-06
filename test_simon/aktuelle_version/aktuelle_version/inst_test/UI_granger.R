@@ -200,6 +200,8 @@ ui <- fluidPage(
                                     conditionalPanel(condition="input.tabs == 'Model specification'",       
                                                      numericInput("split_at","select training/test split",min = 0.1, value=0.7,max = 1,
                                                                   step = 0.1),
+                                                     radioButtons("model_spec","Choose model specification",choices = c("default","custom","hyperparameter_tuning")),
+                                                     model_specification,
                                                      actionButton("run", "Run Model")
                                                      
                                                      )
@@ -227,7 +229,6 @@ ui <- fluidPage(
                                               verbatimTextOutput("df_xgb1_train"),
                                               verbatimTextOutput("df_xgb1_test"),
                                               verbatimTextOutput("model")
-                                              
                                       )
                                     )
                                  )
