@@ -221,8 +221,10 @@ twitter_main_panel <- function(){
                         network_sidebar
                       ),
                       mainPanel(
-                        networkD3::forceNetworkOutput("network_plot") %>%
-                          shinycssloaders::withSpinner()
+                      # shinyjs::hidden(div(id = "loading",
+                      #                     networkD3::forceNetworkOutput("network_plot") %>%
+                      #     shinycssloaders::withSpinner()))
+                      tags$div(id = "placeholder")
                       )),
              tabPanel("Daily Analysis"),
              tabPanel("Going deeper"))
@@ -387,7 +389,7 @@ network_sidebar <- tabPanel( "Network Analysis",
 
 
           ### filter by sentiment
-          numericInput("sentiment_net", "Choose a minmium sentiment", min = -1, max = 1, value = -1),
+          numericInput("sentiment_net", "Choose a minmium sentiment", min = -1, max = 1, value = -1, step = 0.05),
 
 
 
@@ -411,7 +413,8 @@ network_sidebar <- tabPanel( "Network Analysis",
                    buttonLabel = "Got it!",
                    easyClose = FALSE,
                    fade = TRUE,
-                   size = "s")
+                   size = "s"),
+          actionButton("reset_net", "Remove Plot")
 )
 
 
