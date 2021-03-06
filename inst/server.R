@@ -942,14 +942,14 @@ long <- long()
 
   # if button is clicked compute correlations und plot the plot
   observeEvent(input$button_net,{
-    insertUI("#placeholder", "beforeEnd", ui = networkD3::forceNetworkOutput("network_plot") %>%
-               shinycssloaders::withSpinner())
+    # insertUI("#network_plotr", "beforeEnd", ui = networkD3::forceNetworkOutput("network_plot") %>%
+    #            shinycssloaders::withSpinner())
 
     #insertUI("#placeholder", "afterEnd", ui = networkD3::forceNetworkOutput('network_plot'))
 
 
 
-    #shinyjs::showElement(id = "loading")
+    shinyjs::showElement(id = "loading")
     # disable the button after computation started so no new computation can
     # be startedd
 
@@ -992,7 +992,10 @@ long <- long()
 
 
   observeEvent(input$reset_net,{
-      removeUI("#network_plot")
+     shinyjs::hide(id = "loading",
+                         "network_plot",
+                   animType = T,
+                   time = 0)
   })
 
   # observeEvent(input$button_net, {
