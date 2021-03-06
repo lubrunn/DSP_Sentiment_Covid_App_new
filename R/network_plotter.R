@@ -68,7 +68,7 @@ network_plot_filterer <- function(df, input_rt, input_likes, input_tweet_length,
                                   input_corr) {
 
 
-browser()
+
   # unneest the words
   network <-  df %>%
 
@@ -94,11 +94,11 @@ browser()
     filter(n() >= input_n) %>%
     ungroup()
 
-    if (dim(df)[1] == 0){
+    if (dim(network)[1] == 0){
       return()
     }
 
-    network %>%
+ network <- network %>%
     # compute word correlations
     widyr::pairwise_cor(word, doc_id, sort = TRUE) %>%
 
