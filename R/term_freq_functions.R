@@ -1,18 +1,17 @@
 ##### additional emoji filter words (most emoji words were
 # already marked in preprocess)
 emoji_words <- c(
-  "plead",
-  "scream",
-  "social media",
-  "steam",
-  "nose" ,
-  "box",
-  "circl",
-  "whit",
-  "black",
-  "button",
-  "exo",
-  "sad"
+  "plead","scream", "social media", "steam", "nose" , "box", "circl", "whit",
+  "black", "button","exo", "sad",
+  "love", "good", "red", "happi","mu",
+  "happi","excus","tongu","stick", "tear", "joy", "flag", "skin",  "smile",
+  "heart","eye", "index", "medium", "laugh", "loud", "roll", "floor","mark", "exclam",
+  "hand", "clap","dollar",
+  "hot", "light","blow", "kiss","amulet", "head", "tree","speaker","symbol","money","point",
+  "grin","bicep","flex","note","popper","fist","car","follow","retweet","year","ago",
+  "social media","woman","voltag","star","ball","camera","man","ass","video","cake","cool",
+  "fac","smil","see","evil","party","sweat","thumb","big","the","crying","fing",
+  "crossed","god","watch","leaf","food","arrow"
 
 )
 
