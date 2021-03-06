@@ -228,10 +228,10 @@ ui <- fluidPage(
                                      ),
                                      tabPanel("Model specification",value = "Model specification",
                                              # verbatimTextOutput("df_xgb1_train"),
-                                              verbatimTextOutput("df_xgb1_test"),
+                                              #verbatimTextOutput("df_xgb1_test"),
                                               verbatimTextOutput("model"),
-                                             verbatimTextOutput("stuff")
-                                              #plotOutput("plot_1_xgb")
+                                            # verbatimTextOutput("stuff"),
+                                             dygraphOutput("plot_1_xgb")
                                       )
                                     )
                                  )
