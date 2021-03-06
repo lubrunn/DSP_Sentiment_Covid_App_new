@@ -846,13 +846,23 @@ long <- long()
       file_name <- glue("term_freq_{input$comp}_all_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
       file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
       # read file
-      readr::read_csv(file_path, col_types = readr::cols(date_variable = "D"))
+      data.table::fread(file_path, select = c("date_variable",
+                                                              "language_variable",
+                                                              "word",
+                                                              "N",
+                                                              "emo"),
+                        colClasses = c("created_at" = "Date"))
     } else {
       folder <- glue("{lang}_NoFilter")
       file_name <- glue("{add_on}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
       file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
       # read file
-      readr::read_csv(file_path, col_types = readr::cols(date = "D"))
+      data.table::fread(file_path, select = c("date",
+                                              "language",
+                                              "word",
+                                              "N",
+                                              "emo"),
+                        colClasses = c("created_at" = "Date"))
     }
 
 
@@ -873,14 +883,14 @@ long <- long()
   })
 
   ######################### freq_plot
-  output$freq_plot <- renderPlot(
+  output$freq_plot <- renderPlot({
     # dynamically change height of plot
     #height = function() input$n * 30 + 400,
 
-    {
+
       df <- data_expl()
 
-
+#browser()
       if (input$plot_type_expl == "Frequency Plot"){
         df <- word_freq_data_wrangler(df, input$dates[1], input$dates[2],
                                       input$emo, emoji_words,
