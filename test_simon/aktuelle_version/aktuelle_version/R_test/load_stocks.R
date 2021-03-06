@@ -226,6 +226,14 @@ VOW3 <- function(){
 
 #' @export
 #' @rdname load_stocks
+DOW <- function(){
+  filename <- "https://unitc-my.sharepoint.com/:x:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/EVMgYnBudQRAuaP9o6klvBsBUATwb3GY1WBks-nh3pYXrA?download=1"
+  read.csv(filename)
+}
+
+
+#' @export
+#' @rdname load_stocks
 load_all_stocks_DE <- function(){
   filename <- "https://unitc-my.sharepoint.com/:x:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/EagyRFS8KStClVOHtP9Nkj0BUbAwefPendK6to-1BQIZSQ?download=1"
   help <- read.csv(filename)
@@ -258,11 +266,13 @@ stock_controls_test <- function(){
 #' @export
 #' @rdname load_stocks
 global_controls_test_DE <- function(){
-  read.csv("https://unitc-my.sharepoint.com/:x:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/EXdeKbKLByxCpe08oYSIzIEBCL05NKhNzqvHVpmelDRx6Q?download=1")
+  read.csv("https://unitc-my.sharepoint.com/:x:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/EYlajGptNv5CmBepQHp4rroBWfYi-iS9R0Q5MmB9oFxQZg?download=1")
 }
 
 #' @export
 #' @rdname load_stocks
 global_controls_test_US <- function(){
-  read.csv("https://unitc-my.sharepoint.com/:x:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/ESTJZ17gJ6lFs9754ZyxNiYBTb6yuzAXfpWEpOUkZGO4MQ?download=1")
+  read.csv("https://unitc-my.sharepoint.com/:x:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/EdK7M0hgGDpAk_jOPLz-72ABDcQSPSuF32uTQFzyvsALCw?download=1")
 }
+
+

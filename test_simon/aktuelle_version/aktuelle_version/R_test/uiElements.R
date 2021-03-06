@@ -1,16 +1,20 @@
 #' UI Elements
 #'
 #'
-
-
-#####################################################   Stocks
-
-
-
+#' @export
+#' @rdname uiElements
 
 #####################################################   Stocks
 # selectize input for companies
-
+#' @export
+#' @rdname uiElements
+# selectize_Stocks <- function(components) {
+#   selectizeInput("Stock","Chose Company",
+#                  c(components[["Company.Name"]],"GDAXI"),
+#                  selected = "Bayer ",multiple = TRUE
+#                  )
+#
+# }
 # sliderinput for dates
 #' @export
 #' @rdname uiElements

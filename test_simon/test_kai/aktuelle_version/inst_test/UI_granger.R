@@ -16,15 +16,15 @@ parameter_tabsi <- tabsetPanel(
            radioButtons("minRetweet_stocks1", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
            radioButtons("tweet_length_stock1","Tweet larger than median length:",
                         choices = c("yes","no"),selected = "no",inline=T)
-
-
+           
+           
   ),
   tabPanel("yes",
            selectInput("industry", "Industry", choices = c("Consumer Cyclical","Financial Services")),
-
+           
            radioButtons("language2","Language of tweets ?",
                         choices = c("en","de"),inline=T),
-
+           
            selectizeInput("aggregation2", "Aggregation", choices = c("Mean","Mean weighted by retweets",
                                                                      "Mean weighted by likes", "Mean weighted by length"),
                           select = "Mean"),
@@ -32,9 +32,9 @@ parameter_tabsi <- tabsetPanel(
            radioButtons("minRetweet_stocks2", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
            radioButtons("tweet_length_stock2","Tweet larger than median length:",
                         choices = c("yes","no"),selected = "no",inline=T)
-
+           
   )
-
+  
 )
 
 
@@ -50,16 +50,16 @@ parameter_tabs <- tabsetPanel(
            radioButtons("minLikes", "Select minimum number of likes", choices = c("0","10","50","100","200"),selected = "0",inline=T),
            radioButtons("tweet_length","Tweet larger than median length:",
                         choices = c("yes","no"),inline=T)
-
-
+           
+           
   ),
   tabPanel("Stocks",
            radioButtons("industry_sentiment","Sentiment by industry ?",
                         choices = c("yes","no"),selected = "no",inline=T),
            parameter_tabsi
-
+           
   )
-
+  
 )
 
 
@@ -81,17 +81,17 @@ tabs_custom <- tabsetPanel(
                        min = min(as.Date(ADS()[["Date"]], "%b %d, %Y")),
                        max = max(as.Date(ADS()[["Date"]], "%b %d, %Y")),
                        step = 1,timeFormat = "%F")
-
-
-
+           
+           
+           
   ),
   tabPanel("Filter sentiment input",
            selectInput("Sentiment_type", "Type of Sentiment:", choices = c("NoFilter","Stocks"),
                        selected = "NoFilter"),
            parameter_tabs
-
+           
   )
-
+  
 )
 
 
@@ -174,21 +174,18 @@ ui <- fluidPage(
                                               verbatimTextOutput("regression_result")),
                                      tabPanel("Quantile Regression",
                                               plotOutput("plot_dens_Qreg"),
-                                              verbatimTextOutput("regression_result_Qreg")
-
-                                     )
-                                   )
-                                 )
-                         ),
-                        tabPanel("XGboost-forecasting",
-                                  sidebarPanel(
-                                    tabs_custom_xgb,
+                                              verbatimTextOutput("regression_result_Qreg"))))),
+                        tabPanel("XGboost forecast",
+                                 sidebarPanel(
                                    
-                                  ),
+                                 ),
                                  mainPanel(
-                                   verbatimTextOutput("dataset_xgb")
-                
-                                 ))#close tabpanel VAR forecasting
-                        )#close Navbarmenu
-  )#close Navbarpage
+                                   tabsetPanel(
+                                        tabPanel("data",
+                                           verbatimTextOutput("senti_agg")
+                                 ))))
+                                              
+               
+                    )
+  )#close tabsetPanel
 )#close fluidpage

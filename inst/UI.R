@@ -166,6 +166,7 @@ twitter_main_panel <- function(){
                                    tags$head(tags$style("#number_tweets_info{color: black;
                                  font-size: 20px;
                                  font-style: bold;
+                                 color: white
                                  }"
                                    )
                                    ),
@@ -215,31 +216,20 @@ twitter_main_panel <- function(){
 
 
              # andere reiter
-             tabPanel("Sentiment"),
+             tabPanel("Going Deeper",
+                      sidebarPanel(
+                        network_sidebar
+                      ),
+                      mainPanel(
+                        networkD3::forceNetworkOutput("network_plot") %>%
+                          shinycssloaders::withSpinner()
+                      )),
              tabPanel("Daily Analysis"),
              tabPanel("Going deeper"))
 
 }
 
 
-##### main sidebar panel including both tabsetpanels
-# twitter_desc_panel <- function(){
-#   sidebarPanel(
-#     tab_panel_twitter_desc
-# )
-# }
-#
-# ### conditional panels for the histogram plots in the descriptive panel
-# twitter_desc_conditional_histo <- conditionalPanel(
-#
-#     #condition = "input.plot_type == 'Frequency Plot'",
-#     # keep for both because bigram also makes senese with wordcloud
-#   condition = "input.tabselected==1",
-#
-#     )
-#
-#
-#   )
 
 
 ### conditional sidebar panel for the time series
@@ -361,62 +351,68 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
                             )
 
-######### side bar panel for frequency analysis
-# twitter_tab_expl <-  tabPanel("Exploratory",
-#
-#
-#                               ###### both
-#                               radioButtons("lang", "Select Language", choices = c("EN", "DE")),
-#                               selectInput("comp", "Choose a company (optional)", choices = c("Adidas", "3M", ""), selected = ""),
-#
-#                               dateRangeInput("dates", "Select date range:", start = "2018-11-30", end = "2021-02-13",
-#                                              min = "2018-11-30", max = "2018-12-09", format = "yyyy-mm-dd"),
-#                               radioButtons("rt", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
-#                                            inline = T),
-#                               radioButtons("likes", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
-#                                            inline = T),
-#                               #switchInput(inputId = "long", value = TRUE),
-#                               shinyWidgets::materialSwitch(inputId = "long", label = "Long Tweets only?", value = F),
-#
-#
-#
-#
-#                               ##### only expl
-#                               shinyWidgets::materialSwitch(inputId = "emo", label = "Remove Emoji Words?", value = F),
-#                               selectInput("plot_type", "What kind of plot would you like to see?", choices = c("Frequency Plot", "Word Cloud")),
-#                               sliderInput("n", "Number of words to show", min = 5, max = 5000, value = 15),
-#
-#                               conditionalPanel(
-#
-#                                 #condition = "input.plot_type == 'Frequency Plot'",
-#                                 # keep for both because bigram also makes senese with wordcloud
-#                                 condition = "true == true",
-#                                 radioButtons("ngram_sel", "Would like to to see single words or bigrams?", choices = c("Unigram", "Bigram"))
-#                               )
-# )
 
 
-# ################  sidebar tabs
-# tab_panel_twitter_desc <- tabsetPanel(
-#   id = "twitter_filter_tabs",
-#
-#   # descriptive
-#   conditionalPanel(
-#     condition = "input.tabselected==1",
-#     tiwtter_tab_desc
-#   ),
-#
-#
-# # exploratory
-# conditionalPanel(
-#   condition = "input.tabselected==2",
-#   twitter_tab_expl
-# )
-#
-#
-# )
+
+#################################### going deeeper sidbarpanel
+network_sidebar <- tabPanel( "Network Analysis",
 
 
+
+          ###### language selector
+          radioButtons("lang_net", "Select Language", choiceNames = c("English Tweets", "German Tweets"),
+                       choiceValues = c("en", "de")),
+          # company selector
+          selectInput("comp_net","Choose a company (optional)",
+                      c("adidas", "NIKE"),
+                      selected = "",multiple = TRUE),
+
+          # datepicker
+          shinyWidgets::airDatepickerInput("dates_net", "Date range:",
+                                           range = TRUE,
+                                           value = c("2020-03-01", "2020-03-02"),
+                                           maxDate = "2021-02-19", minDate = "2018-11-30",
+                                           clearButton = T, update_on = "close",
+                                           multiple = 5),
+
+          ##### same but continous choices
+          # retweets count
+          numericInput("rt_net", "Choose a minimum number of retweets", min = 0, max = 10000, value = 0),
+
+          # likes count
+          numericInput("likes_net", "Choose a minimum number of likes", min = 0, max = 10000, value = 0),
+
+          # long tweets switch
+          shinyWidgets::materialSwitch(inputId = "long_net", label = "Long Tweets only?", value = F),
+
+
+          ### filter by sentiment
+          numericInput("sentiment_net", "Choose a minmium sentiment", min = -1, max = 1, value = -1),
+
+
+
+          ##### additional
+          ######### search terms
+          textInput("search_term_net", "Only select tweets containing the following:"),
+          textInput("username_net", "Only show tweets for usernames containing the following:"),
+
+
+
+          ######## adjusting plot
+          numericInput("n_net", "Minimum number of occurences of a word pair in the selected sample",
+                       min = 50, value = 50),
+
+          numericInput("corr_net", "Minimum word correlation of word pairs", value = 0.15, min = 0.15, max = 1,
+                       step = 0.01),
+          actionButton("button_net", "Render Plot") %>%
+          shinyhelper::helper(type = "markdown",
+                   title = "Inline Help",
+                   content = "network_plot_button",
+                   buttonLabel = "Got it!",
+                   easyClose = FALSE,
+                   fade = TRUE,
+                   size = "s")
+)
 
 
 #############################################################################

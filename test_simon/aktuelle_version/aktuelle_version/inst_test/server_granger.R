@@ -441,546 +441,492 @@ server <- function(input, output, session) {
   output$regression_result_Qreg <- renderPrint({
     regression_result_Qreg()})
 
-#################################################################################################### twitter
+###############################################################################
+########################   VAR    #############################################
+###############################################################################
 
-  ############################################################################
-  ################# Directory ###############################################
-  ###########################################################################
-  # selecting directory
-  # find home direcoty of user
-  volumes <- c(Home = fs::path_home(), "R Installation" = R.home(), shinyFiles::getVolumes()())
-  # allow for searching directories
-  shinyFiles::shinyDirChoose(input, "directory", roots = volumes, session = session, restrictions = system.file(package = "base"), allowDirCreate = FALSE)
-  observe({
-
-    cat("\ninput$directory value:\n\n")
-    print(input$directory)
-  })
-  path_setter <- reactive({
-    #browser()
-    if (is.integer(input$directory)) {
-      setwd(volumes)
-
-      cat(glue("No directory has been selected. Current directory {getwd()})"))
-
+  ###################################################### dataset ###############################################################
+  ###flexible input for stocks: show either german or us companies
+  output$stock_regression_var <- renderUI({
+    if (input$country_regression_var == "Germany"){
+      input <- selectizeInput("Stock_Regression_var","Choose dependent variable:",
+                              c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
+                              selected = "Bayer ",multiple = FALSE)
     } else {
-
-      path <- shinyFiles::parseDirPath(volumes, input$directory)
-      setwd(path)
-      con <- DBI::dbConnect(RSQLite::SQLite(), "SQLiteStudio/databases/clean_database.db")
-
-      file_needed <- "SQLiteStudio"
-      if(dir.exists(file_needed)) {
-        #setwd(file_path)
-        output_str <- glue("Current path {getwd()}")
-      } else {
-        #setwd(file_path)
-        output_str <- "Current path selection does not seem correct. \n
-                Are you sure it is set correctly?"
-      }
-
-      path_outputs <- list(a = con, b = output_str, c = "correct_path")
-      path_outputs
-
-
+      input <- selectizeInput("Stock_Regression_var","Choose dependent variable:",
+                              c(COMPONENTS_US()[["Company.Name"]],"DOW"),
+                              selected = "Apple ",multiple = FALSE)
     }
   })
-  output$directorypath <- renderText({
-    path_outputs <- path_setter()
-    path_outputs[[2]][1]
+
+
+  output$Controls_var <- renderUI({
+    if (input$country_regression_var == "Germany"){
+      input <- selectizeInput("Controls_var","Choose control variables:",
+                              c(colnames(global_controls_test_DE())[-1],"DAX"),multiple = TRUE)
+      #c(colnames(res[3:length(res)])),multiple = TRUE
+    }else{
+      input <- selectizeInput("Controls_var","Choose control variables:",
+                              c(colnames(global_controls_test_US())[-1],"DOW"),multiple = TRUE)
+    }
+
+  })
+
+  dataset_var <- reactive({
+    if (input$country_regression_var == "Germany"){
+      data_reg <- filter(stockdata_DE(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
+                         .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Regression_var]) &
+                           .data$Dates >= .env$input$date_regression_var[1] & .data$Dates <= .env$input$date_regression_var[2])[c("Dates",input$regression_outcome_var,"name")] #hier später noch CLose flexibel machen
+    } else {
+      data_reg <- filter(stockdata_US(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
+                         .data$name %in% (c(COMPONENTS_US()[["Symbol"]], "DOW")[c(COMPONENTS_US()[["Company.Name"]], "DOW") %in% .env$input$Stock_Regression_var]) &
+                           .data$Dates >= .env$input$date_regression_var[1] & .data$Dates <= .env$input$date_regression_var[2])[c("Dates",input$regression_outcome_var,"name")] #hier später noch CLose flexibel machen
+    }
+
+    if (input$country_regression_var == "Germany"){
+      global_controls <- global_controls_test_DE()   #load controls
+      global_controls$Date <- as.Date(global_controls$Date) #transform date
+      dax <- GDAXI()  #load dax
+      dax$Date <- as.Date(dax$Date, "%d %b %Y") #transform date
+      dax <- missing_date_imputer(dax,"Close.") #transform time series by imputing missing values
+      colnames(dax)[2] <- "DAX"  #rename ->   !! is not renamed in final dataset !! -> dont know why
+      global_controls <- left_join(dax,global_controls,by = c("Date")) #join final
+
+    }else {
+      global_controls <- global_controls_test_US() #same procedure as above
+      global_controls$Date <- as.Date(global_controls$Date)
+      dow <- DOW()
+      dow$Date <- as.Date(dow$Date, "%d %b %Y")
+      dow <- missing_date_imputer(dow,"Close.")
+      colnames(dow)[2] <- "DOW"
+      global_controls <- left_join(dow,global_controls,by = c("Date"))
+    }
+    names(global_controls)[1] <- "Dates"
+    data_reg2 <- left_join(data_reg,global_controls,by = c("Dates")) #hierdurch kommt die varible "global" in den datensatz
+    ##diesen datensatz filtern wir dann nochmal mit dem sliderinput für die kontrollvariablen(eine/keine/mehrere möglich)
+    data_reg2
   })
 
 
-  ###############################################################################
-  ##################### twitter logo directory page ############################
-  ###############################################################################
-
-  output$twitter_logo <- renderImage({
-
-    req(path_setter()[[3]][1] == "correct_path")
-
-    filename <- "shiny/images/twitter_image.png"
-
-
-
-    list(src = filename,
-         alt = "This is the Twitter Logo",
-         contentType = "Images/png",
-         height = 400, width = 400)
-  }, deleteFile = F)
-
-
-  ###############################################################################
-  ############################### twitter descriptive ###########################
-  ###############################################################################
-  ### for histogram less choices
-
-
-
-  ######## disconnect from database after exit
-  cancel.onSessionEnded <- session$onSessionEnded(function() {
-    req(path_setter())
-    con <- path_setter[[1]][1]
-    DBI::dbDisconnect(con)
+  df_selected_controls_var <- reactive({
+    #req(input$Controls_var)
+    res <- dataset_var()
+    res <- res[c("Dates",input$regression_outcome_var,input$Controls_var)]
+    res
   })
 
- long <- reactive({
-   if (input$long == T){
-     long <- 81
-   } else{
-     long <- 0
-   }
-   long
+  observeEvent(input$Sentiment_type_var, {                         #Observe event from input (model choices)
+    req(input$Sentiment_type_var)
+    updateTabsetPanel(session, "params", selected = input$Sentiment_type_var)
+  })
+
+  observeEvent(input$industry_sentiment_var, {                         #Observe event from input (model choices)
+    req(input$industry_sentiment_var)
+    updateTabsetPanel(session, "industry_tab", selected = input$industry_sentiment_var)
+  })
+
+  dataset_senti_var <- reactive({
+    req(input$Sentiment_type_var)
+    if(input$Sentiment_type_var == "NoFilter"){
+
+      res <- En_NoFilter_0_0_yes()   # still fix as it is not clear yet if sql or csv
+      #res <- eval(parse(text = paste('En', '_NoFilter_',input$minRetweet,'_',
+      #                               input$minminLikes,'_',input$tweet_length,'()', sep='')))
+      #input$language
+    }else{
+      req(input$Stock_reg)
+      ticker <- ticker_dict(input$Stock_reg) # dict for a few stock
+      res <- eval(parse(text = paste(ticker,'()', sep=''))) # example: ADS.DE()
+
+    }
+
+
+  })
+  # filter
+  filtered_df_var <- reactive({
+    req(input$Sentiment_type_var)
+    req(input$minRetweet_stocks1_var)
+    req(input$minRetweet_stocks2_var)
+
+    if(input$Sentiment_type_var == "NoFilter"){
+
+      res <- dataset_senti_var()
+    }else{ # live filtering
+      req(input$industry_sentiment_var)
+      res <- dataset_senti_var()
+      if(input$industry_sentiment_var == "no"){
+        res <- dataset_senti_var()
+        if(input$tweet_length_stock1_var == "yes"){
+
+          res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks1_var)) &
+                                  (tweet_length > 81))}
+        else{
+          res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks1_var)))
+        }
+      }#else{
+      #res <- dataset_senti()
+      #if(input$tweet_length_stock2 == "yes"){
+      # res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks2)) &
+      #                          (tweet_length > 81))
+      #}else{
+      #  res <- res %>% filter(retweets_count > as.numeric(input$minRetweet_stocks2))
+      #}
+      #}
+    }
+  })
+
+  # aggregate dataset to get one sentiment per day
+  aggri_select_var <- reactive({
+
+    if(input$Sentiment_type_var == "NoFilter"){ # NoFilter files already aggregated
+      res <- filtered_df_var()
+      aggregation <- key(input$aggregation_var)  # select aggregation type: Mean, mean weighted by,...
+      res <- res %>% tidyr::gather("id", "aggregation", aggregation)
+      res <- res[c("date","aggregation")]
+    }else{
+      if(input$industry_sentiment_var == "no"){
+        res <- filtered_df_var()
+        res <- aggregate_sentiment(res) # function to aggregate sentiment per day
+        res <- res %>% filter(language == input$language1_var)
+        aggregation <- key(input$aggregation1_var)
+        res <- res %>% tidyr::gather("id", "aggregation", aggregation)
+        res <- res[c("date","aggregation")]
+      }else{
+        res <- get_industry_sentiment(COMPONENTS_DE(),input$industry_var,input$minRetweet_stocks2_var,
+                                      input$tweet_length_stock2_var)      #function to gather all stock in certain industry
+        aggregation <- key(input$aggregation2_var)                          #--> also calculates aggregation inside function
+        res <- res %>% tidyr::gather("id", "aggregation", aggregation)
+        res <- res[c("date","aggregation")]
+      }
+    }
+
+  })
+
+  observeEvent(input$reset_regression_var,{
+    updateSelectizeInput(session,"Controls_var",selected = "")
+  })
+
+  #merge sentiment with control+dep vars
+  final_regression_df_var <- reactive ({
+    if (input$senti_yesno == TRUE){
+      res <- aggri_select_var()
+    } else {
+      res <- aggri_select_var()[1]
+    }
+    res$date <- as.Date(res$date)
+    res_c <- df_selected_controls_var()
+    res <- left_join(res_c,res, by=c("Dates" = "date"))
+    #res <- res[-1]
+    res
+  })
+
+  #####################################################################################################################
+
+
+  output$datensatz_var <- renderPrint ({
+    head(final_regression_df_var())
+  })
+
+  output$summary <- renderPrint({
+    final_regression_df_var() %>% dplyr::select(-Dates) %>%
+      summary()
+
+  })
+
+
+training_data <- renderPrint({
+  req(input$data_split)
+  res <- final_regression_df_var()
+  res_list<- split_data(res,input$data_split)
+  res_train <- res_list[["df.train"]]
+})
+
+
+output$acf_plot_xgb <- renderPlot({
+  req(input$correlation_var)
+  acf_plot_xgb(final_regression_df_var(),input$correlation_var)
+})
+
+
+output$pacf_plot_xgb <- renderPlot({
+  req(input$correlation_var)
+  pacf_plot_xgb(final_regression_df_var(),input$correlation_var)
+})
+
+output$correlation_plot_choice <- renderUI({
+  res <- final_regression_df_var() %>% dplyr::select(-Dates)
+  input <- selectInput("correlation_var","Select variable for ACF/PACF plot:",
+                           names(res))
+
+})
+
+# output$Lag_choice <- renderUI({
+#   res <- final_regression_df_var() %>% dplyr::select(-Dates)
+#   input <- selectizeInput("var_list_xgb","Add AR and MA columns for which variables?",
+#                        names(res),selected="")
+#
+# })
+
+observeEvent(input$number_of_vars, {                         #Observe event from input (model choices)
+  req(input$number_of_vars)
+  updateTabsetPanel(session, "tabs_for_var", selected = as.character(input$number_of_vars))
+})
+
+
+observeEvent(input$Controls_var,{
+  res <- final_regression_df_var() %>% dplyr::select(-Dates)
+  updateSelectInput(session, "var_1",
+                    choices = names(res))
+})
+
+
+observeEvent(input$Controls_var,{
+  res <- final_regression_df_var() %>% dplyr::select(-Dates)
+  updateSelectInput(session, "var_2",
+                    choices = names(res))
+})
+# 
+ filter_by_input_df <- reactive({
+   req(input$var_2)
+   res <- final_regression_df_var() %>% dplyr::select(-Dates)
+   res <- names(res)
+   res <- res[!(res %in% input$var_2)]
+   res
  })
 
+observeEvent(input$var_2,{
+  updateSelectInput(session, "var_3",
+                    choices = filter_by_input_df())
+})
+
+
+
+df_xgb <- reactive({
+  
+  req(input$var_1)
+  req(input$var_2)
+  req(input$var_3)
+  req(input$num_1)
+  req(input$num_2)
+  req(input$num_3)
+  req(input$num_4)
+  req(input$num_5)
+  req(input$num_6)
+  req(input$number_of_vars)
+  
+  res <- final_regression_df_var()
+  
+  res <- ARMA_creator(res,input$number_of_vars,input$var_1,input$var_2,
+                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
+                      input$num_5,input$num_6)
+  
+})
+
+
+output$df_xgb1 <- renderPrint ({
+  head(df_xgb())
+})
+
+observeEvent(input$reset_arma,{
+  updateNumericInput(session,"number_of_vars",value = 1)
+})
+
+
+
+
+df_xgb_train <- reactive({
+  
+  req(input$var_1)
+  req(input$var_2)
+  req(input$var_3)
+  req(input$num_1)
+  req(input$num_2)
+  req(input$num_3)
+  req(input$num_4)
+  req(input$num_5)
+  req(input$num_6)
+  req(input$number_of_vars)
+  req(input$split_at)
+  
+  res <- final_regression_df_var()
+
+  list_dfs <- split_data(res,input$split_at)
+  
+  res <- ARMA_creator(list_dfs$df.train,input$number_of_vars,input$var_1,input$var_2,
+                     input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
+                     input$num_5,input$num_6)
+})
+
+
+
+
+df_xgb_test <- reactive({
+  
+  req(input$var_1)
+  req(input$var_2)
+  req(input$var_3)
+  req(input$num_1)
+  req(input$num_2)
+  req(input$num_3)
+  req(input$num_4)
+  req(input$num_5)
+  req(input$num_6)
+  req(input$number_of_vars)
+  req(input$split_at)
+  
+  res <- final_regression_df_var()
+  
+  list_dfs <- split_data(res,input$split_at)
+  
+  res <- ARMA_creator(list_dfs$df.test,input$number_of_vars,input$var_1,input$var_2,
+                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
+                      input$num_5,input$num_6)
+})
+
+output$df_xgb1_train <- renderPrint ({
+  head(df_xgb_train())
+})
+
+output$df_xgb1_test <- renderPrint ({
+  head(df_xgb_test())
+})
+
+output$correlation_plot <- renderPlot({
+  corr_plot(final_regression_df_var())
+})
+
 
-
-
-
- ################################### path finder for histo files
-  querry_histo <- reactive({
-    if (input$long == T){
-      long_name <- "long_only"
-    } else{
-      long_name <- "all"
-    }
-
-    lang <- lang_converter()
-
-
-    ### account for case where sentiment is selected
-
-    # replace sentiment with senti because refernced with senti in file
-    value_var <- stringr::str_replace(input$value[1],"sentiment", "senti")
-    # replace tweet_length with long becuase refernced with long in file
-    value_var <- stringr::str_replace(value_var, "tweet_length", "long")
-
-
-
-
-
-
-
-    # for no filter
-    if (is.null(input$comp)){
-    glue("histo_{value_var}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
-    } else { #for chosen company
-      req(!is.null(input$comp))
-
-
-
-
-
-      glue("histo_{value_var}_{input$comp}_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
-
-    }
-     # old sql
-      #browser()
-      # if (input$value == "length"){
-      #   tb_metric <- "len"
-      #   col_value <- input$value
-      #
-      # } else if(input$value == "rt") {
-      #
-      #   tb_metric <- input$value
-      #   col_val <- "retweets_count"
-      #
-      # } else if(input$value == "likes") {
-      #   tb_metric <- input$value
-      #   col_val <- "likes_count"
-      # } else if(input$value == "sentiment"){
-      #   tb_metric <- input$value
-      #   col_val <- "sentiment_rd"
-      # } else{
-      #   Sys.sleep(0.2)
-      # }
-      #
-      #
-      #
-      #
-      #
-      # table_name <- glue("histo_{tb_metric}_{tolower(input$lang)}")
-      #
-      # if (table_name %in% c("histo_rt_en", "histo_likes_en", "histo_len_en")){
-      #   date_col <- "date"
-      # } else{
-      #   date_col <- "created_at"
-      # }
-      #
-      # glue("SELECT {col_val}, sum(N) as n  FROM {table_name}  WHERE {date_col} >=  '{input$dates[1]}'
-      # and {date_col} <= '{input$dates[2]}'
-      # and retweets_count_filter = {input$rt} and likes_count_filter = {input$likes} and
-      # tweet_length_filter = {long}
-      #      group by {col_val}")
-
-
-     #if closed
-    }) #reactive closed
-
-
-
-
-  ##################### summary statistics table data and time series data
-    querry_sum_stats_table <- reactive({
-
-long <- long()
-#browser()
-      if (is.null(input$comp)){
-      table_name <- glue("sum_stats_{tolower(input$lang)}")
-
-      glue("SELECT *  FROM {table_name}  WHERE created_at >= '{input$dates[1]}'
-      and created_at <= '{input$dates[2]}'
-         and retweets_count = {input$rt} and likes_count = {input$likes} and
-         tweet_length = {long}" )
-      } else { #if company is chosen
-        glue("SELECT *  FROM sum_stats_companies WHERE created_at >= '{input$dates[1]}'
-      and created_at <= '{input$dates[2]}'
-         and retweets_count = {input$rt} and likes_count = {input$likes} and
-         tweet_length = {long} and company  = '{input$comp}' and
-             language = '{tolower(input$lang)}'" )
-      }
-
-
-    })
-    #browser()
-
-
-
-
-
-  # ## get data from querry
-  # data_time_series <- reactive({
-  #
-  #
-  #
-  #   con <- path_setter()
-  #
-  #
-  #   con <- con[[1]]
-  #
-  #   string_value <- is.null(con)
-  #   req(!string_value)
-  #   df_need <- DBI::dbGetQuery(con, querry_time_series())
-  #
-  #  df_need
-  # })
-############################### data retriever for histogram
-  data_histo <- reactive({
-
-    lang <- lang_converter()
-    a <- path_setter()
-
-
-
-    # for case no company selected
-    if (is.null(input$comp)){
-  file_path <- file.path(glue("Twitter/plot_data/{lang}_NoFilter/{querry_histo()}"))
-  exists <- file.exists(file_path)
-  shinyFeedback::feedbackDanger("histo_plot", !exists, "Please make sure you picked the correct path. The \n
-                                file cannot be found in the current directory")
-  req(exists)
-    df_need <- data.table::fread(file_path,
-                                 select = 1:3)
-
-    df_need
-    } else { #for case of choosen company
-      file_path <- file.path(glue("Twitter/plot_data/Companies/{input$comp}/{querry_histo()}"))
-      df_need <- data.table::fread(file_path,
-                                   select = 1:3)
-      df_need
-
-    }
-  })
-
-
-
-    ######################### time series plot for retweets etc.
-  output$sum_stats_plot <- renderPlot({
-
-    req(!is.null(input$value) | input$num_tweets_box == T)
-
-    df <- get_data_sum_stats_tables()
-
- if (input$num_tweets_box == F){
-    time_series_plotter(df, input$metric, input$value, num_tweets = F)
- } else {
-   time_series_plotter(df, input$metric, input$value, num_tweets = T)
- }
-
- })
-
-
-####### block metric selection if chosen number of tweets
-  # observeEvent(input$metric,{
-  #  # browser()
-  #   if (input$metric == "N"){
-  #     shinyjs::disable("value")
-  #   } else {
-  #     shinyjs::enable("value")
-  #   }
-  # })
-
-
-
-
-  ##################### disable log scale option for sentiment because as negative values
-  observeEvent(input$value, {
-    #browser()
-    if (grepl("sentiment",input$value[1])) {
-      shinyWidgets::updateSwitchInput(session = session,
-                                      "log_scale",
-                                      disabled = T,
-                                      value = F)
-    } else {
-      shinyWidgets::updateSwitchInput(session = session,
-                                      "log_scale",
-                                      disabled = F)
-    }
-  })
-
-
-  ######################################## histogram output
-  output$histo_plot <- renderPlot({
-   #  df <- data_histo()
-   #
-   # df %>%
-   #      group_by(.[[2]]) %>% summarise(N = sum(N)) %>%
-   #     mutate(metric = case_when(input$log_scale == T ~ log(as.numeric(.[[1]])+ 0.0001),
-   #                                input$log_scale == F ~ as.numeric(.[[1]])),
-   #             bins = cut_interval(metric, n = input$bins)) %>%
-   #
-   #      ggplot(aes(bins, N)) +
-   #      geom_col() +
-   #      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-   #
-   req(input$value)
-   # df <- data_histo()
-   #
-   #   df %>%   group_by(.[[2]]) %>% summarise(N = sum(N)) %>%
-   #     mutate(metric = case_when(input$log_scale == T ~ log(as.numeric(.[[1]])+ 0.0001),
-   #                                input$log_scale == F ~ as.numeric(.[[1]])),
-   #             bins = cut_interval(metric, n = input$bins)) %>%
-   #
-   #      ggplot(aes(bins, N)) +
-   #      geom_col() +
-   #      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-  histogram_plotter(data_histo(), date_input1 = input$dates[1], date_input2 = input$dates[2],
-                    input_bins = input$bins, input_log = input$log_scale)
-
-  })
-
-
-
-
-############################# get data for sum stats table
-  get_data_sum_stats_tables <- reactive({
-    con <- path_setter()
-    con <- con[[1]]
-    string_value <- is.null(con)
-    req(!string_value)
-    df_need <- DBI::dbGetQuery(con,  querry_sum_stats_table())
-
-    df_need
-  })
-
-  ################################# sum stats table
-  output$sum_stats_table <- function(){
-     # browser()
-    df_need <- get_data_sum_stats_tables()
-    sum_stats_table_creator(df_need)
+output$random_walk_choice <- renderUI({
+  res <- final_regression_df_var() %>% dplyr::select(-Dates)
+  input <- selectInput("test_selection","Select variable to test for random walk",
+                       names(res))
+  
+})
+
+
+
+output$rw_hyp <- renderPrint({
+  req(input$test_selection)
+  req(input$rw_tests)
+  res <- final_regression_df_var() %>% dplyr::select(-Dates)
+  res <- res[,input$test_selection]
+  if(input$rw_tests == "Box–Ljung test"){
+    Box.test(res, lag = 12, type = "L")
+    #as.numeric(as.matrix(m$statistic))
+  }else if(input$rw_tests == "Wald-Wolfowitz runs test"){
+    runs.test(res)
+    
+  }else{
+    adf.test(res)
+    
   }
+  
+})
 
 
-  ###### number of tweets display
-  output$number_tweets_info <- renderText({
-    df_need <- get_data_sum_stats_tables()
+model_xgbi <- eventReactive(input$run,{
+  req(input$model_spec)
+  
+  if(input$model_spec == "default"){
+    res <- df_xgb_train()
+    model1 <- model_xgb(res)
+    model1
+  }else if(input$model_spec == "custom"){
+    res <- df_xgb_train()
+    model2 <- model_xgb_custom(res,input$mtry,input$trees,input$min_n,input$tree_depth,
+                            input$learn_rate,input$loss_reduction,input$cv,input$sample_size)
+    model2
+  }else{
+    res <- df_xgb_train()
+    model3 <- model_xgb_hyp(res,input$trees_hyp,input$cv_hyp,input$grid_size)  
+    model3
+  }
+})
 
-   glue("For current selection: {round(mean(df_need$N))} tweets on average per day")
-  })
 
 
-  ######################################################
-  ########################## Word Frequencies ###########
-  #######################################################
- lang_converter <- reactive({
+output$model <- renderPrint({
+  model_xgbi()
+})
 
-  lang <- stringr::str_to_title(input$lang)
- })
 
-  data_expl <- reactive({
+observeEvent(input$model_spec, {                         #Observe event from input (model choices)
+  req(input$model_spec)
+  updateTabsetPanel(session, "mod_spec", selected = input$model_spec)
+})
 
-    lang <- lang_converter()
 
+prediction_xgb <- eventReactive(input$pred,{
+  # res <- aa
+  #  names(res)[1] <- "date"
+  #  names(res)[2] <- "Close"
+  #  res_train <- res[1:600,]
+  #  res_test <- res[601:813,]
+  # # 
+  res_train <- df_xgb_train()
+  res_test <- df_xgb_test()
+  
+preds <-  model_xgbi() %>%
+    fit(formula = Close ~ .,data = res_train[,c(-1)]) %>%
+    predict(new_data = res_test[,c(-1)])
+preds
+})
 
+output$predictions <- renderPrint({
+  prediction_xgb()
+})
 
-    if (input$long == T){
-      long <- "long_only"
-      tweet_length_filter <- 81
-    } else{
-      long <- "all"
-      tweet_length_filter <- 0
-    }
+output$stuff <- renderPrint({
+    req(input$split)
+    res <- final_regression_df_var()
+    list_dfs <- split_data(res,input$split_at)
 
-    correct_path <- path_setter()[[3]]
-    # if (correct_path == "correct_path"){
-    #   Sys.sleep(0.2)
-    # } else{
-    #   return()
-    # }
+    preds <- prediction_xgb() %>%
+      zoo(seq(from = as.Date(min(list_dfs$date.test)), to = as.Date(max(list_dfs$date.test)), by = "day"))
 
-    # go into specified folder and load dataframe
+    ts <- res %>% pull(Close) %>%
+      zoo(seq(from = as.Date(min(list_dfs$date.train)), to = as.Date(max(list_dfs$date.test)), by = "day"))
 
+  ts
+  
+})
 
-    if (input$ngram_sel == "Unigram"){
-      subfolder <- "uni_appended"
-      add_on <- "uni"
-    } else {
-      subfolder <- "bi_appended"
-      add_on <- "bi"
-    }
 
 
-    if (!is.null(input$comp)) {
-      folder <- file.path("Companies")
-      file_name <- glue("term_freq_{input$comp}_all_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
-      file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
-      # read file
-      readr::read_csv(file_path, col_types = readr::cols(date_variable = "D"))
-    } else {
-      folder <- glue("{lang}_NoFilter")
-      file_name <- glue("{add_on}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
-      file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
-      # read file
-      readr::read_csv(file_path, col_types = readr::cols(date = "D"))
-    }
 
 
 
+# output$plot_1_xgb <- renderPlot({
+#   req(input$split)
+#   res <- final_regression_df_var()
+#   list_dfs <- split_data(res,input$split_at)
+# 
+#   preds <- prediction_xgb() %>%
+#     zoo(seq(from = as.Date(min(list_dfs$date.test)), to = as.Date(max(list_dfs$date.test)), by = "day"))
+# 
+#   ts <- res %>% pull(Close) %>%
+#     zoo(seq(from = as.Date(min(list_dfs$date.train)), to = as.Date(max(list_dfs$date.test)), by = "day"))
+# 
+#   a <- {cbind(actuals=ts, predicted=preds)} %>% dygraph()
+#   a
+# 
+# })
 
 
 
-    #%>%
-    # filter(between(date_variable, input$dates[1], input$dates[2]))
 
 
 
+# forecast_data <- reactive({
+#   final_regression_df_var()[1:(nrow(final_regression_df_var())-input$ahead),-1,drop=FALSE]
+# })
+#
 
+#
+#   actual_values <- reactive({
+#     final_regression_df_var()[((nrow(final_regression_df_var())+1)-input$ahead):nrow(final_regression_df_var()),2,drop=FALSE]
+#   })
+#
 
-
-
-
-  })
-
-  ######################### freq_plot
-  output$freq_plot <- renderPlot(
-    # dynamically change height of plot
-    #height = function() input$n * 30 + 400,
-
-    {
-      df <- data_expl()
-
-
-      if (input$plot_type_expl == "Frequency Plot"){
-        df <- word_freq_data_wrangler(df, input$dates[1], input$dates[2],
-                                      input$emo, emoji_words,
-                                      input$word_freq_filter,
-                                      tolower(input$lang),
-                                      input$comp)
-
-        df <- df_filterer(df, input$n)
-
-        term_freq_bar_plot(df)
-
-      }
-    })
-
-################## wordcloud
-  output$wordcloud <- wordcloud2::renderWordcloud2({
-  req(input$plot_type_expl == "Word Cloud")
-
-    if (input$plot_type_expl == "Word Cloud"){
-      df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
-                                    input$emo, emoji_words,
-                                    input$word_freq_filter,
-                                    tolower(input$lang),
-                                    input$comp)
-
-      df <- df_filterer(df, input$n)
-
-      word_cloud_plotter(df, input$size_wordcloud)
-    }
-  })
-
-
-############################## time series bigram plot
-  output$word_freq_time_series <- renderPlot({
-    df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
-                                  input$emo, emoji_words,
-                                  input$word_freq_filter, input$lang,
-                                  input$comp)
-
-     word_filter_time_series_plotter(df)
-  })
-
-
-
-###########################################################################
-###########################################################################
-######################### GOING DEEPER ####################################
-###########################################################################
-###########################################################################
-  # path to markdown files for helpers
-  shinyhelper::observe_helpers(help_dir = "shiny/helpers")
-
-
-  ###### network plot
-
-
-
-
-
-  # if button is clicked compute correlations und plot the plot
-  observeEvent(input$button_net,{
-
-    # disable the button after computation started so no new computation can
-    # be startedd
-    disable("button_net")
-
-#    browser()
-
-    lang <- stringr::str_to_title(input$lang_net)
-
-
-
-    ### read all files for the dates
-
-    df <- network_plot_datagetter(lang, input$dates_net[1], input$dates_net[2], input$comp_net)
-
-
-    ### set up data for network
-    df <- network_plot_filterer(df, input$rt_net, input$likes_net, input$long_net,
-                                      input$sentiment_net, input$search_term_net,
-                                      input$username_net, input$n_net,
-                                      input$corr_net)
-
-
-
-
-    # render the network plot
-    output$network_plot <- networkD3::renderForceNetwork({
-      req(input$button_net)
-      if (is.null(df)) return()
-
-
-      network_plot_plotter(df)
-
-    })
-    enable("button_net")
-  })
-
-
-
-######################################################################### add companies choice
 
 }

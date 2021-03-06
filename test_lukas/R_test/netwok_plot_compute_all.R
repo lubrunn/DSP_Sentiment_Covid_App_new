@@ -34,12 +34,17 @@ ui <- fluidPage(
       numericInput("rt", "Minimum Retweets", 0),
       numericInput("likes", "Minimum Likes", 0),
       numericInput("long", "Minimum Tweet Length", 0),
-      numericInput("n_all", "Miimum Number of Tweets that have word pairs",
+
+
+       numericInput("n_all", "Miimum Number of Tweets that have word pairs",
                    min = 50, value = 50),
+
       numericInput("n_subset", "Miimum Number of Times words need to appear in subsample",
                    min = 0, value = 0),
+
       numericInput("min_corr", "Minimum Word Correlation", value = 0.15, min = 0.15, max = 1,
                    step = 0.01),
+
       actionButton("button", "Render Plot") %>%
         helper(type = "markdown",
                title = "Inline Help",
