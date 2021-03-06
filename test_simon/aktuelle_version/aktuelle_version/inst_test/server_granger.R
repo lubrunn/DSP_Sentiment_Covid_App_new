@@ -856,6 +856,65 @@ observeEvent(input$model_spec, {                         #Observe event from inp
 })
 
 
+prediction_xgb <- eventReactive(input$pred,{
+  # res <- aa
+  #  names(res)[1] <- "date"
+  #  names(res)[2] <- "Close"
+  #  res_train <- res[1:600,]
+  #  res_test <- res[601:813,]
+  # # 
+  res_train <- df_xgb_train()
+  res_test <- df_xgb_test()
+  
+preds <-  model_xgbi() %>%
+    fit(formula = Close ~ .,data = res_train[,c(-1)]) %>%
+    predict(new_data = res_test[,c(-1)])
+preds
+})
+
+output$predictions <- renderPrint({
+  prediction_xgb()
+})
+
+output$stuff <- renderPrint({
+    req(input$split)
+    res <- final_regression_df_var()
+    list_dfs <- split_data(res,input$split_at)
+
+    preds <- prediction_xgb() %>%
+      zoo(seq(from = as.Date(min(list_dfs$date.test)), to = as.Date(max(list_dfs$date.test)), by = "day"))
+
+    ts <- res %>% pull(Close) %>%
+      zoo(seq(from = as.Date(min(list_dfs$date.train)), to = as.Date(max(list_dfs$date.test)), by = "day"))
+
+  ts
+  
+})
+
+
+
+
+
+
+# output$plot_1_xgb <- renderPlot({
+#   req(input$split)
+#   res <- final_regression_df_var()
+#   list_dfs <- split_data(res,input$split_at)
+# 
+#   preds <- prediction_xgb() %>%
+#     zoo(seq(from = as.Date(min(list_dfs$date.test)), to = as.Date(max(list_dfs$date.test)), by = "day"))
+# 
+#   ts <- res %>% pull(Close) %>%
+#     zoo(seq(from = as.Date(min(list_dfs$date.train)), to = as.Date(max(list_dfs$date.test)), by = "day"))
+# 
+#   a <- {cbind(actuals=ts, predicted=preds)} %>% dygraph()
+#   a
+# 
+# })
+
+
+
+
 
 
 # forecast_data <- reactive({

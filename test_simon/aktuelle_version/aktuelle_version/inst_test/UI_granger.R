@@ -202,7 +202,8 @@ ui <- fluidPage(
                                                                   step = 0.1),
                                                      radioButtons("model_spec","Choose model specification",choices = c("default","custom","hyperparameter_tuning")),
                                                      model_specification,
-                                                     actionButton("run", "Run Model")
+                                                     actionButton("run", "Run Model"),
+                                                     actionButton("pred", "Predict")
                                                      
                                                      )
                                   ),
@@ -226,9 +227,11 @@ ui <- fluidPage(
 
                                      ),
                                      tabPanel("Model specification",value = "Model specification",
-                                              verbatimTextOutput("df_xgb1_train"),
+                                             # verbatimTextOutput("df_xgb1_train"),
                                               verbatimTextOutput("df_xgb1_test"),
-                                              verbatimTextOutput("model")
+                                              verbatimTextOutput("model"),
+                                             verbatimTextOutput("stuff")
+                                              #plotOutput("plot_1_xgb")
                                       )
                                     )
                                  )
