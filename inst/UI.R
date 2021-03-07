@@ -303,7 +303,9 @@ network_sidebar <- tabPanel( "Network Analysis",
 
 
           ### filter by sentiment
-          numericInput("sentiment_net", "Choose a minmium sentiment", min = -1, max = 1, value = -1, step = 0.05),
+          sliderInput("sentiment_net", label = h3("Choose a sentiment range"),
+                      min = -1, max = 1, value = c(-1, 1), step = 0.01, dragRange = T),
+
 
 
 
