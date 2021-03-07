@@ -147,15 +147,69 @@ time1 <- Sys.time()
     d3.selectAll("text").style("fill", "#ff2a00");
     d3.selectAll("text").style("stroke", "white");
     d3.selectAll("circle").style("fill", "green");
-    d3.selectAll("circle").on("mouseover", function(d,i){
+    d3.selectAll("circle").on("mouseover", function(d){
     d3.select(this).style("fill", "orange");
     });
-     d3.selectAll("circle").on("mouseout", function(d,i){
+     d3.selectAll("circle").on("mouseout", function(d){
     d3.select(this).style("fill", "green");
     });
 
   }'
   )
+
+#
+#
+#   htmlwidgets::onRender(
+#     fn,
+#     'function(el, x) {
+#     d3.select("body").style("background-color", "#313632");
+#     d3.selectAll(".legend text").style("fill", "white");
+#     d3.selectAll("text").style("fill", "#ff2a00");
+#     d3.selectAll("text").style("stroke", "white");
+#     d3.selectAll("circle").style("fill", "green");
+#     d3.selectAll("links").on("mouseover", function(d,i){
+#     d3.select(this).style("fill", "orange");
+#     });
+#      d3.selectAll("links").on("mouseout", function(d,i){
+#     d3.select(this).style("fill", "green");
+#     });
+#
+#   }'
+#   )
+#
+#
+#
+#   htmlwidgets::onRender(
+#     fn,
+#     'd3.selectAll("circle").on("mouseover", function(d,i){
+#
+#     var connectedNodeIds = graph
+#       .links
+#       .filter(x => x.source.id == d.id || x.target.id == d.id)
+#       .map(x => x.source.id == d.id ? x.target.id : x.source.id);
+#
+#
+#
+#       d3.select(circle).selectAll("circle").style("fill", "green");
+#     });'
+#   )
+
+
+  #### access nodes
+  htmlwidgets::onRender(
+    fn,
+    'function(el, x) {
+    d3.select("body").style("background-color", "#313632");
+    d3.selectAll(".legend text").style("fill", "white");
+    d3.selectAll("text").style("fill", "#ff2a00");
+    d3.selectAll("text").style("stroke", "white");
+    d3.selectAll("circle").style("fill", "green");
+    d3.selectAll(".node").style("opacity", 0.01);
+    }
+    '
+
+  )
+
 
 
 
@@ -167,14 +221,35 @@ time1 <- Sys.time()
     d3.selectAll("text").style("fill", "#ff2a00");
     d3.selectAll("text").style("stroke", "white");
     d3.selectAll("circle").style("fill", "green");
-    d3.selectAll("links").on("mouseover", function(d,i){
-    d3.select(this).style("fill", "orange");
-    });
-     d3.selectAll("links").on("mouseout", function(d,i){
-    d3.select(this).style("fill", "green");
+    d3.selectAll(".node").style("opacity", 0.1);
+    d3.selectAll(".node").style("fill", "red");
+    d3.selectAll(".node").on("mouseover", function(d){
+
+    var unfocusDivisor = 4;
+
+        link.transition().duration(200)
+          .style("opacity", function(l) { return d != l.source && d != l.target ? +options.opacity / unfocusDivisor : +options.opacity });
+
+        node.transition().duration(200)
+          .style("opacity", function(o) { return d.index == o.index || neighboring(d, o) ? +options.opacity : +options.opacity / unfocusDivisor; });
+
+
+      d3.select(this).select("circle").transition()
+        .duration(750)
+        .attr("r", function(d){return nodeSize(d)+5;});
+      d3.select(this).select("text").transition()
+        .duration(750)
+        .attr("x", 13)
+        .style("stroke-width", ".5px")
+        .style("font", options.clickTextSize + "px ")
+        .style("opacity", 1);
+
+
+
     });
 
-  }'
+    }
+    '
+
   )
-
 
