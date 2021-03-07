@@ -269,7 +269,11 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 #################################### going deeeper sidbarpanel
 network_sidebar <- tabPanel( "Network Analysis",
 
-          waiter::use_waitress(color = "#5ee643"),
+          waiter::use_waitress(color = "#375a7f"),
+          #waiter::use_waiter(),
+          #waiter::use_hostess(),
+          #waiter::hostess_loader("load", text_color = "white", center_page = TRUE),
+
 
           ###### language selector
           radioButtons("lang_net", "Select Language", choiceNames = c("English Tweets", "German Tweets"),
