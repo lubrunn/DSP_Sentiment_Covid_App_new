@@ -320,7 +320,7 @@ network_sidebar <- tabPanel( "Network Analysis",
 
 
           ######## adjusting plot
-          numericInput("n_net", "Minimum number of occurences of a word combination in the selected sample",
+          numericInput("n_net", "Minimum number of occurences of a single word in the sample",
                        min = 50, value = 50),
 
 
@@ -331,6 +331,16 @@ network_sidebar <- tabPanel( "Network Analysis",
                          step = 0.01)
 
           ),
+
+
+          ### panel for minium number of time bigrams arise
+          conditionalPanel(
+            condition = "input.word_type_net = 'bigrams_net'",
+            numericInput("n_bigrams_net", "Minimum number of occurences of a Bigram in the selected sample",
+                         min = 50, value = 50)
+          ),
+
+
           actionButton("button_net", "Render Plot") %>%
           shinyhelper::helper(type = "markdown",
                    title = "Inline Help",
