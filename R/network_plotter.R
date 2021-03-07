@@ -80,7 +80,8 @@ network_plot_filterer <- function(df, input_rt, input_likes, input_tweet_length,
       retweets_count >= input_rt &
         likes_count >= input_likes &
         tweet_length >= input_tweet_length &
-        sentiment >= input_sentiment
+        sentiment >= input_sentiment[1] &
+        sentiment <= input_sentiment[2]
       )
 
   return(network)
