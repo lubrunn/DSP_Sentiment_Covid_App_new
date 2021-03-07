@@ -9,6 +9,9 @@
 \alias{plot_corona}
 \alias{hover_info_corona}
 \alias{selectize_Stocks_reg}
+\alias{parameter_tabsi}
+\alias{parameter_tabs}
+\alias{tabs_custom}
 \alias{parameter_tabsi_var}
 \alias{parameter_tabs_var}
 \alias{tabs_custom_var}
@@ -29,6 +32,12 @@ plot_corona()
 hover_info_corona()
 
 selectize_Stocks_reg(components1, components2)
+
+parameter_tabsi()
+
+parameter_tabs()
+
+tabs_custom()
 
 parameter_tabsi_var()
 

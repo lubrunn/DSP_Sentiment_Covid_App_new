@@ -3,14 +3,10 @@ server <- function(input, output, session) {
   ############################################################# Stocks
   # load stock dataset
   stockdata_DE <- reactive({
-    #req(input$Stock)
-    #stock_dataset_DE(input$Stock,input$dates[1],input$dates[2])
-    aa <- load_all_stocks_DE()
+    load_all_stocks_DE()
   })
 
   stockdata_US <- reactive({
-    #req(input$Stock)
-    #stock_dataset_DE(input$Stock,input$dates[1],input$dates[2])
     load_all_stocks_US()
   })
 
