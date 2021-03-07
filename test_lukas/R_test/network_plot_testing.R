@@ -557,8 +557,8 @@ Sys.time() - time1
 #####################################################
 ################################## bigram
 ###################################################
-input_date1 <- "2020-01-01"
-input_date2 <- '2020-01-05'
+input_date1 <- "2020-03-01"
+input_date2 <- '2020-03-05'
 time1 <- Sys.time()
 ### read all files for the dates
 date_list <- seq(as.Date(input_date1), as.Date(input_date2), "days")
@@ -601,20 +601,42 @@ input_min_corr <- 0.15
 
 
 n <- 2
-threshold <- 50
+threshold <- 200
+
+input_emo = F
 
 
 
-bi.gram.words <- df %>%
+####### first filter according to single word frequency
+words_above_threshold <- df %>% unnest_tokens(word, text) %>%
+  group_by(word) %>%
+  summarise(n = n()) %>%
+  filter(n > threshold) %>%
+  select(word)
+
+
+
+bi.gram.words %>%filter(grepl( paste(head(words_above_threshold$word,2000), collapse = "|"), ngram))
+
+
+a <- paste(words_above_threshold$word, collapse = "|")
+b <- paste(emoji_words, collapse = "|")
+
+bi.gram.words2 <- df %>%
   { if (!is.null(input_search_term)) filter(., grepl(paste(input_search_term, collapse="|"), text)) else . } %>%
   { if (!is.null(input_username)) filter(., grepl(paste(input_username, collapse="|"), username)) else . } %>%
   unnest_tokens(
     input = text,
     output = ngram,
     token = 'ngrams',
-    n = n
+    n = 2
   ) %>%
   filter(! is.na(ngram)) %>%
+
+  ### only words that are not in dataframe containing words that at least appear n times
+  #filter(grepl(paste(words_above_threshold$word, collapse = "|"), ngram)) %>%
+
+
   {if (input_emo == T) filter(.,
                               !grepl(paste(emoji_words, collapse = "|") , ngram)) else .}
 
@@ -622,13 +644,18 @@ bi.gram.words <- df %>%
 setDT(bi.gram.words)
 bi.gram.words_dt <- bi.gram.words[,.(.N), by = ngram]
 
-bi.gram.words_dt <- bi.gram.words_dt[N > threshold]
+#bi.gram.words_dt <- bi.gram.words_dt[N > threshold]
 
 bi.gram.words_dt[, c("item1", "item2") := tstrsplit(ngram, " ", fixed=TRUE)]
 
 bi.gram.words_dt <- bi.gram.words_dt[, c("item1", "item2","N")]
 
 setnames(bi.gram.words_dt, "N", "weight")
+
+
+##### filter out if not often enough as single word
+bi.gram.words_dt[item1 %in% words_above_threshold$word &
+                   item2 %in% words_above_threshold$word]
 
 
 ### split bigrams into two columns
