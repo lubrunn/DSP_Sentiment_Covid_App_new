@@ -1360,30 +1360,39 @@ long <- long()
       validate(need(initial.ok == 0, message = "The computation has been aborted."))
     }
 
-#browser()
-    network <- network_plot_filterer(df, input$rt, input$likes_net, input$long_net,
+
+
+
+      network <- network_plot_filterer(df, input$rt, input$likes_net, input$long_net,
                                      input$sentiment_net, input$search_term_net,
                                      input$username_net)
 
 
 
-    if (initial.ok < input$cancel_net) {
-      initial.ok <<- initial.ok + 1
-      validate(need(initial.ok == 0, message = "The computation has been aborted."))
-    }
-
-
-    network <- network_unnester(network, df)
 
     if (initial.ok < input$cancel_net) {
       initial.ok <<- initial.ok + 1
       validate(need(initial.ok == 0, message = "The computation has been aborted."))
     }
 
+    if (input$word_type_net == "word_pairs_net"){
+      network <- network_unnester(network, df, input$emo_net)
+    } else{
+      network <- network_unnester_bigrams(network, input$emo_net)
+    }
 
-    df <- network_word_corr(network, input$n_net,
+
+     if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+    if (input$word_type_net == "word_pairs_net"){
+      df <- network_word_corr(network, input$n_net,
                                              input$corr_net)
-
+    } else {
+      df <- network_bigrammer(network, input$n_net)
+    }
 
 
     # ### set up data for network
@@ -1406,6 +1415,7 @@ long <- long()
 
 
     # render the network plot
+      if (input$word_type_net == "word_pairs_net"){
     output$network_plot <- networkD3::renderForceNetwork({
 
 
@@ -1420,9 +1430,34 @@ long <- long()
       }
 
 
-      network_plot_plotter(df)
+
+        network_plot_plotter(df)
+
+
 
     })
+  } else {
+    output$network_plot <- networkD3::renderForceNetwork({
+    req(input$button_net)
+    #if (is.null(df)) return()
+    validate(need(!is.null(df), message = "No data found for current selection"))
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+
+
+    network_plot_plotter_bigrams(df)
+
+
+
+
+})
+
+
+
+  }
     # Hide loading element when done
     # shinyjs::hideElement(id = 'loading')
     enable("button_net")
