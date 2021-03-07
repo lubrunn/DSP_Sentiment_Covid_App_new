@@ -325,7 +325,7 @@ network_sidebar <- tabPanel( "Network Analysis",
                    fade = TRUE,
                    size = "s"),
           actionButton("reset_net", "Remove Plot"),
-          actionButton("cancel_net", "Cancel Rendering")
+     shinyjs::disabled(actionButton("cancel_net", "Cancel Rendering"))
 )
 
 
