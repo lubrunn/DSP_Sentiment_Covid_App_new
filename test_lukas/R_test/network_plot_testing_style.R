@@ -110,7 +110,7 @@ time1 <- Sys.time()
       JS('function(){d3.select("body").style("background-color", "#313632");return 50;}')
 
     )
-
+### working with changing font color
   htmlwidgets::onRender(
     fn,
     'function(el, x) {
@@ -122,7 +122,7 @@ time1 <- Sys.time()
   }'
   )
 
-
+### working with changing color on click
   htmlwidgets::onRender(
     fn,
     'function(el, x) {
@@ -137,4 +137,44 @@ time1 <- Sys.time()
 
   }'
   )
+
+### working with changing color on hover
+  htmlwidgets::onRender(
+    fn,
+    'function(el, x) {
+    d3.select("body").style("background-color", "#313632");
+    d3.selectAll(".legend text").style("fill", "white");
+    d3.selectAll("text").style("fill", "#ff2a00");
+    d3.selectAll("text").style("stroke", "white");
+    d3.selectAll("circle").style("fill", "green");
+    d3.selectAll("circle").on("mouseover", function(d,i){
+    d3.select(this).style("fill", "orange");
+    });
+     d3.selectAll("circle").on("mouseout", function(d,i){
+    d3.select(this).style("fill", "green");
+    });
+
+  }'
+  )
+
+
+
+  htmlwidgets::onRender(
+    fn,
+    'function(el, x) {
+    d3.select("body").style("background-color", "#313632");
+    d3.selectAll(".legend text").style("fill", "white");
+    d3.selectAll("text").style("fill", "#ff2a00");
+    d3.selectAll("text").style("stroke", "white");
+    d3.selectAll("circle").style("fill", "green");
+    d3.selectAll("links").on("mouseover", function(d,i){
+    d3.select(this).style("fill", "orange");
+    });
+     d3.selectAll("links").on("mouseout", function(d,i){
+    d3.select(this).style("fill", "green");
+    });
+
+  }'
+  )
+
 
