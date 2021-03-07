@@ -5,7 +5,7 @@ server <- function(input, output, session) {
   stockdata_DE <- reactive({
     #req(input$Stock)
     #stock_dataset_DE(input$Stock,input$dates[1],input$dates[2])
-  aa <- load_all_stocks_DE()
+    aa <- load_all_stocks_DE()
   })
 
   stockdata_US <- reactive({
@@ -37,8 +37,8 @@ server <- function(input, output, session) {
     req(input$Stock)
     if (input$country_stocks == "Germany"){
       plotdata <- filter(stockdata_DE(),
-                       .data$name %in% (c(COMPONENTS_DE()[["Symbol"]],"GDAXI")[c(COMPONENTS_DE()[["Company.Name"]],"GDAXI") %in% .env$input$Stock]) &
-                         .data$Dates >= .env$input$dates[1] & .data$Dates <= .env$input$dates[2])
+                         .data$name %in% (c(COMPONENTS_DE()[["Symbol"]],"GDAXI")[c(COMPONENTS_DE()[["Company.Name"]],"GDAXI") %in% .env$input$Stock]) &
+                           .data$Dates >= .env$input$dates[1] & .data$Dates <= .env$input$dates[2])
     } else {
       plotdata <- filter(stockdata_US(),
                          .data$name %in% (c(COMPONENTS_US()[["Symbol"]], "DOW")[c(COMPONENTS_US()[["Company.Name"]], "DOW") %in% .env$input$Stock]) &
@@ -131,9 +131,9 @@ server <- function(input, output, session) {
   granger_data <- reactive({
     req(input$Stock_Granger)
     if (input$country_granger == "Germany"){
-    granger1 <- filter(stockdata_DE(),
-                       .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Granger]) &
-                         .data$Dates >= .env$input$date_granger[1] & .data$Dates <= .env$input$date_granger[2])[c("Dates", input$Granger_outcome)]
+      granger1 <- filter(stockdata_DE(),
+                         .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Granger]) &
+                           .data$Dates >= .env$input$date_granger[1] & .data$Dates <= .env$input$date_granger[2])[c("Dates", input$Granger_outcome)]
     } else {
       granger1 <- filter(stockdata_US(),
                          .data$name %in% (c(COMPONENTS_US()[["Symbol"]], "DOW")[c(COMPONENTS_US()[["Company.Name"]], "DOW") %in% .env$input$Stock_Granger]) &
@@ -193,16 +193,16 @@ server <- function(input, output, session) {
     if(input$direction_granger == TRUE){
       if (granger_result()["p.value"] < 0.1){
         str1 <- paste("Zweitevariable granger causes ",input$Granger_outcome,"of",input$Stock_Granger)
-        } else {
-          str1 <- paste("Zweitevariable does not granger cause ",input$Granger_outcome,"of",input$Stock_Granger)
-        }
+      } else {
+        str1 <- paste("Zweitevariable does not granger cause ",input$Granger_outcome,"of",input$Stock_Granger)
+      }
     } else {
       if (granger_result()["p.value"] < 0.1){
         str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "granger causes Zweitevariable")
-        } else {
-          str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "does not granger cause Zweitevariable")
-        }
+      } else {
+        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "does not granger cause Zweitevariable")
       }
+    }
     HTML(paste(str1))
   })
 
@@ -224,9 +224,9 @@ server <- function(input, output, session) {
   ###flexible input for stocks: show either german or us companies
   output$stock_regression <- renderUI({
     if (input$country_regression == "Germany"){
-           input <- selectizeInput("Stock_Regression","Choose dependent variable:",
-                                 c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
-                                 selected = "Bayer ",multiple = FALSE)
+      input <- selectizeInput("Stock_Regression","Choose dependent variable:",
+                              c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
+                              selected = "Bayer ",multiple = FALSE)
     } else {
       input <- selectizeInput("Stock_Regression","Choose dependent variable:",
                               c(COMPONENTS_US()[["Company.Name"]],"DOW"),
@@ -242,49 +242,49 @@ server <- function(input, output, session) {
     #res <- dataset()
     #res$name <- NULL
     if (input$country_regression == "Germany"){
-     input <- selectizeInput("Controls","Choose control variables:",
-                        c(colnames(global_controls_test_DE())[-1],"DAX"),multiple = TRUE)
-                   #c(colnames(res[3:length(res)])),multiple = TRUE
+      input <- selectizeInput("Controls","Choose control variables:",
+                              c(colnames(global_controls_test_DE())[-1],"DAX"),multiple = TRUE)
+      #c(colnames(res[3:length(res)])),multiple = TRUE
     }else{
-        input <- selectizeInput("Controls","Choose control variables:",
-                                c(colnames(global_controls_test_US())[-1],"DOW"),multiple = TRUE)
-       }
+      input <- selectizeInput("Controls","Choose control variables:",
+                              c(colnames(global_controls_test_US())[-1],"DOW"),multiple = TRUE)
+    }
 
   })
 
   dataset <- reactive({
     if (input$country_regression == "Germany"){
-    data_reg <- filter(stockdata_DE(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
-                       .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Regression]) &
-                         .data$Dates >= .env$input$date_regression[1] & .data$Dates <= .env$input$date_regression[2])[c("Dates",input$regression_outcome,"name")] #hier später noch CLose flexibel machen
+      data_reg <- filter(stockdata_DE(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
+                         .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Regression]) &
+                           .data$Dates >= .env$input$date_regression[1] & .data$Dates <= .env$input$date_regression[2])[c("Dates",input$regression_outcome,"name")] #hier später noch CLose flexibel machen
     } else {
       data_reg <- filter(stockdata_US(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
                          .data$name %in% (c(COMPONENTS_US()[["Symbol"]], "DOW")[c(COMPONENTS_US()[["Company.Name"]], "DOW") %in% .env$input$Stock_Regression]) &
                            .data$Dates >= .env$input$date_regression[1] & .data$Dates <= .env$input$date_regression[2])[c("Dates",input$regression_outcome,"name")] #hier später noch CLose flexibel machen
-   }
+    }
 
-  if (input$country_regression == "Germany"){
-    global_controls <- global_controls_test_DE()   #load controls
-    global_controls$Date <- as.Date(global_controls$Date) #transform date
-    dax <- GDAXI()  #load dax
-    dax$Date <- as.Date(dax$Date, "%d %b %Y") #transform date
-    dax <- missing_date_imputer(dax,"Close.") #transform time series by imputing missing values
-    colnames(dax)[2] <- "DAX"  #rename ->   !! is not renamed in final dataset !! -> dont know why
-    global_controls <- left_join(dax,global_controls,by = c("Date")) #join final
+    if (input$country_regression == "Germany"){
+      global_controls <- global_controls_test_DE()   #load controls
+      global_controls$Date <- as.Date(global_controls$Date) #transform date
+      dax <- GDAXI()  #load dax
+      dax$Date <- as.Date(dax$Date, "%d %b %Y") #transform date
+      dax <- missing_date_imputer(dax,"Close.") #transform time series by imputing missing values
+      colnames(dax)[2] <- "DAX"  #rename ->   !! is not renamed in final dataset !! -> dont know why
+      global_controls <- left_join(dax,global_controls,by = c("Date")) #join final
 
-  }else {
-    global_controls <- global_controls_test_US() #same procedure as above
-    global_controls$Date <- as.Date(global_controls$Date)
-    dow <- DOW()
-    dow$Date <- as.Date(dow$Date, "%d %b %Y")
-    dow <- missing_date_imputer(dow,"Close.")
-    colnames(dow)[2] <- "DOW"
-    global_controls <- left_join(dow,global_controls,by = c("Date"))
-  }
-  names(global_controls)[1] <- "Dates"
-  data_reg2 <- left_join(data_reg,global_controls,by = c("Dates")) #hierdurch kommt die varible "global" in den datensatz
-      ##diesen datensatz filtern wir dann nochmal mit dem sliderinput für die kontrollvariablen(eine/keine/mehrere möglich)
-  data_reg2
+    }else {
+      global_controls <- global_controls_test_US() #same procedure as above
+      global_controls$Date <- as.Date(global_controls$Date)
+      dow <- DOW()
+      dow$Date <- as.Date(dow$Date, "%d %b %Y")
+      dow <- missing_date_imputer(dow,"Close.")
+      colnames(dow)[2] <- "DOW"
+      global_controls <- left_join(dow,global_controls,by = c("Date"))
+    }
+    names(global_controls)[1] <- "Dates"
+    data_reg2 <- left_join(data_reg,global_controls,by = c("Dates")) #hierdurch kommt die varible "global" in den datensatz
+    ##diesen datensatz filtern wir dann nochmal mit dem sliderinput für die kontrollvariablen(eine/keine/mehrere möglich)
+    data_reg2
   })
 
 
@@ -314,9 +314,9 @@ server <- function(input, output, session) {
       #                               input$minminLikes,'_',input$tweet_length,'()', sep='')))
       #input$language
     }else{
-       req(input$Stock_reg)
-       ticker <- ticker_dict(input$Stock_reg) # dict for a few stock
-       res <- eval(parse(text = paste(ticker,'()', sep=''))) # example: ADS.DE()
+      req(input$Stock_reg)
+      ticker <- ticker_dict(input$Stock_reg) # dict for a few stock
+      res <- eval(parse(text = paste(ticker,'()', sep=''))) # example: ADS.DE()
 
     }
 
@@ -344,13 +344,13 @@ server <- function(input, output, session) {
           res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks1)))
         }
       }#else{
-        #res <- dataset_senti()
-        #if(input$tweet_length_stock2 == "yes"){
-         # res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks2)) &
-        #                          (tweet_length > 81))
-        #}else{
-        #  res <- res %>% filter(retweets_count > as.numeric(input$minRetweet_stocks2))
-        #}
+      #res <- dataset_senti()
+      #if(input$tweet_length_stock2 == "yes"){
+      # res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks2)) &
+      #                          (tweet_length > 81))
+      #}else{
+      #  res <- res %>% filter(retweets_count > as.numeric(input$minRetweet_stocks2))
+      #}
       #}
     }
   })
@@ -371,13 +371,13 @@ server <- function(input, output, session) {
         aggregation <- key(input$aggregation1)
         res <- res %>% tidyr::gather("id", "aggregation", aggregation)
         res <- res[c("date","aggregation")]
-       }else{
+      }else{
         res <- get_industry_sentiment(COMPONENTS_DE(),input$industry,input$minRetweet_stocks2,
                                       input$tweet_length_stock2)      #function to gather all stock in certain industry
         aggregation <- key(input$aggregation2)                          #--> also calculates aggregation inside function
         res <- res %>% tidyr::gather("id", "aggregation", aggregation)
         res <- res[c("date","aggregation")]
-        }
+      }
     }
 
   })
@@ -440,6 +440,383 @@ server <- function(input, output, session) {
 
   output$regression_result_Qreg <- renderPrint({
     regression_result_Qreg()})
+
+  ###############################################################################
+  ########################   VAR    #############################################
+  ###############################################################################
+
+  ###################################################### dataset ###############################################################
+  ###flexible input for stocks: show either german or us companies
+  output$stock_regression_var <- renderUI({
+    if (input$country_regression_var == "Germany"){
+      input <- selectizeInput("Stock_Regression_var","Choose dependent variable:",
+                              c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
+                              selected = "Bayer ",multiple = FALSE)
+    } else {
+      input <- selectizeInput("Stock_Regression_var","Choose dependent variable:",
+                              c(COMPONENTS_US()[["Company.Name"]],"DOW"),
+                              selected = "Apple ",multiple = FALSE)
+    }
+  })
+
+
+  output$Controls_var <- renderUI({
+    if (input$country_regression_var == "Germany"){
+      input <- selectizeInput("Controls_var","Choose control variables:",
+                              c(colnames(global_controls_test_DE())[-1],"DAX"),multiple = TRUE)
+      #c(colnames(res[3:length(res)])),multiple = TRUE
+    }else{
+      input <- selectizeInput("Controls_var","Choose control variables:",
+                              c(colnames(global_controls_test_US())[-1],"DOW"),multiple = TRUE)
+    }
+
+  })
+
+  dataset_var <- reactive({
+    if (input$country_regression_var == "Germany"){
+      data_reg <- filter(stockdata_DE(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
+                         .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Regression_var]) &
+                           .data$Dates >= .env$input$date_regression_var[1] & .data$Dates <= .env$input$date_regression_var[2])[c("Dates",input$regression_outcome_var,"name")] #hier später noch CLose flexibel machen
+    } else {
+      data_reg <- filter(stockdata_US(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
+                         .data$name %in% (c(COMPONENTS_US()[["Symbol"]], "DOW")[c(COMPONENTS_US()[["Company.Name"]], "DOW") %in% .env$input$Stock_Regression_var]) &
+                           .data$Dates >= .env$input$date_regression_var[1] & .data$Dates <= .env$input$date_regression_var[2])[c("Dates",input$regression_outcome_var,"name")] #hier später noch CLose flexibel machen
+    }
+
+    if (input$country_regression_var == "Germany"){
+      global_controls <- global_controls_test_DE()   #load controls
+      global_controls$Date <- as.Date(global_controls$Date) #transform date
+      dax <- GDAXI()  #load dax
+      dax$Date <- as.Date(dax$Date, "%d %b %Y") #transform date
+      dax <- missing_date_imputer(dax,"Close.") #transform time series by imputing missing values
+      colnames(dax)[2] <- "DAX"  #rename ->   !! is not renamed in final dataset !! -> dont know why
+      global_controls <- left_join(dax,global_controls,by = c("Date")) #join final
+
+    }else {
+      global_controls <- global_controls_test_US() #same procedure as above
+      global_controls$Date <- as.Date(global_controls$Date)
+      dow <- DOW()
+      dow$Date <- as.Date(dow$Date, "%d %b %Y")
+      dow <- missing_date_imputer(dow,"Close.")
+      colnames(dow)[2] <- "DOW"
+      global_controls <- left_join(dow,global_controls,by = c("Date"))
+    }
+    names(global_controls)[1] <- "Dates"
+    data_reg2 <- left_join(data_reg,global_controls,by = c("Dates")) #hierdurch kommt die varible "global" in den datensatz
+    ##diesen datensatz filtern wir dann nochmal mit dem sliderinput für die kontrollvariablen(eine/keine/mehrere möglich)
+    data_reg2
+  })
+
+
+  df_selected_controls_var <- reactive({
+    #req(input$Controls_var)
+    res <- dataset_var()
+    res <- res[c("Dates",input$regression_outcome_var,input$Controls_var)]
+    res
+  })
+
+  observeEvent(input$Sentiment_type_var, {                         #Observe event from input (model choices)
+    req(input$Sentiment_type_var)
+    updateTabsetPanel(session, "params", selected = input$Sentiment_type_var)
+  })
+
+  observeEvent(input$industry_sentiment_var, {                         #Observe event from input (model choices)
+    req(input$industry_sentiment_var)
+    updateTabsetPanel(session, "industry_tab", selected = input$industry_sentiment_var)
+  })
+
+  dataset_senti_var <- reactive({
+    req(input$Sentiment_type_var)
+    if(input$Sentiment_type_var == "NoFilter"){
+
+      res <- En_NoFilter_0_0_yes()   # still fix as it is not clear yet if sql or csv
+      #res <- eval(parse(text = paste('En', '_NoFilter_',input$minRetweet,'_',
+      #                               input$minminLikes,'_',input$tweet_length,'()', sep='')))
+      #input$language
+    }else{
+      req(input$Stock_reg)
+      ticker <- ticker_dict(input$Stock_reg) # dict for a few stock
+      res <- eval(parse(text = paste(ticker,'()', sep=''))) # example: ADS.DE()
+
+    }
+
+
+  })
+  # filter
+  filtered_df_var <- reactive({
+    req(input$Sentiment_type_var)
+    req(input$minRetweet_stocks1_var)
+    req(input$minRetweet_stocks2_var)
+
+    if(input$Sentiment_type_var == "NoFilter"){
+
+      res <- dataset_senti_var()
+    }else{ # live filtering
+      req(input$industry_sentiment_var)
+      res <- dataset_senti_var()
+      if(input$industry_sentiment_var == "no"){
+        res <- dataset_senti_var()
+        if(input$tweet_length_stock1_var == "yes"){
+
+          res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks1_var)) &
+                                  (tweet_length > 81))}
+        else{
+          res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks1_var)))
+        }
+      }#else{
+      #res <- dataset_senti()
+      #if(input$tweet_length_stock2 == "yes"){
+      # res <- res %>% filter((retweets_count > as.numeric(input$minRetweet_stocks2)) &
+      #                          (tweet_length > 81))
+      #}else{
+      #  res <- res %>% filter(retweets_count > as.numeric(input$minRetweet_stocks2))
+      #}
+      #}
+    }
+  })
+
+  # aggregate dataset to get one sentiment per day
+  aggri_select_var <- reactive({
+
+    if(input$Sentiment_type_var == "NoFilter"){ # NoFilter files already aggregated
+      res <- filtered_df_var()
+      aggregation <- key(input$aggregation_var)  # select aggregation type: Mean, mean weighted by,...
+      res <- res %>% tidyr::gather("id", "aggregation", aggregation)
+      res <- res[c("date","aggregation")]
+    }else{
+      if(input$industry_sentiment_var == "no"){
+        res <- filtered_df_var()
+        res <- aggregate_sentiment(res) # function to aggregate sentiment per day
+        res <- res %>% filter(language == input$language1_var)
+        aggregation <- key(input$aggregation1_var)
+        res <- res %>% tidyr::gather("id", "aggregation", aggregation)
+        res <- res[c("date","aggregation")]
+      }else{
+        res <- get_industry_sentiment(COMPONENTS_DE(),input$industry_var,input$minRetweet_stocks2_var,
+                                      input$tweet_length_stock2_var)      #function to gather all stock in certain industry
+        aggregation <- key(input$aggregation2_var)                          #--> also calculates aggregation inside function
+        res <- res %>% tidyr::gather("id", "aggregation", aggregation)
+        res <- res[c("date","aggregation")]
+      }
+    }
+
+  })
+
+  observeEvent(input$reset_regression_var,{
+    updateSelectizeInput(session,"Controls_var",selected = "")
+  })
+
+  #merge sentiment with control+dep vars
+  final_regression_df_var <- reactive ({
+    if (input$senti_yesno == TRUE){
+      res <- aggri_select_var()
+    } else {
+      res <- aggri_select_var()[1]
+    }
+    res$date <- as.Date(res$date)
+    res_c <- df_selected_controls_var()
+    res <- left_join(res_c,res, by=c("Dates" = "date"))
+    #res <- res[-1]
+    res
+  })
+
+  #####################################################################################################################
+
+  ##################################################   Validity    ######################################################
+  output$datensatz_var <- renderPrint ({
+    head(final_regression_df_var())
+  })
+
+  forecast_data <- reactive({
+    final_regression_df_var()[1:(nrow(final_regression_df_var())-input$ahead),-1,drop=FALSE]
+  })
+
+  actual_values <- reactive({
+    final_regression_df_var()[((nrow(final_regression_df_var())+1)-input$ahead):nrow(final_regression_df_var()),2]
+  })
+
+
+
+  stationary <- reactive({
+    data <- forecast_data()
+    if (adf.test(data[[1]],k=2)$p.value > 0.1){
+      for (i in 1:ncol(data)){
+        data[i] <- c(diff(data[[i]],1),NA)
+      }
+      data <- drop_na(data)
+    }else{}
+    data
+  })
+
+
+  #optimal lags
+  optlags_var <- reactive({
+    VARselect(stationary(),lag.max = 10, type = "none")$selection[["SC(n)"]]
+  })
+
+  #fit model
+  var_model <- reactive({
+    if (ncol(forecast_data()) == 1) {
+      model <- arima(stationary(), order = c(optlags_var(), 0, 0))
+    } else {
+      model <- VAR(stationary(), p = optlags_var(), type = "none")
+    }
+    model
+  })
+
+  #test for autocorrelation: rejection = bad (means presence of correlated errors)
+  serial_test <- reactive({
+    if (ncol(forecast_data()) == 1) {
+      test <- Box.test(var_model()$residuals,type= "Box-Pierce" )
+    } else {
+      test <- serial.test(var_model(), type="BG",lags.bg = optlags_var())
+    }
+    test
+  })
+
+  #forecast
+  forecast_var <- reactive({
+    fcast <- predict(var_model(), n.ahead = input$ahead)
+    if (ncol(forecast_data()) == 1) {
+      x <- fcast$pred[1:input$ahead]
+      x <- cumsum(x) + forecast_data()[nrow(forecast_data()),1]
+    }else {
+      x <- fcast$fcst[[1]]
+      x <- x[,1]
+      x <- cumsum(x) + forecast_data()[nrow(forecast_data()),1]
+    }
+    x
+  })
+
+  #plot the actual vs. the predicted forecast
+  output$plot_forecast <- renderPlot({
+    plot1 <- data.frame(final_regression_df_var()$Dates[(nrow(forecast_data())+1):(nrow(forecast_data())+input$ahead)],#Dates
+                        forecast_var(),                                                              #forecasted values
+                        actual_values())#actual values
+    colnames(plot1) <- c("a","b","c")
+    ggplot(plot1) +
+      geom_line(aes(a,b),color="red")+
+      geom_line(aes(a,c),color="gold")+
+      labs(x="Date",y="StockPrice",title = "forecasted vs. actual")
+
+  })
+
+  output$accuracy_var <- renderUI({
+    str1 <- paste("The RMSE is: ",sqrt(mean((forecast_var()-actual_values())^2)))
+    str2 <- paste("The MAE is: ",mean(abs(forecast_var()-actual_values())))
+    HTML(paste(str1,str2, sep = '<br/>'))
+
+  })
+
+  output$serial_test <- renderPrint({
+    serial_test()
+  })
+
+  output$var <- renderUI({
+    if (ncol(forecast_data()) == 1) {
+      str1 <- paste("Box-Pierce test statistic to test for autocorrelation in the AR-residuals:")
+      if (serial_test()$p.value > 0.1){
+        str2 <- paste("The hypothesis of serially uncorrelated residuals cannot be rejected.")
+      } else{
+        str2 <- paste("The hypothesis of serially uncorrelated residuals can be rejected.")
+      }
+    } else {
+      str1 <- paste("Breusch-Godfrey LM-statistic to test for autocorrelation in the AR-residuals:")
+      if (serial_test()$serial$p.value > 0.1){
+        str2 <- paste("The hypothesis of serially uncorrelated residuals cannot be rejected.")
+      } else {
+        str2 <- paste("The hypothesis of serially uncorrelated residuals can be rejected.")
+      }
+    }
+    HTML(paste(str1,str2, sep = '<br/>'))
+  })
+
+  output$plot_forecast2 <- renderPlot({
+
+    plot2 <- data.frame(final_regression_df_var()$Dates,
+                        c(forecast_data()[[1]],forecast_var()),
+                        final_regression_df_var()[2])
+    colnames(plot2) <- c("a","b","c")
+    ggplot(plot2) +
+      geom_line(aes(a,b))+
+      geom_line(aes(a,c))+
+      labs(x="Date",y="StockPrice",title = "forecasted vs. actual, full series")
+
+  })
+
+  ##################################################   actual forecast    ######################################################
+  forecast_data_real <- reactive({
+    final_regression_df_var()[,-1,drop=FALSE]
+  })
+
+
+
+  stationary_real <- reactive({
+    data <- forecast_data_real()
+    if (adf.test(data[[1]],k=2)$p.value > 0.1){
+      for (i in 1:ncol(data)){
+        data[i] <- c(diff(data[[i]],1),NA)
+      }
+      data <- drop_na(data)
+    }else{}
+    data
+  })
+
+
+  #optimal lags
+  optlags_var_real <- reactive({
+    VARselect(stationary_real(),lag.max = 10, type = "none")$selection[["SC(n)"]]
+  })
+
+  #fit model
+  var_model_real <- reactive({
+    if (ncol(forecast_data_real()) == 1) {
+      model <- arima(stationary_real(), order = c(optlags_var_real(), 0, 0))
+    } else {
+      model <- VAR(stationary_real(), p = optlags_var_real(), type = "none")
+    }
+    model
+  })
+
+  #test for autocorrelation: rejection = bad (means presence of correlated errors)
+  # serial_test <- reactive({
+  #   if (ncol(forecast_data()) == 1) {
+  #     test <- Box.test(var_model()$residuals,type= "Box-Pierce" )
+  #   } else {
+  #     test <- serial.test(var_model(), type="BG",lags.bg = optlags_var())
+  #   }
+  #   test
+  # })
+
+  #forecast
+  forecast_var_real <- reactive({
+    fcast <- predict(var_model_real(), n.ahead = input$ahead)
+    if (ncol(forecast_data_real()) == 1) {
+      x <- fcast$pred[1:input$ahead]
+      x <- cumsum(x) + forecast_data_real()[nrow(forecast_data_real()),1]
+    }else {
+      x <- fcast$fcst[[1]]
+      x <- x[,1]
+      x <- cumsum(x) + forecast_data_real()[nrow(forecast_data_real()),1]
+    }
+    x
+  })
+
+  output$plot_forecast_real <- renderPlot({
+
+    plot2 <- data.frame(c(final_regression_df_var()[["Dates"]],seq(as.Date(tail(final_regression_df_var()$Dates,1))+1,by = "day",length.out = input$ahead)),
+                        c(forecast_data_real()[[1]],forecast_var_real()))
+    colnames(plot2) <- c("a","b")
+    ggplot(plot2) +
+      geom_line(aes(a,b))+
+      labs(x="Date",y="StockPrice",title = "forecasted series")
+
+  })
+
+  # output$testins <- renderPrint({
+  #   c(final_regression_df_var()[["Dates"]],seq(as.Date(tail(final_regression_df_var()$Dates,1)),by = "day",length.out = input$ahead))
+  #   #seq(as.Date(tail(final_regression_df_var()[["Dates"]],1)),by = "day",length.out = input$ahead)
+  # })
 
 #################################################################################################### twitter
 
