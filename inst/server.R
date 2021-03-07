@@ -1338,6 +1338,7 @@ long <- long()
 
 
     disable("button_net")
+    enable("cancel_net")
     lang <- stringr::str_to_title(input$lang_net)
 
     if (initial.ok < input$cancel_net) {
@@ -1425,6 +1426,7 @@ long <- long()
     # Hide loading element when done
     # shinyjs::hideElement(id = 'loading')
     enable("button_net")
+    disable("cancel_net")
 
   })
 
@@ -1439,6 +1441,13 @@ long <- long()
   # observeEvent(input$button_net, {
   #
   # })
+  ##
+
+  ######## message for aborting process
+  observeEvent(input$cancel_net, {
+
+    showNotification("Computation is being aborted", type = "error")
+  })
 
 
 
