@@ -89,15 +89,42 @@ network_plot_filterer <- function(df, input_rt, input_likes, input_tweet_length,
 
 
 
-network_unnester <- function(network, df){
+network_unnester <- function(network, df, input_emo_net){
   network <- network %>%
 
 
 
     tidytext::unnest_tokens(word, text) %>%
+    {if (input_emo_net == T) filter(.,
+                                !grepl(paste(emoji_words, collapse = "|") , word)) else .} %>% ### filter out emoji words
     left_join(subset(df, select = c(doc_id, text, username)), by = "doc_id")
 
   return(network)
+
+}
+
+
+
+
+network_unnester_bigrams <- function(network, input_emo){
+
+network <- network %>%
+  tidytext::unnest_tokens(
+    input = text,
+    output = ngram,
+    token = 'ngrams',
+    n = 2
+  ) %>%
+    filter(! is.na(ngram)) %>%
+    {if (input_emo == T) filter(.,
+                                !grepl(paste(emoji_words, collapse = "|") , ngram)) else .}
+
+
+
+  return(network)
+
+
+
 
 }
 
@@ -119,6 +146,7 @@ network_word_corr <- function(network, input_n,
  network <- network %>%
     # compute word correlations
     widyr::pairwise_cor(word, doc_id, sort = TRUE) %>%
+
 
    na.omit() %>%
 
@@ -150,6 +178,31 @@ network_word_corr <- function(network, input_n,
 
 
 
+
+
+
+network_bigrammer <- function(network, input_n){
+  setDT(network)
+  network <- network[,.(.N), by = ngram]
+
+  network <- network[N > input_n]
+
+  network[, c("item1", "item2") := tstrsplit(ngram, " ", fixed=TRUE)]
+
+  network <- network[, c("item1", "item2","N")]
+
+  setnames(network, "N", "weight")
+
+
+  ### split bigrams into two columns
+
+  network <-  network %>%
+
+    graph_from_data_frame(directed = FALSE)
+
+  return(network)
+
+}
 
 
 
@@ -198,7 +251,7 @@ network_plot_plotter <- function(network){
      # linkWidth = 1, # width of the linkgs
       linkWidth = networkD3::JS("function(d) { return d.value * 5; }"),
 
-      fontSize = 30, # font size of words
+      fontSize = 25, # font size of words
       zoom = TRUE,
       opacityNoHover = 100,
       linkDistance = 100, # length of links
@@ -207,13 +260,100 @@ network_plot_plotter <- function(network){
       bounded = F, # if T plot is limited and can not extend outside of box
       # colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);")# change color scheme
       colourScale = networkD3::JS(ColourScale),
-      width = 200,
-      height = 350
+      #width = 200,
+     # height = 350
     )
 
 
 
 }
+
+
+
+
+
+network_plot_plotter_bigrams <- function(network){
+
+
+
+
+  # Create networkD3 object.
+  network.D3 <- networkD3::igraph_to_networkD3(g = network)
+  # Define node size.
+  # network.D3$nodes <- network.D3$nodes %>% mutate(Degree = (1E-2)*V(network)$degree)
+  # Degine color group (I will explore this feature later).
+  network.D3$nodes <- network.D3$nodes %>% mutate(Group = 1)
+
+  # degree is number of adjacent edges --> here we set the size of nodes proportional to the degree
+  # i.e. the more adjacent words a node has the bigger it will appear
+
+  # how to calculates manually :
+  # e.g. for word "trump":
+  # count number of word pairs that contain trump eihter item1 or item2
+
+  deg <- igraph::degree(network, mode="all")
+  network.D3$nodes$size <- deg * 3
+
+  ### add word correlation to nodes
+  #network.D3$links$corr <- network$correlation
+
+
+
+  # Store the degree.
+  V(network)$degree <- strength(graph = network)
+  # Compute the weight shares.
+  E(network)$width <- E(network)$weight/max(E(network)$weight)
+  # Define edges width.
+  network.D3$links$Width <- 10*E(network)$width
+
+
+
+
+
+
+
+
+
+
+
+  # adjust colors of nodes, first is rest, second is main node for word (with group 2)
+  ColourScale <- 'd3.scaleOrdinal()
+            .range(["#ff2a00" ,"#694489"]);'
+
+  # doc: https://www.rdocumentation.org/packages/networkD3/versions/0.4/topics/forceNetwork
+  networkD3::forceNetwork(
+    Links = network.D3$links,
+    Nodes = network.D3$nodes,
+    Source = 'source',
+    Target = 'target',
+    NodeID = 'name',
+    Group = 'Group',
+    opacity = 0.8,
+    Value = 'value',
+    #Nodesize = 'Degree',
+    Nodesize = "size", # size of nodes, is column name or column number of network.D3$nodes df
+    radiusCalculation = networkD3::JS("Math.sqrt(d.nodesize)+2"), # radius of nodes (not sure whats difference to nodesize but has different effect)
+    # We input a JavaScript function.
+    linkWidth = JS("function(d) { return d.value / 200 ; }"),
+    #linkWidth = 1, # width of the linkgs
+    #linkWidth = JS("function(d) { return d.value * 100; }"),
+    fontSize = 25, # font size of words
+    zoom = TRUE,
+    opacityNoHover = 1,
+    linkDistance = 100, # length of links
+    #linkDistance = JS("function(d){return d.value * 150}"),
+    charge =  -70, # the more negative the furher away nodes,
+    linkColour = "red", #color of links
+    bounded = F, # if T plot is limited and can not extend outside of box
+
+    colourScale = networkD3::JS(ColourScale)
+  )
+
+}
+
+
+
+
 
 
 
