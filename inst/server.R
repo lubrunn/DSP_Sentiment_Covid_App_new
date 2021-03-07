@@ -1391,7 +1391,7 @@ long <- long()
       df <- network_word_corr(network, input$n_net,
                                              input$corr_net)
     } else {
-      df <- network_bigrammer(network, input$n_net)
+      df <- network_bigrammer(df, network, input$n_net, input$n_bigrams_net)
     }
 
 
