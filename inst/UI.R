@@ -297,6 +297,10 @@ network_sidebar <- tabPanel( "Network Analysis",
           # long tweets switch
           shinyWidgets::materialSwitch(inputId = "long_net", label = "Long Tweets only?", value = F),
 
+          # filter out emoji words
+          shinyWidgets::materialSwitch(inputId = "emo_net", label = "Remove Emoji Words?", value = F),
+
+
 
           ### filter by sentiment
           numericInput("sentiment_net", "Choose a minmium sentiment", min = -1, max = 1, value = -1, step = 0.05),
@@ -309,13 +313,24 @@ network_sidebar <- tabPanel( "Network Analysis",
           textInput("username_net", "Only show tweets for usernames containing the following:"),
 
 
+          ####### type of plot bigram/word pairs
+          selectInput("word_type_net", "Select the type of word combination you would like to analyse", choices = c("Bigram" = "bigrams_net",
+                                                                                                                    "Word Pairs" = "word_pairs_net")),
+
+
 
           ######## adjusting plot
-          numericInput("n_net", "Minimum number of occurences of a word pair in the selected sample",
+          numericInput("n_net", "Minimum number of occurences of a word combination in the selected sample",
                        min = 50, value = 50),
 
-          numericInput("corr_net", "Minimum word correlation of word pairs", value = 0.15, min = 0.15, max = 1,
-                       step = 0.01),
+
+          ### panel in case of word pairs to compute word correlations
+          conditionalPanel(
+            condition = "input.word_type_net == 'word_pairs_net'",
+            numericInput("corr_net", "Minimum word correlation of word pairs", value = 0.15, min = 0.15, max = 1,
+                         step = 0.01)
+
+          ),
           actionButton("button_net", "Render Plot") %>%
           shinyhelper::helper(type = "markdown",
                    title = "Inline Help",
@@ -324,8 +339,13 @@ network_sidebar <- tabPanel( "Network Analysis",
                    easyClose = FALSE,
                    fade = TRUE,
                    size = "s"),
+
+          #### removing plot
           actionButton("reset_net", "Remove Plot"),
-     shinyjs::disabled(actionButton("cancel_net", "Cancel Rendering"))
+
+
+          ### canceling computation
+          shinyjs::disabled(actionButton("cancel_net", "Cancel Rendering"))
 )
 
 
