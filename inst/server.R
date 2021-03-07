@@ -1326,11 +1326,19 @@ long <- long()
   observeEvent(input$button_net,{
 
 
-    waitress <- waiter::Waitress$new(max = 4)
-    # Automatically close it when done
+    waitress <- waiter::Waitress$new("nav", max = 4,  theme = "overlay")
+    #Automatically close it when done
     on.exit(waitress$close())
 
+    waitress$notify()
 
+    ### progress bar elements
+    #hostess <- waiter::Hostess$new("load")
+
+
+
+
+    ################################
 
 
     insertUI("#placeholder", "beforeEnd", ui = networkD3::forceNetworkOutput("network_plot"))
@@ -1361,6 +1369,7 @@ long <- long()
 
     df <- network_plot_datagetter(lang, input$dates_net[1], input$dates_net[2], input$comp_net)
 
+    #hostess$set(2 * 10)
     waitress$inc(1)
 
 
@@ -1382,7 +1391,9 @@ long <- long()
                                      input$username_net)
 
 
+      #hostess$set(2 * 10)
       waitress$inc(1)
+
 
     if (initial.ok < input$cancel_net) {
       initial.ok <<- initial.ok + 1
@@ -1395,6 +1406,7 @@ long <- long()
       network <- network_unnester_bigrams(network, input$emo_net)
     }
 
+      #hostess$set(2 * 10)
       waitress$inc(1)
 
 
@@ -1409,6 +1421,10 @@ long <- long()
     } else {
       df <- network_bigrammer(df, network, input$n_net, input$n_bigrams_net)
     }
+
+
+
+      # hostess$set(2 * 10)
       waitress$inc(1)
 
     # ### set up data for network
@@ -1437,6 +1453,7 @@ long <- long()
 
 
 
+
       req(input$button_net)
       #if (is.null(df)) return()
       validate(need(!is.null(df), message = "No data found for current selection"))
@@ -1446,7 +1463,8 @@ long <- long()
       }
 
 
-      #waitress$inc(1)
+      #hostess$set(2 * 10)
+     # waitress$inc(1)
         network_plot_plotter(df)
 
 
@@ -1462,8 +1480,8 @@ long <- long()
       validate(need(initial.ok == 0, message = "The computation has been aborted."))
     }
 
+    #hostess$set(2 * 10)
     #waitress$inc(1)
-
     network_plot_plotter_bigrams(df)
 
 
@@ -1499,7 +1517,7 @@ long <- long()
   ######## message for aborting process
   observeEvent(input$cancel_net, {
 
-    showNotification("Computation is being aborted", type = "error")
+    showNotification("Computation has been aborted", type = "error")
   })
 
 
