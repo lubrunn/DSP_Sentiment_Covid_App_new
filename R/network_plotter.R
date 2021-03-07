@@ -64,8 +64,7 @@ network_plot_datagetter <- function(input_lang, input_date1, input_date2, input_
 #'@rdname network_plot
 network_plot_filterer <- function(df, input_rt, input_likes, input_tweet_length,
                                   input_sentiment, input_search_term,
-                                  input_username, input_n,
-                                  input_corr) {
+                                  input_username) {
 
 
 
@@ -82,12 +81,31 @@ network_plot_filterer <- function(df, input_rt, input_likes, input_tweet_length,
         likes_count >= input_likes &
         tweet_length >= input_tweet_length &
         sentiment >= input_sentiment
-      )  %>%
+      )
+
+  return(network)
+}
+
+
+
+
+network_unnester <- function(network, df){
+  network <- network %>%
 
 
 
     tidytext::unnest_tokens(word, text) %>%
-    left_join(subset(df, select = c(doc_id, text, username)), by = "doc_id") %>%
+    left_join(subset(df, select = c(doc_id, text, username)), by = "doc_id")
+
+  return(network)
+
+}
+
+
+
+network_word_corr <- function(network, input_n,
+                              input_corr){
+  network <- network %>%
 
     # filter out uncommon words
     group_by(word) %>%
@@ -102,22 +120,39 @@ network_plot_filterer <- function(df, input_rt, input_likes, input_tweet_length,
     # compute word correlations
     widyr::pairwise_cor(word, doc_id, sort = TRUE) %>%
 
+   na.omit() %>%
+
     # create network
     # filter out words with too low correaltion as baseline and even more if user
     # want it
     filter(correlation > 0.15) %>% # fix in order to avoid overcrowed plot
     filter(correlation > input_corr)
 
+ if (dim(network)[1] == 0){
+   return()
+ }
+
   #### remove duplicates ( where item1 & item2 == item2 & item1)
   network <- network[!duplicated(t(apply(network,1,sort))),]
+
+  if (dim(network)[1] == 0){
+    return()
+  }
 
   network <- network %>% # optional
     igraph::graph_from_data_frame(directed = FALSE)
 
+
+
   return(network)
 
-
 }
+
+
+
+
+
+
 
 
 #'@export
