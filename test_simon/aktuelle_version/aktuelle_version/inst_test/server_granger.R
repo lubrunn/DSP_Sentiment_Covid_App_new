@@ -733,7 +733,6 @@ observeEvent(input$reset_arma,{
 
 
 
-
 df_xgb_train <- reactive({
   
   req(input$var_1)
@@ -746,12 +745,19 @@ df_xgb_train <- reactive({
   req(input$num_5)
   req(input$num_6)
   req(input$number_of_vars)
-  req(input$split_at)
+  #req(input$split_at)
+  req(input$n_ahead)
   
   res <- final_regression_df_var()
-
-  list_dfs <- split_data(res,input$split_at)
   
+  res <- lag_cols(res)
+  #list_dfs <- split_data(res,input$split_at)
+  #res <- make_ts_stationary(res)
+  browser()
+  
+  list_dfs <- split_data_for(res,input$n_ahead,"forecastcovariates")
+  
+
   res <- ARMA_creator(list_dfs$df.train,input$number_of_vars,input$var_1,input$var_2,
                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
                      input$num_5,input$num_6)
@@ -760,36 +766,36 @@ df_xgb_train <- reactive({
 
 
 
-df_xgb_test <- reactive({
-  
-  req(input$var_1)
-  req(input$var_2)
-  req(input$var_3)
-  req(input$num_1)
-  req(input$num_2)
-  req(input$num_3)
-  req(input$num_4)
-  req(input$num_5)
-  req(input$num_6)
-  req(input$number_of_vars)
-  req(input$split_at)
-  
-  res <- final_regression_df_var()
-  
-  list_dfs <- split_data(res,input$split_at)
-  
-  res <- ARMA_creator(list_dfs$df.test,input$number_of_vars,input$var_1,input$var_2,
-                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
-                      input$num_5,input$num_6)
-})
+# df_xgb_test <- reactive({
+#   
+#   req(input$var_1)
+#   req(input$var_2)
+#   req(input$var_3)
+#   req(input$num_1)
+#   req(input$num_2)
+#   req(input$num_3)
+#   req(input$num_4)
+#   req(input$num_5)
+#   req(input$num_6)
+#   req(input$number_of_vars)
+#   req(input$split_at)
+#   
+#   res <- final_regression_df_var()
+#   res <- lag_cols(res)
+#   list_dfs <- split_data(res,input$split_at)
+#   
+#   # res <- ARMA_creator(list_dfs$df.test,input$number_of_vars,input$var_1,input$var_2,
+#   #                     input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
+#   #                     input$num_5,input$num_6)
+# })
 
 output$df_xgb1_train <- renderPrint ({
   head(df_xgb_train())
 })
 
-output$df_xgb1_test <- renderPrint ({
-  head(df_xgb_test())
-})
+# output$df_xgb1_test <- renderPrint ({
+#   head(df_xgb_test())
+# })
 
 output$correlation_plot <- renderPlot({
   corr_plot(final_regression_df_var())
@@ -854,41 +860,59 @@ observeEvent(input$model_spec, {                         #Observe event from inp
 })
 
 
-prediction_xgb <- eventReactive(input$pred,{
+# prediction_xgb <- eventReactive(input$pred,{
+# 
+#   res_train <- df_xgb_train()
+#   res_test <- df_xgb_test()
+#   
+# preds <-  model_xgbi() %>%
+#     fit(formula = Close ~ .,data = res_train[,c(-1)]) %>%
+#     predict(new_data = res_test[,c(-1)])
+# preds
+# })
 
-  res_train <- df_xgb_train()
-  res_test <- df_xgb_test()
-  
-preds <-  model_xgbi() %>%
-    fit(formula = Close ~ .,data = res_train[,c(-1)]) %>%
-    predict(new_data = res_test[,c(-1)])
-preds
-})
+# output$predictions <- renderTable({
+#   prediction_xgb()
+# })
 
-output$predictions <- renderTable({
-  prediction_xgb()
-})
+# output$plot_1_xgb <- renderDygraph({
+# 
+#   res <- final_regression_df_var()
+#   list_dfs <- split_data(res,input$split_at)
+# 
+#   preds <- prediction_xgb() %>%
+#     zoo(seq(from = as.Date(min(list_dfs$date.test)), to = as.Date(max(list_dfs$date.test)), by = "day"))
+# 
+#   ts <- res %>% pull(Close) %>%
+#     zoo(seq(from = as.Date(min(list_dfs$date.train)), to = as.Date(max(list_dfs$date.test)), by = "day"))
+# 
+#  {cbind(actuals=ts, predicted=preds)} %>% dygraph() %>% 
+#     dyEvent(as.Date(min(list_dfs$date.test)), "Test data", labelLoc = "bottom") 
+#   
+# 
+# })
 
-output$plot_1_xgb <- renderDygraph({
+# output$Feature_imp <- renderPlot({
+#   res_train <- df_xgb_train()
+#   model_xgboost <-  model_xgbi() %>%
+#     fit(formula = Close ~ .,data = res_train[,c(-1)])
+# 
+#   xgb.importance(model=model_xgboost$fit) %>% xgb.ggplot.importance(
+#     top_n=10, measure=NULL, rel_to_first = F)
+# })
 
-  res <- final_regression_df_var()
-  list_dfs <- split_data(res,input$split_at)
-
-  preds <- prediction_xgb() %>%
-    zoo(seq(from = as.Date(min(list_dfs$date.test)), to = as.Date(max(list_dfs$date.test)), by = "day"))
-
-  ts <- res %>% pull(Close) %>%
-    zoo(seq(from = as.Date(min(list_dfs$date.train)), to = as.Date(max(list_dfs$date.test)), by = "day"))
-
- {cbind(actuals=ts, predicted=preds)} %>% dygraph() %>% 
-    dyEvent(as.Date(min(list_dfs$date.test)), "Test data", labelLoc = "bottom") 
-  
-
-})
-
-
-
-
+# output$Residuals <- renderPlot({
+#   res_train <- df_xgb_train()
+#   model_xgboost <-  model_xgbi() %>%
+#     fit(formula = Close ~ .,data = res_train[,c(-1)])
+#   
+#   ggplot(house_prediction_residual, aes(x = .pred, y = residual_pct)) +
+#     geom_point() +
+#     xlab("Predicted Stock") +
+#     ylab("Residual")
+#   
+# })
+# 
 
 
 # 
