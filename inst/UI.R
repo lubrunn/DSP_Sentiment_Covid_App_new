@@ -131,10 +131,10 @@ twitter_main_panel <- function(){
                         network_sidebar
                       ),
                       mainPanel(
-                      shinyjs::hidden(div(id = "loading",
-                                          networkD3::forceNetworkOutput("network_plot") %>%
-                          shinycssloaders::withSpinner()))
-                      #tags$div(id = "placeholder")
+                      # shinyjs::hidden(div(id = "loading",
+                      #                     networkD3::forceNetworkOutput("network_plot") %>%
+                      #     shinycssloaders::withSpinner()))
+                      tags$div(id = "placeholder")
                       )),
              tabPanel("Daily Analysis"),
              tabPanel("Going deeper"))
@@ -269,7 +269,7 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 #################################### going deeeper sidbarpanel
 network_sidebar <- tabPanel( "Network Analysis",
 
-
+          waiter::use_waitress(color = "#5ee643"),
 
           ###### language selector
           radioButtons("lang_net", "Select Language", choiceNames = c("English Tweets", "German Tweets"),
@@ -337,7 +337,7 @@ network_sidebar <- tabPanel( "Network Analysis",
 
           ### panel for minium number of time bigrams arise
           conditionalPanel(
-            condition = "input.word_type_net = 'bigrams_net'",
+            condition = "input.word_type_net == 'bigrams_net'",
             numericInput("n_bigrams_net", "Minimum number of occurences of a Bigram in the selected sample",
                          min = 50, value = 50)
           ),
