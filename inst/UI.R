@@ -282,7 +282,7 @@ network_sidebar <- tabPanel( "Network Analysis",
           # datepicker
           shinyWidgets::airDatepickerInput("dates_net", "Date range:",
                                            range = TRUE,
-                                           value = c("2020-03-01", "2020-03-02"),
+                                           value = "2020-03-01",
                                            maxDate = "2021-02-19", minDate = "2018-11-30",
                                            clearButton = T, update_on = "close",
                                            multiple = 5),
@@ -324,7 +324,8 @@ network_sidebar <- tabPanel( "Network Analysis",
                    easyClose = FALSE,
                    fade = TRUE,
                    size = "s"),
-          actionButton("reset_net", "Remove Plot")
+          actionButton("reset_net", "Remove Plot"),
+          actionButton("cancel_net", "Cancel Rendering")
 )
 
 
