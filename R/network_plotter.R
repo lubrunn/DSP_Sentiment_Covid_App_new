@@ -181,11 +181,19 @@ network_word_corr <- function(network, input_n,
 
 
 
-network_bigrammer <- function(network, input_n){
+network_bigrammer <- function(df, network, input_n, input_bigrams_n){
+
+
+  words_above_threshold <- df %>% unnest_tokens(word, text) %>%
+    group_by(word) %>%
+    summarise(n = n()) %>%
+    filter(n > input_n) %>%
+    select(word)
+
   setDT(network)
   network <- network[,.(.N), by = ngram]
 
-  network <- network[N > input_n]
+  network <- network[N > input_bigrams_n]
 
   network[, c("item1", "item2") := tstrsplit(ngram, " ", fixed=TRUE)]
 
@@ -193,6 +201,9 @@ network_bigrammer <- function(network, input_n){
 
   setnames(network, "N", "weight")
 
+  # filter out words that dont appear often enough indivudally
+  network <- network[item1 %in% words_above_threshold$word &
+                     item2 %in% words_above_threshold$word]
 
   ### split bigrams into two columns
 
@@ -256,7 +267,7 @@ network_plot_plotter <- function(network){
       opacityNoHover = 100,
       linkDistance = 100, # length of links
       charge =  -70, # the more negative the furher away nodes,
-      linkColour = "red", #color of links
+      #linkColour = "red", #color of links
       bounded = F, # if T plot is limited and can not extend outside of box
       # colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);")# change color scheme
       colourScale = networkD3::JS(ColourScale),
@@ -273,7 +284,6 @@ network_plot_plotter <- function(network){
 
 
 network_plot_plotter_bigrams <- function(network){
-
 
 
 
@@ -329,25 +339,26 @@ network_plot_plotter_bigrams <- function(network){
     NodeID = 'name',
     Group = 'Group',
     opacity = 0.8,
-    Value = 'value',
+    Value = 'Width',
     #Nodesize = 'Degree',
     Nodesize = "size", # size of nodes, is column name or column number of network.D3$nodes df
     radiusCalculation = networkD3::JS("Math.sqrt(d.nodesize)+2"), # radius of nodes (not sure whats difference to nodesize but has different effect)
-    # We input a JavaScript function.
-    linkWidth = JS("function(d) { return d.value / 200 ; }"),
-    #linkWidth = 1, # width of the linkgs
-    #linkWidth = JS("function(d) { return d.value * 100; }"),
+
+
     fontSize = 25, # font size of words
     zoom = TRUE,
     opacityNoHover = 1,
     linkDistance = 100, # length of links
-    #linkDistance = JS("function(d){return d.value * 150}"),
+
     charge =  -70, # the more negative the furher away nodes,
-    linkColour = "red", #color of links
+
     bounded = F, # if T plot is limited and can not extend outside of box
 
     colourScale = networkD3::JS(ColourScale)
   )
+
+
+
 
 }
 
