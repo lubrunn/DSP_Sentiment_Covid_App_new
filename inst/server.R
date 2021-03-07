@@ -1322,7 +1322,6 @@ long <- long()
 
 
 
-
   # if button is clicked compute correlations und plot the plot
   observeEvent(input$button_net,{
     # insertUI("#network_plotr", "beforeEnd", ui = networkD3::forceNetworkOutput("network_plot") %>%
@@ -1330,28 +1329,79 @@ long <- long()
 
     #insertUI("#placeholder", "afterEnd", ui = networkD3::forceNetworkOutput('network_plot'))
 
+    initial.ok <- input$cancel_net
 
 
     shinyjs::showElement(id = "loading")
     # disable the button after computation started so no new computation can
     # be startedd
 
-#    browser()
+
     disable("button_net")
     lang <- stringr::str_to_title(input$lang_net)
 
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
 
     ### read all files for the dates
 
     df <- network_plot_datagetter(lang, input$dates_net[1], input$dates_net[2], input$comp_net)
 
+   if(is.null(df)){
+     enable("button_net")
+     return()
+   }
 
-    ### set up data for network
-    df <- network_plot_filterer(df, input$rt_net, input$likes_net, input$long_net,
-                                input$sentiment_net, input$search_term_net,
-                                input$username_net, input$n_net,
-                                input$corr_net)
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
 
+#browser()
+    network <- network_plot_filterer(df, input$rt, input$likes_net, input$long_net,
+                                     input$sentiment_net, input$search_term_net,
+                                     input$username_net)
+
+
+
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+
+    network <- network_unnester(network, df)
+
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+
+    df <- network_word_corr(network, input$n_net,
+                                             input$corr_net)
+
+
+
+    # ### set up data for network
+    # df <- network_plot_filterer(df, input$rt_net, input$likes_net, input$long_net,
+    #                             input$sentiment_net, input$search_term_net,
+    #                             input$username_net, input$n_net,
+    #                             input$corr_net)
+
+
+
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+        # if(is.null(df)){
+    #   enable("button_net")
+    #   return()
+    # }
 
 
     # render the network plot
@@ -1361,7 +1411,12 @@ long <- long()
 
 
       req(input$button_net)
-      if (is.null(df)) return()
+      #if (is.null(df)) return()
+      validate(need(!is.null(df), message = "No data found for current selection"))
+      if (initial.ok < input$cancel_net) {
+        initial.ok <<- initial.ok + 1
+        validate(need(initial.ok == 0, message = "The computation has been aborted."))
+      }
 
 
       network_plot_plotter(df)
