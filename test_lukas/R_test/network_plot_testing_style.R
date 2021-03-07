@@ -131,6 +131,9 @@ time1 <- Sys.time()
     d3.selectAll("text").style("fill", "#ff2a00");
     d3.selectAll("text").style("stroke", "white");
     d3.selectAll("circle").style("fill", "green");
+    d3.selectAll("circle").on("click", function(d,i){
+    d3.select(this).style("fill", "orange");
+    });
 
   }'
   )
