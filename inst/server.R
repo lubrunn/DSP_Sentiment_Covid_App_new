@@ -248,7 +248,6 @@ server <- function(input, output, session) {
   output$Controls <- renderUI({
     #res <- dataset()
     #res$name <- NULL
-    browser()
     req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression == "Germany"){
       input <- selectizeInput("Controls","Choose control variables:",
