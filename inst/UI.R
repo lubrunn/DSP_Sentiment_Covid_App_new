@@ -80,7 +80,23 @@ twitter_main_panel <- function(){
                                  }"
                                    )
                                    ),
-                                     plotOutput('sum_stats_plot'),
+                                     #plotOutput('sum_stats_plot'),
+                                   tags$head(
+                                     # Note the wrapping of the string in HTML()
+                                     tags$style(HTML("
+
+                                        .dygraph-axis-label {
+                                          font-size: 12px;
+                                          color:white;
+                                        }
+                                        .dygraph-legend {
+                                          color: black;
+                                        }
+
+
+                                                     "))
+                                   ),
+                                   dygraphs::dygraphOutput("sum_stats_plot"),
 
                                    # seconds time series plot
                                    plotOutput('sum_stats_plot2'),
@@ -201,7 +217,7 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                               selectInput("comp","Choose a company (optional)",
                                              c("adidas", "NIKE"),
                                              selected = "",multiple = TRUE),
-                              shinyWidgets::airDatepickerInput("dates", "Date range:",
+                              shinyWidgets::airDatepickerInput("dates_desc", "Date range:",
                                                                range = TRUE,
                                                                value = c("2018-11-30", "2021-02-19"),
                                                                maxDate = "2021-02-19", minDate = "2018-11-30",
@@ -425,102 +441,102 @@ ui <- fluidPage(
   navbarPage("APP",
 
              dir_setter_panel(),
-              twitter_main_panel(),
-             tabPanel("Sentiment"),
-             tabPanel("Stocks",
-                      sidebarPanel(
-                        radioButtons("country_stocks","Which country?",c("Germany","USA"),selected = "Germany"),
-                        #selectize_Stocks(COMPONENTS_DE()),
-                        uiOutput("stock_choice"),
-                        radioButtons("stock_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
-                        actionButton("reset", "clear selected"),
-                        checkboxInput("hovering","Enable hover",value = FALSE),
-                        sliderinput_dates()
-                      ),
-                      mainPanel(
-                        plot_stocks_DE(),
-                        hover_info_DE()
-                      ),#close MainPanel
-             ),#close tabPanel stock
-             tabPanel("Corona",
-                      sidebarPanel(
-                        selectize_corona(),
-                        checkboxGroupInput("CoronaCountry","Country",c("Germany","United States"),selected = "Germany"),
-                        sliderinput_dates_corona(),
-                        checkboxInput("hovering_corona","Enable hover",value = FALSE)
-                      ),
-                      mainPanel(
-                        plot_corona(),
-                        hover_info_corona()
-                      )
-             ),#close tabPanel Corona
-             navbarMenu("Model",
-                        tabPanel("Granger",
-                                 sidebarPanel(
-                                   radioButtons("country_granger","Which country?",c("Germany","USA"),selected = "Germany"),
-                                   uiOutput("Stock_Granger"),
-                                   # selectizeInput("Stock_Granger","Choose first argument: Company or Index",
-                                   #                c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
-                                   #                selected = "Bayer ",multiple = FALSE),
-                                   radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
-                                   selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
-                                   sliderInput("date_granger",label="Timeseries",
-                                               value = c(min(as.Date(ADS()[["Date"]], "%b %d, %Y")),max(as.Date(ADS()[["Date"]], "%b %d, %Y"))),
-                                               min = min(as.Date(ADS()[["Date"]], "%b %d, %Y")),
-                                               max = max(as.Date(ADS()[["Date"]], "%b %d, %Y")),
-                                               step = 1,timeFormat = "%F"),
-                                   checkboxInput("direction_granger","Second variable causes first?",value = TRUE)
-                                 ),
-                                 mainPanel(
-                                   tabsetPanel(
-                                     tabPanel("Information Granger",
-                                              htmlOutput("info_granger")),
-                                     tabPanel("Visualize",
-                                              plotOutput("stocks_granger")),
-                                     tabPanel("Background-steps",
-                                              htmlOutput("dickey")),
-                                     tabPanel("Results",
-                                              verbatimTextOutput("granger_result"),
-                                              htmlOutput("granger_satz"))))),
-                        tabPanel("Regression Analysis",
-                                 sidebarPanel(
-                                   tabs_custom()
-                                 ),
-                                 mainPanel(
-                                   tabsetPanel(
-                                     tabPanel("regression",
-                                              verbatimTextOutput("testi_table"),
-                                              verbatimTextOutput("senti"),
-                                              verbatimTextOutput("senti_agg"),
-                                              htmlOutput("regression_equation"),
-                                              verbatimTextOutput("regression_result")),
-                                     tabPanel("Quantile Regression",
-                                              plotOutput("plot_dens_Qreg"),
-                                              verbatimTextOutput("regression_result_Qreg")
-
-                                     )
-                                   )
-                                 )
-                        ),
-                        tabPanel("VAR-forecasting",
-                                 sidebarPanel(
-                                   tabs_custom_var(),
-                                   numericInput("ahead", "choose how many days to forecast", value = 5, min = 1, max = 100)
-                                 ),
-                                 mainPanel(
-                                   tabsetPanel(
-                                     tabPanel("Validity",
-                                              #verbatimTextOutput("datensatz_var"),
-                                              plotOutput("plot_forecast"),
-                                              htmlOutput("accuracy_var"),
-                                              verbatimTextOutput("serial_test"),
-                                              htmlOutput("var"),
-                                              plotOutput("plot_forecast2")
-                                     ),#close tabpanel validity
-                                     tabPanel("Actual Forecast",
-                                              verbatimTextOutput("testins"),
-                                              plotOutput("plot_forecast_real"))#close tabpanel actual forecast
-                                   )))#close tabpanel VAR forecasting
-             )#close Navbarmenu
+            twitter_main_panel()
+             # tabPanel("Sentiment"),
+             # tabPanel("Stocks",
+             #          sidebarPanel(
+             #            radioButtons("country_stocks","Which country?",c("Germany","USA"),selected = "Germany"),
+             #            #selectize_Stocks(COMPONENTS_DE()),
+             #            uiOutput("stock_choice"),
+             #            radioButtons("stock_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
+             #            actionButton("reset", "clear selected"),
+             #            checkboxInput("hovering","Enable hover",value = FALSE),
+             #            sliderinput_dates()
+             #          ),
+             #          mainPanel(
+             #            plot_stocks_DE(),
+             #            hover_info_DE()
+             #          ),#close MainPanel
+             # ),#close tabPanel stock
+             # tabPanel("Corona",
+             #          sidebarPanel(
+             #            selectize_corona(),
+             #            checkboxGroupInput("CoronaCountry","Country",c("Germany","United States"),selected = "Germany"),
+             #            sliderinput_dates_corona(),
+             #            checkboxInput("hovering_corona","Enable hover",value = FALSE)
+             #          ),
+             #          mainPanel(
+             #            plot_corona(),
+             #            hover_info_corona()
+             #          )
+             # ),#close tabPanel Corona
+             # navbarMenu("Model",
+             #            tabPanel("Granger",
+             #                     sidebarPanel(
+             #                       radioButtons("country_granger","Which country?",c("Germany","USA"),selected = "Germany"),
+             #                       uiOutput("Stock_Granger"),
+             #                       # selectizeInput("Stock_Granger","Choose first argument: Company or Index",
+             #                       #                c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
+             #                       #                selected = "Bayer ",multiple = FALSE),
+             #                       radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
+             #                       selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
+             #                       sliderInput("date_granger",label="Timeseries",
+             #                                   value = c(min(as.Date(ADS()[["Date"]], "%b %d, %Y")),max(as.Date(ADS()[["Date"]], "%b %d, %Y"))),
+             #                                   min = min(as.Date(ADS()[["Date"]], "%b %d, %Y")),
+             #                                   max = max(as.Date(ADS()[["Date"]], "%b %d, %Y")),
+             #                                   step = 1,timeFormat = "%F"),
+             #                       checkboxInput("direction_granger","Second variable causes first?",value = TRUE)
+             #                     ),
+             #                     mainPanel(
+             #                       tabsetPanel(
+             #                         tabPanel("Information Granger",
+             #                                  htmlOutput("info_granger")),
+             #                         tabPanel("Visualize",
+             #                                  plotOutput("stocks_granger")),
+             #                         tabPanel("Background-steps",
+             #                                  htmlOutput("dickey")),
+             #                         tabPanel("Results",
+             #                                  verbatimTextOutput("granger_result"),
+             #                                  htmlOutput("granger_satz"))))),
+             #            tabPanel("Regression Analysis",
+             #                     sidebarPanel(
+             #                       tabs_custom()
+             #                     ),
+             #                     mainPanel(
+             #                       tabsetPanel(
+             #                         tabPanel("regression",
+             #                                  verbatimTextOutput("testi_table"),
+             #                                  verbatimTextOutput("senti"),
+             #                                  verbatimTextOutput("senti_agg"),
+             #                                  htmlOutput("regression_equation"),
+             #                                  verbatimTextOutput("regression_result")),
+             #                         tabPanel("Quantile Regression",
+             #                                  plotOutput("plot_dens_Qreg"),
+             #                                  verbatimTextOutput("regression_result_Qreg")
+             #
+             #                         )
+             #                       )
+             #                     )
+             #            ),
+             #            tabPanel("VAR-forecasting",
+             #                     sidebarPanel(
+             #                       tabs_custom_var(),
+             #                       numericInput("ahead", "choose how many days to forecast", value = 5, min = 1, max = 100)
+             #                     ),
+             #                     mainPanel(
+             #                       tabsetPanel(
+             #                         tabPanel("Validity",
+             #                                  #verbatimTextOutput("datensatz_var"),
+             #                                  plotOutput("plot_forecast"),
+             #                                  htmlOutput("accuracy_var"),
+             #                                  verbatimTextOutput("serial_test"),
+             #                                  htmlOutput("var"),
+             #                                  plotOutput("plot_forecast2")
+             #                         ),#close tabpanel validity
+             #                         tabPanel("Actual Forecast",
+             #                                  verbatimTextOutput("testins"),
+             #                                  plotOutput("plot_forecast_real"))#close tabpanel actual forecast
+             #                       )))#close tabpanel VAR forecasting
+             # )#close Navbarmenu
   )#close Navbarpage
 )#close fluidpage
