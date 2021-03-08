@@ -3,18 +3,20 @@ server <- function(input, output, session) {
   ############################################################# Stocks
   # load stock dataset
   stockdata_DE <- reactive({
-    #req(path_setter()[[3]][1] == "correct_path")
+    req(path_setter()[[3]][1] == "correct_path")
 
     load_all_stocks_DE()
   })
 
   stockdata_US <- reactive({
-   # req(path_setter()[[3]][1] == "correct_path")
+   req(path_setter()[[3]][1] == "correct_path")
 
     load_all_stocks_US()
   })
 
+
   output$stock_choice <- renderUI({
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_stocks == "Germany"){
       input <- selectizeInput("Stock","Choose Companies:",
                               c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
@@ -35,6 +37,7 @@ server <- function(input, output, session) {
   # plot of the stocks
   output$plot_DE <- renderPlot({
     req(input$Stock)
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_stocks == "Germany"){
       plotdata <- filter(stockdata_DE(),
                          .data$name %in% (c(COMPONENTS_DE()[["Symbol"]],"GDAXI")[c(COMPONENTS_DE()[["Company.Name"]],"GDAXI") %in% .env$input$Stock]) &
@@ -76,6 +79,7 @@ server <- function(input, output, session) {
   ##################################################################### Corona
 
   corona_data <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
     CORONA(input$CoronaCountry,input$dates_corona[1],input$dates_corona[2])
   })
 
@@ -116,6 +120,7 @@ server <- function(input, output, session) {
 
 
   output$Stock_Granger <- renderUI({
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_granger == "Germany"){
       input <- selectizeInput("Stock_Granger","Choose dependent variable:",
                               c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
@@ -129,6 +134,7 @@ server <- function(input, output, session) {
 
 
   granger_data <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
     req(input$Stock_Granger)
     if (input$country_granger == "Germany"){
       granger1 <- filter(stockdata_DE(),
@@ -223,6 +229,7 @@ server <- function(input, output, session) {
 
   ###flexible input for stocks: show either german or us companies
   output$stock_regression <- renderUI({
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression == "Germany"){
       input <- selectizeInput("Stock_Regression","Choose dependent variable:",
                               c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
@@ -241,6 +248,8 @@ server <- function(input, output, session) {
   output$Controls <- renderUI({
     #res <- dataset()
     #res$name <- NULL
+    browser()
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression == "Germany"){
       input <- selectizeInput("Controls","Choose control variables:",
                               c(colnames(global_controls_test_DE())[-1],"DAX"),multiple = TRUE)
@@ -253,6 +262,7 @@ server <- function(input, output, session) {
   })
 
   dataset <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression == "Germany"){
       data_reg <- filter(stockdata_DE(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
                          .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Regression]) &
@@ -307,6 +317,7 @@ server <- function(input, output, session) {
 
   dataset_senti <- reactive({
     req(input$Sentiment_type)
+    req(path_setter()[[3]][1] == "correct_path")
     if(input$Sentiment_type == "NoFilter"){
 
       res <- En_NoFilter_0_0_yes()   # still fix as it is not clear yet if sql or csv
@@ -324,6 +335,7 @@ server <- function(input, output, session) {
   })
   # filter
   filtered_df <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
     req(input$Sentiment_type)
     req(input$minRetweet_stocks1)
     req(input$minRetweet_stocks2)
@@ -448,6 +460,7 @@ server <- function(input, output, session) {
   ###################################################### dataset ###############################################################
   ###flexible input for stocks: show either german or us companies
   output$stock_regression_var <- renderUI({
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression_var == "Germany"){
       input <- selectizeInput("Stock_Regression_var","Choose dependent variable:",
                               c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
@@ -461,6 +474,7 @@ server <- function(input, output, session) {
 
 
   output$Controls_var <- renderUI({
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression_var == "Germany"){
       input <- selectizeInput("Controls_var","Choose control variables:",
                               c(colnames(global_controls_test_DE())[-1],"DAX"),multiple = TRUE)
@@ -473,6 +487,7 @@ server <- function(input, output, session) {
   })
 
   dataset_var <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression_var == "Germany"){
       data_reg <- filter(stockdata_DE(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
                          .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Regression_var]) &
@@ -526,6 +541,7 @@ server <- function(input, output, session) {
   })
 
   dataset_senti_var <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
     req(input$Sentiment_type_var)
     if(input$Sentiment_type_var == "NoFilter"){
 
@@ -544,6 +560,7 @@ server <- function(input, output, session) {
   })
   # filter
   filtered_df_var <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
     req(input$Sentiment_type_var)
     req(input$minRetweet_stocks1_var)
     req(input$minRetweet_stocks2_var)

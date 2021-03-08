@@ -31,7 +31,7 @@ plot_corona()
 
 hover_info_corona()
 
-selectize_Stocks_reg(components1, components2)
+selectize_Stocks_reg()
 
 parameter_tabsi()
 
