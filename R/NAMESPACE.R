@@ -27,4 +27,6 @@
 #' @import networkD3
 #' @import igraph
 #' @import dygraphs
+#' @import xts
+#' @import lubridate
 NULL
