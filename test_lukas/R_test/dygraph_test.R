@@ -19,7 +19,14 @@ df_values <- df %>% select(mean_rt, mean_sentiment,mean_sentiment_likes,
 
 don <- xts(x = df_values, order.by = df$created_at)
 
-dygraph(don)
+dygraph(don)  %>%
+  dyCSS(".dygraph-title {
+  color: navy;
+  font-weight: bold;
+}
+.dygraph-axis-label {
+  font-size: 11px;
+}")
 
 
 dygraph(don, main = "This is a title") %>%
