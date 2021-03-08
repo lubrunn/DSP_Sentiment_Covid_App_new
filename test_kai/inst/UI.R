@@ -80,7 +80,23 @@ twitter_main_panel <- function(){
                                  }"
                                    )
                                    ),
-                                     plotOutput('sum_stats_plot'),
+                                     #plotOutput('sum_stats_plot'),
+                                   tags$head(
+                                     # Note the wrapping of the string in HTML()
+                                     tags$style(HTML("
+
+                                        .dygraph-axis-label {
+                                          font-size: 12px;
+                                          color:white;
+                                        }
+                                        .dygraph-legend {
+                                          color: black;
+                                        }
+
+
+                                                     "))
+                                   ),
+                                   dygraphs::dygraphOutput("sum_stats_plot"),
 
                                    # seconds time series plot
                                    plotOutput('sum_stats_plot2'),
@@ -135,7 +151,42 @@ twitter_main_panel <- function(){
                       #                     networkD3::forceNetworkOutput("network_plot") %>%
                       #     shinycssloaders::withSpinner()))
                       tags$div(id = "placeholder")
-                      )),
+                      ),
+
+
+                      fluidRow(column(12,
+                                      tags$style(HTML("
+                    .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+                    color: #ffffff;
+                    }
+
+                    .dataTables_wrapper .dataTables_paginate .paginate_button{box-sizing:border-box;display:inline-block;min-width:1.5em;padding:0.5em 1em;margin-left:2px;text-align:center;text-decoration:none !important;cursor:pointer;*cursor:hand;color:#ffffff !important;border:1px solid transparent;border-radius:2px}
+
+
+                    .dataTables_length select {
+                           color: #000000;
+                           background-color: #ffffff
+                           }
+
+
+                    .dataTables_filter input {
+                            color: #000000;
+                            background-color: #ffffff
+                           }
+
+                    thead {
+                    color: #ffffff;
+                    }
+
+                     tbody {
+                    color: #000000;
+                    }
+
+                   "
+
+
+                                      )),
+                                      DT::dataTableOutput("raw_tweets_net")))),
              tabPanel("Daily Analysis"),
              tabPanel("Going deeper"))
 
@@ -166,7 +217,7 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                               selectInput("comp","Choose a company (optional)",
                                              c("adidas", "NIKE"),
                                              selected = "",multiple = TRUE),
-                              shinyWidgets::airDatepickerInput("dates", "Date range:",
+                              shinyWidgets::airDatepickerInput("dates_desc", "Date range:",
                                                                range = TRUE,
                                                                value = c("2018-11-30", "2021-02-19"),
                                                                maxDate = "2021-02-19", minDate = "2018-11-30",
@@ -390,22 +441,22 @@ ui <- fluidPage(
   navbarPage("APP",
 
              dir_setter_panel(),
-              twitter_main_panel(),
+             twitter_main_panel(),
              tabPanel("Sentiment"),
              tabPanel("Stocks",
                       sidebarPanel(
                         radioButtons("country_stocks","Which country?",c("Germany","USA"),selected = "Germany"),
                         #selectize_Stocks(COMPONENTS_DE()),
                         uiOutput("stock_choice"),
+                        #selectizeInput("stock_choice", choices = "Platzhalter"),
                         radioButtons("stock_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
                         actionButton("reset", "clear selected"),
                         checkboxInput("hovering","Enable hover",value = FALSE),
                         sliderinput_dates()
                       ),
                       mainPanel(
-                        #plot_stocks_DE(),
-                        plotlyOutput("plot_DE")
-                        #hover_info_DE()
+                        plot_stocks_DE(),
+                        hover_info_DE()
                       ),#close MainPanel
              ),#close tabPanel stock
              tabPanel("Corona",
@@ -429,12 +480,11 @@ ui <- fluidPage(
                                    #                c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
                                    #                selected = "Bayer ",multiple = FALSE),
                                    radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
-                                   #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
-                                   uiOutput("ControlsGranger"),
+                                   selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
                                    sliderInput("date_granger",label="Timeseries",
-                                               value = c(min(as.Date(ADS()[["Date"]], "%b %d, %Y")),max(as.Date(ADS()[["Date"]], "%b %d, %Y"))),
-                                               min = min(as.Date(ADS()[["Date"]], "%b %d, %Y")),
-                                               max = max(as.Date(ADS()[["Date"]], "%b %d, %Y")),
+                                               value = c(as.Date("2020-02-12"),as.Date("2021-02-12")),
+                                               min = as.Date("2020-01-02"),
+                                               max = as.Date("2021-02-12"),
                                                step = 1,timeFormat = "%F"),
                                    checkboxInput("direction_granger","Second variable causes first?",value = TRUE)
                                  ),
@@ -478,7 +528,7 @@ ui <- fluidPage(
                                    tabsetPanel(
                                      tabPanel("Validity",
                                               #verbatimTextOutput("datensatz_var"),
-                                              dygraphOutput("plot_forecast"),
+                                              plotOutput("plot_forecast"),
                                               htmlOutput("accuracy_var"),
                                               verbatimTextOutput("serial_test"),
                                               htmlOutput("var"),

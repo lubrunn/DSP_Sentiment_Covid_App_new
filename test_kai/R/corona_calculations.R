@@ -7,7 +7,7 @@
 #' @export
 #' @rdname corona_calculations
 CORONA <- function(country,datestart,dateend){
-  filename <- "https://unitc-my.sharepoint.com/:x:/g/personal/zxmvp94_s-cloud_uni-tuebingen_de/ESmxHV1gNxNOtOgcSFPOoFQBNe4PBlvcMiw7MvSmZTiZuw?download=1"
+  filename <- "Corona/owid.csv"
   help <- filter(read.csv(filename),location %in% c(country))
   help$date <- as.Date(help$date)
   help <- filter(help,date >= datestart & date <= dateend)
