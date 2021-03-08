@@ -26,7 +26,6 @@ split_data <- function(sample,spliti){
   return(out)
 }
 
-
 #' @export
 #' @rdname xgboost_prep
 AR_creator <- function(df,variable,lag){
@@ -59,6 +58,7 @@ MA_creator <- function(df,variable,avg_len){
 }
 #' @export
 #' @rdname xgboost_prep
+
 ARMA_creator <- function(res,number_of_vars,var_1,var_2,var_3,num_1,num_2,num_3
                          ,num_4,num_5,num_6){
   
@@ -75,7 +75,7 @@ ARMA_creator <- function(res,number_of_vars,var_1,var_2,var_3,num_1,num_2,num_3
   
   bb <- mapply(c,list_ar, list_var, SIMPLIFY = T)
   cc <- mapply(c,list_ma, list_var, SIMPLIFY = T)
-  
+
   for(i in 1:length(list_var)){
     cols_ar <- AR_creator(res,bb[2,i],bb[1,i])
     res <- cbind(res,cols_ar)
@@ -135,7 +135,7 @@ split_data_for <- function(sample,n_ahead,ftype){
   n <- dim(sample)[1]
   out <- NULL
   out$df_train <- sample[1:(n-n_ahead),]
-  out$df_forecast <- sample[(n-n_ahead)+1:n,c("date","Close","days","weeks","months","years")]
+  out$df_forecast <- sample[(n-n_ahead)+1:n,c("date","days","weeks","months","years")]
   out$df_forecast <- drop_na(out$df_forecast)
   
   n_train <- dim(out$df_train)[1]
@@ -147,14 +147,14 @@ split_data_for <- function(sample,n_ahead,ftype){
   if(ftype == "pastvalues"){
   
   # append past X's to test data
-  past_features <- past_features %>% dplyr::select(-date,-Close,-days,-weeks,-months,-years)
+  past_features <- past_features %>% dplyr::select(-date,-days,-weeks,-months,-years)
   
   out$df_forecast <- cbind(out$df_forecast,past_features)
   #out$date_forecast <- out$df_forecast %>% dplyr::select(date)
   
   
   }else{
-  covariates <- out$df_train %>% dplyr::select(-date,-Close,-days,-weeks,-months,-years) %>% 
+  covariates <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years) %>% 
       names()
 
   for(i in covariates){
@@ -169,6 +169,73 @@ split_data_for <- function(sample,n_ahead,ftype){
   
   # out$date_forecast <- out$df_forecast %>% dplyr::select(date)
   
+    }
+  }
+  return(out)
+}
+
+#' @export
+#' @rdname xgboost_prep
+split_data_for_ahead <- function(sample,n_ahead2,ftype2){
+  names(sample)[1] <- "date"
+  sample <- sample %>%
+    dplyr::mutate(.,
+                  months = lubridate::month(date),
+                  years = lubridate::year(date),
+                  weeks = lubridate::week(date),
+                  days = lubridate::day(date))
+  
+  n <- dim(sample)[1]
+  out <- NULL
+  out$df_train <- sample
+  
+  dats_seq <- seq(from = as.Date(max(sample$date))+1, 
+                  to = as.Date(max(sample$date)) + n_ahead2, by = "day")
+  
+  out$df_forecast <- data.frame(matrix(ncol = 1 , nrow = n_ahead2 ))
+  x <- c("date")
+  colnames(out$df_forecast) <- x
+  
+  out$df_forecast$date <- dats_seq
+  
+  out$df_forecast <- out$df_forecast %>%
+    dplyr::mutate(.,
+                  months = lubridate::month(date),
+                  years = lubridate::year(date),
+                  weeks = lubridate::week(date),
+                  days = lubridate::day(date))
+  
+  n_train <- dim(out$df_train)[1]
+  past_features <- out$df_train[(n_train-n_ahead2)+1:n_train,]
+  past_features <- drop_na(past_features)
+  
+  #out$y_forecast <- past_features %>% dplyr::select(Close)
+  
+  if(ftype2 == "pastvalues"){
+    
+    # append past X's to test data
+    past_features <- past_features %>% dplyr::select(-date,-days,-weeks,-months,-years)
+    
+    out$df_forecast <- cbind(out$df_forecast,past_features)
+    #out$date_forecast <- out$df_forecast %>% dplyr::select(date)
+    
+    
+  }else{
+    covariates <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years) %>% 
+      names()
+    
+    for(i in covariates){
+      
+      Lambda <- BoxCox.lambda(out$df_train[,i])
+      arima_fit <-  auto.arima(out$df_train[,i],D=1,approximation = F,allowdrift = T,
+                               allowmean = T,seasonal = T,lambda = Lambda)
+      preds_cov <- forecast(arima_fit,h = n_ahead2)
+      
+      out$df_forecast <- cbind(out$df_forecast,fcast = preds_cov$mean)
+      names(out$df_forecast)[ncol(out$df_forecast)] <- paste0(i)
+      
+      # out$date_forecast <- out$df_forecast %>% dplyr::select(date)
+      
     }
   }
   return(out)

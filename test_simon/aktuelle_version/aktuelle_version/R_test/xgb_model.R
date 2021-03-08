@@ -29,7 +29,6 @@ model_xgb <- function(res){
     add_model(model_xgboost) %>%
     add_formula(Close ~ .)
   #
-  #   folds <- vfold_cv(res, v = 3)
   #
   #   rf_fit_rs <-
   #     xgboost_wf %>%

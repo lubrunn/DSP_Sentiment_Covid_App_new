@@ -209,8 +209,11 @@ ui <- fluidPage(
                                                      numericInput("n_ahead","select forecast",min = 1, value=5,max = 10,
                                                                   step = 1),
                                                      radioButtons("ftpye","Select covariates for forecast",choices = c("pastvalues","forecastcovariates"),
-                                                                  selected = "forecastcovariates")
-                                                     
+                                                                  selected = "forecastcovariates"),
+                                                   numericInput("n_ahead2","select forecast for future (days):",min = 1, value=5,max = 10,
+                                                                step = 1),
+                                                   radioButtons("ftpye2","Select covariates for forecast",choices = c("pastvalues","forecastcovariates"),
+                                                                selected = "forecastcovariates")
                                                      ),
                                     conditionalPanel(condition="input.tabs == 'Diagnostics'",       
                                                      selectInput("chose_diag","Chose post-estimation diagnostic",choices = c("Residual plot","Feature importance",
@@ -238,9 +241,9 @@ ui <- fluidPage(
 
                                      ),
                                      tabPanel("Model specification",value = "Model specification",
-                                             verbatimTextOutput("df_xgb1_train")),
+                                             #verbatimTextOutput("df_xgb1_train")),
                                              # verbatimTextOutput("df_xgb1_test"),
-                                             # verbatimTextOutput("model"),
+                                              verbatimTextOutput("model")),
                                             # verbatimTextOutput("stuff"),
                                             # dygraphOutput("plot_1_xgb")),
                                      tabPanel("Diagnostics",value = "Diagnostics")
