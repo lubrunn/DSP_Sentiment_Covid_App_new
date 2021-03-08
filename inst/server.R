@@ -1319,7 +1319,17 @@ long <- long()
 
   ###### network plot
 
+  data_getter_net <- reactive({
+    lang <- stringr::str_to_title(input$lang_net)
+    network_plot_datagetter(lang, input$dates_net[1], input$dates_net[2], input$comp_net)
+  })
 
+  data_filterer_net <- reactive({
+    df <- data_getter_net()
+    network_plot_filterer(df, input$rt, input$likes_net, input$long_net,
+                          input$sentiment_net, input$search_term_net,
+                          input$username_net)
+  })
 
 
   # if button is clicked compute correlations und plot the plot
@@ -1358,7 +1368,7 @@ long <- long()
 
     disable("button_net")
     enable("cancel_net")
-    lang <- stringr::str_to_title(input$lang_net)
+
 
     if (initial.ok < input$cancel_net) {
       initial.ok <<- initial.ok + 1
@@ -1367,7 +1377,7 @@ long <- long()
 
     ### read all files for the dates
 
-    df <- network_plot_datagetter(lang, input$dates_net[1], input$dates_net[2], input$comp_net)
+    df <- data_getter_net()
 
     #hostess$set(2 * 10)
     waitress$inc(1)
@@ -1386,9 +1396,7 @@ long <- long()
 
 
 
-      network <- network_plot_filterer(df, input$rt, input$likes_net, input$long_net,
-                                     input$sentiment_net, input$search_term_net,
-                                     input$username_net)
+      network <- data_filterer_net()
 
 
       #hostess$set(2 * 10)
@@ -1518,6 +1526,20 @@ long <- long()
   observeEvent(input$cancel_net, {
 
     showNotification("Computation has been aborted", type = "error")
+  })
+
+
+
+
+  output$raw_tweets_net <- DT::renderDataTable({
+    dt <- data_filterer_net()
+
+    DT::datatable(dt, options = list(
+      initComplete = JS(
+        "function(settings, json) {",
+        "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+        "}"))
+    )
   })
 
 
