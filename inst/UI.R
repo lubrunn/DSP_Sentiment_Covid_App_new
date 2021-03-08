@@ -135,7 +135,42 @@ twitter_main_panel <- function(){
                       #                     networkD3::forceNetworkOutput("network_plot") %>%
                       #     shinycssloaders::withSpinner()))
                       tags$div(id = "placeholder")
-                      )),
+                      ),
+
+
+                      fluidRow(column(12,
+                                      tags$style(HTML("
+                    .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+                    color: #ffffff;
+                    }
+
+                    .dataTables_wrapper .dataTables_paginate .paginate_button{box-sizing:border-box;display:inline-block;min-width:1.5em;padding:0.5em 1em;margin-left:2px;text-align:center;text-decoration:none !important;cursor:pointer;*cursor:hand;color:#ffffff !important;border:1px solid transparent;border-radius:2px}
+
+
+                    .dataTables_length select {
+                           color: #000000;
+                           background-color: #ffffff
+                           }
+
+
+                    .dataTables_filter input {
+                            color: #000000;
+                            background-color: #ffffff
+                           }
+
+                    thead {
+                    color: #ffffff;
+                    }
+
+                     tbody {
+                    color: #000000;
+                    }
+
+                   "
+
+
+                                      )),
+                                      DT::dataTableOutput("raw_tweets_net")))),
              tabPanel("Daily Analysis"),
              tabPanel("Going deeper"))
 
