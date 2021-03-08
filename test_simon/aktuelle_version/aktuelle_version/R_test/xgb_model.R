@@ -2,24 +2,15 @@
 #' @export
 #' @rdname xgboost
 model_xgb <- function(res){
+  
 
-    res$date <- NULL
-
-  # val_split <- rsample::initial_split(
-  #   res,
-  #   prop = 1,
-  #   strata = Close
-  # )
-
+  
+  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 4 , assess_stop = 1,step = 1)
+  
+  res$date <- NULL
+  
   preprocessing_recipe <-
     recipes::recipe(Close ~ ., data = res) %>% prep()
-
-  cv_folds <-
-    recipes::bake(
-      preprocessing_recipe,
-      new_data = res
-    ) %>%
-    rsample::vfold_cv(v = 3)
 
 
   model_xgboost <- boost_tree(
@@ -38,7 +29,6 @@ model_xgb <- function(res){
     add_model(model_xgboost) %>%
     add_formula(Close ~ .)
   #
-  #   folds <- vfold_cv(res, v = 3)
   #
   #   rf_fit_rs <-
   #     xgboost_wf %>%
@@ -48,7 +38,7 @@ model_xgb <- function(res){
   #
   xgboost_tuned <- tune::tune_grid(
     object = xgboost_wf,
-    resamples = cv_folds,
+    resamples = slidng_eval_window,
     metrics = yardstick::metric_set(yardstick::rmse, yardstick::mae)
   )
 
