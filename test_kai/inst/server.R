@@ -29,7 +29,7 @@ server <- function(input, output, session) {
     updateSelectizeInput(session,"Stock",selected = "")
   })
   # plot of the stocks
-  output$plot_DE <- renderPlot({
+  output$plot_DE <- renderPlotly({
     req(input$Stock)
     if (input$country_stocks == "Germany"){
       plotdata <- filter(stockdata_DE(),
@@ -44,10 +44,14 @@ server <- function(input, output, session) {
     if (!is.null(ranges$x)) {
       ranges$x <- as.Date(ranges$x, origin = "1970-01-01")
     }
-    ggplot(plotdata,aes_string("Dates",input$stock_outcome,color = "name"))+
+
+    plotdata <-
+
+
+    ggplotly(ggplot(plotdata,aes_string("Dates",input$stock_outcome,color = "name"))+
       geom_line()+
       theme_classic()+
-      coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)
+      coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE))
   })
   # hover info box
   output$hover_info_DE <- renderUI({
@@ -123,6 +127,17 @@ server <- function(input, output, session) {
     }
   })
 
+  output$ControlsGranger <- renderUI({
+    if (input$country_regression == "Germany"){
+      input <- selectizeInput("Controls","Choose control variables:",
+                              c(colnames(global_controls_test_DE())[-1],"DAX"),multiple = TRUE)
+      #c(colnames(res[3:length(res)])),multiple = TRUE
+    }else{
+      input <- selectizeInput("Controls","Choose control variables:",
+                              c(colnames(global_controls_test_US())[-1],"DOW"),multiple = TRUE)
+    }
+  })
+
 
   granger_data <- reactive({
     req(input$Stock_Granger)
@@ -136,11 +151,35 @@ server <- function(input, output, session) {
                            .data$Dates >= .env$input$date_granger[1] & .data$Dates <= .env$input$date_granger[2])[c("Dates", input$Granger_outcome)]
 
     }
-    granger1["zweitevariable"] <- filter(stockdata_DE(),
-                                         .data$name == "ADS.DE" &
-                                           .data$Dates >= .env$input$date_granger[1] & .data$Dates <= .env$input$date_granger[2])[["Open"]]
-    granger1
+
+    if (input$country_granger == "Germany"){
+      global_controls <- global_controls_test_DE()   #load controls
+      global_controls$Date <- as.Date(global_controls$Date) #transform date
+      dax <- GDAXI()  #load dax
+      dax$Date <- as.Date(dax$Date, "%d %b %Y") #transform date
+      dax <- missing_date_imputer(dax,"Close.") #transform time series by imputing missing values
+      colnames(dax)[2] <- "DAX"  #rename ->   !! is not renamed in final dataset !! -> dont know why
+      global_controls <- left_join(dax,global_controls,by = c("Date")) #join final
+
+    }else {
+      global_controls <- global_controls_test_US() #same procedure as above
+      global_controls$Date <- as.Date(global_controls$Date)
+      dow <- DOW()
+      dow$Date <- as.Date(dow$Date, "%d %b %Y")
+      dow <- missing_date_imputer(dow,"Close.")
+      colnames(dow)[2] <- "DOW"
+      global_controls <- left_join(dow,global_controls,by = c("Date"))
+    }
+    names(global_controls)[1] <- "Dates"
+    granger <- left_join(granger1,global_controls,by = c("Dates")) #hierdurch kommt die varible "global" in den datensatz
+    ##diesen datensatz filtern wir dann nochmal mit dem sliderinput für die kontrollvariablen(eine/keine/mehrere möglich)
+
+    granger <- granger[c("Dates",input$Granger_outcome,input$ControlsGranger)]
+    granger
   })
+
+
+
 
   optlags <- reactive({
     #library(vars)
@@ -1325,68 +1364,203 @@ long <- long()
 
 
 
-
   # if button is clicked compute correlations und plot the plot
   observeEvent(input$button_net,{
+
+
+    waitress <- waiter::Waitress$new("nav", max = 4,  theme = "overlay")
+    #Automatically close it when done
+    on.exit(waitress$close())
+
+    waitress$notify()
+
+    ### progress bar elements
+    #hostess <- waiter::Hostess$new("load")
+
+
+
+
+    ################################
+
+
+    insertUI("#placeholder", "beforeEnd", ui = networkD3::forceNetworkOutput("network_plot"))
+
     # insertUI("#network_plotr", "beforeEnd", ui = networkD3::forceNetworkOutput("network_plot") %>%
     #            shinycssloaders::withSpinner())
 
     #insertUI("#placeholder", "afterEnd", ui = networkD3::forceNetworkOutput('network_plot'))
 
+    initial.ok <- input$cancel_net
 
 
     shinyjs::showElement(id = "loading")
     # disable the button after computation started so no new computation can
     # be startedd
 
-#    browser()
+
     disable("button_net")
+    enable("cancel_net")
     lang <- stringr::str_to_title(input$lang_net)
 
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
 
     ### read all files for the dates
 
     df <- network_plot_datagetter(lang, input$dates_net[1], input$dates_net[2], input$comp_net)
 
+    #hostess$set(2 * 10)
+    waitress$inc(1)
 
-    ### set up data for network
-    df <- network_plot_filterer(df, input$rt_net, input$likes_net, input$long_net,
-                                input$sentiment_net, input$search_term_net,
-                                input$username_net, input$n_net,
-                                input$corr_net)
 
+   if(is.null(df)){
+     enable("button_net")
+     return()
+   }
+
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+
+
+
+      network <- network_plot_filterer(df, input$rt, input$likes_net, input$long_net,
+                                     input$sentiment_net, input$search_term_net,
+                                     input$username_net)
+
+
+      #hostess$set(2 * 10)
+      waitress$inc(1)
+
+
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+    if (input$word_type_net == "word_pairs_net"){
+      network <- network_unnester(network, df, input$emo_net)
+    } else{
+      network <- network_unnester_bigrams(network, input$emo_net)
+    }
+
+      #hostess$set(2 * 10)
+      waitress$inc(1)
+
+
+     if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+    if (input$word_type_net == "word_pairs_net"){
+      df <- network_word_corr(network, input$n_net,
+                                             input$corr_net)
+    } else {
+      df <- network_bigrammer(df, network, input$n_net, input$n_bigrams_net)
+    }
+
+
+
+      # hostess$set(2 * 10)
+      waitress$inc(1)
+
+    # ### set up data for network
+    # df <- network_plot_filterer(df, input$rt_net, input$likes_net, input$long_net,
+    #                             input$sentiment_net, input$search_term_net,
+    #                             input$username_net, input$n_net,
+    #                             input$corr_net)
+
+
+
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+        # if(is.null(df)){
+    #   enable("button_net")
+    #   return()
+    # }
 
 
     # render the network plot
+      if (input$word_type_net == "word_pairs_net"){
     output$network_plot <- networkD3::renderForceNetwork({
 
 
 
 
+
       req(input$button_net)
-      if (is.null(df)) return()
+      #if (is.null(df)) return()
+      validate(need(!is.null(df), message = "No data found for current selection"))
+      if (initial.ok < input$cancel_net) {
+        initial.ok <<- initial.ok + 1
+        validate(need(initial.ok == 0, message = "The computation has been aborted."))
+      }
 
 
-      network_plot_plotter(df)
+      #hostess$set(2 * 10)
+     # waitress$inc(1)
+        network_plot_plotter(df)
+
+
 
     })
+  } else {
+    output$network_plot <- networkD3::renderForceNetwork({
+    req(input$button_net)
+    #if (is.null(df)) return()
+    validate(need(!is.null(df), message = "No data found for current selection"))
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+    #hostess$set(2 * 10)
+    #waitress$inc(1)
+    network_plot_plotter_bigrams(df)
+
+
+
+
+})
+
+
+
+  }
     # Hide loading element when done
     # shinyjs::hideElement(id = 'loading')
     enable("button_net")
+    disable("cancel_net")
 
   })
 
 
   observeEvent(input$reset_net,{
-     shinyjs::hide(id = "loading",
-                         "network_plot",
-                   animType = T,
-                   time = 0)
+     # shinyjs::hide(id = "loading",
+     #                     "network_plot",
+     #               animType = T,
+     #               time = 0)
+    removeUI("#network_plot")
   })
 
   # observeEvent(input$button_net, {
   #
+  #
   # })
+  # ##
+
+  ######## message for aborting process
+  observeEvent(input$cancel_net, {
+
+    showNotification("Computation has been aborted", type = "error")
+  })
 
 
 

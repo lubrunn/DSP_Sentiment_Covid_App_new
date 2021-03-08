@@ -131,10 +131,10 @@ twitter_main_panel <- function(){
                         network_sidebar
                       ),
                       mainPanel(
-                      shinyjs::hidden(div(id = "loading",
-                                          networkD3::forceNetworkOutput("network_plot") %>%
-                          shinycssloaders::withSpinner()))
-                      #tags$div(id = "placeholder")
+                      # shinyjs::hidden(div(id = "loading",
+                      #                     networkD3::forceNetworkOutput("network_plot") %>%
+                      #     shinycssloaders::withSpinner()))
+                      tags$div(id = "placeholder")
                       )),
              tabPanel("Daily Analysis"),
              tabPanel("Going deeper"))
@@ -269,6 +269,10 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 #################################### going deeeper sidbarpanel
 network_sidebar <- tabPanel( "Network Analysis",
 
+          waiter::use_waitress(color = "#375a7f"),
+          #waiter::use_waiter(),
+          #waiter::use_hostess(),
+          #waiter::hostess_loader("load", text_color = "white", center_page = TRUE),
 
 
           ###### language selector
@@ -282,7 +286,7 @@ network_sidebar <- tabPanel( "Network Analysis",
           # datepicker
           shinyWidgets::airDatepickerInput("dates_net", "Date range:",
                                            range = TRUE,
-                                           value = c("2020-03-01", "2020-03-02"),
+                                           value = "2020-03-01",
                                            maxDate = "2021-02-19", minDate = "2018-11-30",
                                            clearButton = T, update_on = "close",
                                            multiple = 5),
@@ -297,9 +301,15 @@ network_sidebar <- tabPanel( "Network Analysis",
           # long tweets switch
           shinyWidgets::materialSwitch(inputId = "long_net", label = "Long Tweets only?", value = F),
 
+          # filter out emoji words
+          shinyWidgets::materialSwitch(inputId = "emo_net", label = "Remove Emoji Words?", value = F),
+
+
 
           ### filter by sentiment
-          numericInput("sentiment_net", "Choose a minmium sentiment", min = -1, max = 1, value = -1, step = 0.05),
+          sliderInput("sentiment_net", label = h3("Choose a sentiment range"),
+                      min = -1, max = 1, value = c(-1, 1), step = 0.01, dragRange = T),
+
 
 
 
@@ -309,13 +319,34 @@ network_sidebar <- tabPanel( "Network Analysis",
           textInput("username_net", "Only show tweets for usernames containing the following:"),
 
 
+          ####### type of plot bigram/word pairs
+          selectInput("word_type_net", "Select the type of word combination you would like to analyse", choices = c("Bigram" = "bigrams_net",
+                                                                                                                    "Word Pairs" = "word_pairs_net")),
+
+
 
           ######## adjusting plot
-          numericInput("n_net", "Minimum number of occurences of a word pair in the selected sample",
+          numericInput("n_net", "Minimum number of occurences of a single word in the sample",
                        min = 50, value = 50),
 
-          numericInput("corr_net", "Minimum word correlation of word pairs", value = 0.15, min = 0.15, max = 1,
-                       step = 0.01),
+
+          ### panel in case of word pairs to compute word correlations
+          conditionalPanel(
+            condition = "input.word_type_net == 'word_pairs_net'",
+            numericInput("corr_net", "Minimum word correlation of word pairs", value = 0.15, min = 0.15, max = 1,
+                         step = 0.01)
+
+          ),
+
+
+          ### panel for minium number of time bigrams arise
+          conditionalPanel(
+            condition = "input.word_type_net == 'bigrams_net'",
+            numericInput("n_bigrams_net", "Minimum number of occurences of a Bigram in the selected sample",
+                         min = 50, value = 50)
+          ),
+
+
           actionButton("button_net", "Render Plot") %>%
           shinyhelper::helper(type = "markdown",
                    title = "Inline Help",
@@ -324,7 +355,13 @@ network_sidebar <- tabPanel( "Network Analysis",
                    easyClose = FALSE,
                    fade = TRUE,
                    size = "s"),
-          actionButton("reset_net", "Remove Plot")
+
+          #### removing plot
+          actionButton("reset_net", "Remove Plot"),
+
+
+          ### canceling computation
+          shinyjs::disabled(actionButton("cancel_net", "Cancel Rendering"))
 )
 
 
@@ -366,8 +403,9 @@ ui <- fluidPage(
                         sliderinput_dates()
                       ),
                       mainPanel(
-                        plot_stocks_DE(),
-                        hover_info_DE()
+                        #plot_stocks_DE(),
+                        plotlyOutput("plot_DE")
+                        #hover_info_DE()
                       ),#close MainPanel
              ),#close tabPanel stock
              tabPanel("Corona",
@@ -391,7 +429,8 @@ ui <- fluidPage(
                                    #                c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
                                    #                selected = "Bayer ",multiple = FALSE),
                                    radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
-                                   selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
+                                   #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
+                                   uiOutput("ControlsGranger"),
                                    sliderInput("date_granger",label="Timeseries",
                                                value = c(min(as.Date(ADS()[["Date"]], "%b %d, %Y")),max(as.Date(ADS()[["Date"]], "%b %d, %Y"))),
                                                min = min(as.Date(ADS()[["Date"]], "%b %d, %Y")),

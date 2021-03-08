@@ -26,4 +26,5 @@
 #' @import widyr
 #' @import networkD3
 #' @import igraph
+#' @import dygraphs
 NULL
