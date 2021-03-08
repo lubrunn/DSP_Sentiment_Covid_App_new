@@ -3,10 +3,14 @@ server <- function(input, output, session) {
   ############################################################# Stocks
   # load stock dataset
   stockdata_DE <- reactive({
+    #req(path_setter()[[3]][1] == "correct_path")
+
     load_all_stocks_DE()
   })
 
   stockdata_US <- reactive({
+   # req(path_setter()[[3]][1] == "correct_path")
+
     load_all_stocks_US()
   })
 
@@ -1001,14 +1005,12 @@ long <- long()
       if (is.null(input$comp)){
       table_name <- glue("sum_stats_{tolower(input$lang)}")
 
-      glue("SELECT *  FROM {table_name}  WHERE created_at >= '{input$dates[1]}'
-      and created_at <= '{input$dates[2]}'
-         and retweets_count = {input$rt} and likes_count = {input$likes} and
+      glue("SELECT *  FROM {table_name}  WHERE
+         retweets_count = {input$rt} and likes_count = {input$likes} and
          tweet_length = {long}" )
       } else { #if company is chosen
-        glue("SELECT *  FROM sum_stats_companies WHERE created_at >= '{input$dates[1]}'
-      and created_at <= '{input$dates[2]}'
-         and retweets_count = {input$rt} and likes_count = {input$likes} and
+        glue("SELECT *  FROM sum_stats_companies WHERE
+         retweets_count = {input$rt} and likes_count = {input$likes} and
          tweet_length = {long} and company  = '{input$comp}' and
              language = '{tolower(input$lang)}'" )
       }
@@ -1068,19 +1070,71 @@ long <- long()
 
 
     ######################### time series plot for retweets etc.
-  output$sum_stats_plot <- renderPlot({
 
+  r <- reactiveValues(
+    change_datewindow = 0,
+    change_dates = 0,
+    change_datewindow_auto = 0,
+    change_dates_auto = 0,
+    dates = c( as.Date("2018-11-30"), as.Date("2021-02-19"))
+  )
+
+
+  observeEvent(input$sum_stats_plot_date_window, {
+    message(crayon::blue("observeEvent_input_sum_stats_plot_date_window"))
+    r$change_datewindow <- r$change_datewindow + 1
+    if (r$change_datewindow > r$change_datewindow_auto) {
+
+      r$change_dates_auto <- r$change_dates_auto + 1
+      r$change_datewindow_auto <- r$change_datewindow
+
+      start <- as.Date(ymd_hms(input$sum_stats_plot_date_window[[1]])+ days(1))
+      stop  <- as.Date(ymd_hms(input$sum_stats_plot_date_window[[2]])+ days(1))
+      updateAirDateInput(session = session,
+                         inputId = "dates_desc",
+                         value = c(start, stop),
+      )
+    } else {
+      if (r$change_datewindow >= 10) {
+        r$change_datewindow_auto <- r$change_datewindow <- 0
+      }
+    }
+  })
+
+  observeEvent(input$dates, {
+    message("observeEvent_input_dates")
+    r$change_dates <- r$change_dates + 1
+    if (r$change_dates > r$change_dates_auto) {
+      message("event input_year update")
+
+      r$change_datewindow_auto <- r$change_datewindow_auto
+      r$change_dates_auto <- r$change_dates
+
+      r$dates <- input$dates
+
+    }
+  })
+
+
+
+
+  output$sum_stats_plot <- dygraphs::renderDygraph({
+    message("renderDygraph")
     req(!is.null(input$value) | input$num_tweets_box == T)
 
     df <- get_data_sum_stats_tables()
 
- if (input$num_tweets_box == F){
-    time_series_plotter(df, input$metric, input$value, num_tweets = F)
- } else {
-   time_series_plotter(df, input$metric, input$value, num_tweets = T)
- }
+    if (input$num_tweets_box == F){
+      time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r)
+    } else {
+      time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r)
+    }
+    # dygraphs::dygraph(don) %>%
+    #   dygraphs::dyRangeSelector( input$dates_desc + 1, retainDateWindow = T
+    #   )
+  })
 
- })
+
 
 
 ####### block metric selection if chosen number of tweets
@@ -1138,7 +1192,7 @@ long <- long()
    #      geom_col() +
    #      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-  histogram_plotter(data_histo(), date_input1 = input$dates[1], date_input2 = input$dates[2],
+  histogram_plotter(data_histo(), date_input1 = input$dates_desc[1], date_input2 = input$dates_desc[2],
                     input_bins = input$bins, input_log = input$log_scale)
 
   })
@@ -1161,7 +1215,7 @@ long <- long()
   output$sum_stats_table <- function(){
      # browser()
     df_need <- get_data_sum_stats_tables()
-    sum_stats_table_creator(df_need)
+    sum_stats_table_creator(df_need, input$dates_desc[1], input$dates_desc[2])
   }
 
 
@@ -1265,7 +1319,7 @@ long <- long()
 
 #browser()
       if (input$plot_type_expl == "Frequency Plot"){
-        df <- word_freq_data_wrangler(df, input$dates[1], input$dates[2],
+        df <- word_freq_data_wrangler(df, input$dates_desc[1], input$dates_desc[2],
                                       input$emo, emoji_words,
                                       input$word_freq_filter,
                                       tolower(input$lang),
@@ -1298,7 +1352,7 @@ long <- long()
 
 ############################## time series bigram plot
   output$word_freq_time_series <- renderPlot({
-    df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
+    df <- word_freq_data_wrangler(data_expl(), input$dates_desc[1], input$dates[2],
                                   input$emo, emoji_words,
                                   input$word_freq_filter, input$lang,
                                   input$comp)
