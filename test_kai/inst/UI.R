@@ -439,7 +439,7 @@ ui <- fluidPage(
                                    tabsetPanel(
                                      tabPanel("Validity",
                                               #verbatimTextOutput("datensatz_var"),
-                                              plotOutput("plot_forecast"),
+                                              dygraphOutput("plot_forecast"),
                                               htmlOutput("accuracy_var"),
                                               verbatimTextOutput("serial_test"),
                                               htmlOutput("var"),

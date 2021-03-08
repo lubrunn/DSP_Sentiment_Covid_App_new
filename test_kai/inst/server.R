@@ -685,15 +685,18 @@ server <- function(input, output, session) {
   })
 
   #plot the actual vs. the predicted forecast
-  output$plot_forecast <- renderPlot({
+  output$plot_forecast <- renderDygraph({
     plot1 <- data.frame(final_regression_df_var()$Dates[(nrow(forecast_data())+1):(nrow(forecast_data())+input$ahead)],#Dates
                         forecast_var(),                                                              #forecasted values
                         actual_values())#actual values
     colnames(plot1) <- c("a","b","c")
-    ggplot(plot1) +
-      geom_line(aes(a,b),color="red")+
-      geom_line(aes(a,c),color="gold")+
-      labs(x="Date",y="StockPrice",title = "forecasted vs. actual")
+
+    dygraph(xts(plot1[,-1],order.by=plot1[,1]))
+
+    # ggplot(plot1) +
+    #   geom_line(aes(a,b),color="red")+
+    #   geom_line(aes(a,c),color="gold")+
+    #   labs(x="Date",y="StockPrice",title = "forecasted vs. actual")
 
   })
 
