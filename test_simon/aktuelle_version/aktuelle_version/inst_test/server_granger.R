@@ -715,10 +715,10 @@ df_xgb <- reactive({
   req(input$number_of_vars)
   
   res <- final_regression_df_var()
-  
+
   res <- ARMA_creator(res,input$number_of_vars,input$var_1,input$var_2,
                       input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
-                      input$num_5,input$num_6)
+                      input$num_5,input$num_6,input$lag_tab,list_dfs$df_train,"no")
   
 })
 
@@ -749,16 +749,21 @@ df_xgb_train <- reactive({
 
   res <- final_regression_df_var()
   #res <- make_ts_stationary(res)
-  list_dfs <- split_data_for(res,10,"past_features")
+  list_dfs <- split_data_for(res,input$n_ahead,input$ftpye)
+  browser()
   
   res <- ARMA_creator(list_dfs$df_train,input$number_of_vars,input$var_1,input$var_2,
                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
-                     input$num_5,input$num_6)
-  list_dfs$df_train<- res 
+                     input$num_5,input$num_6,input$lag_tab,list_dfs$df_train,"no")
+  
+  res <- res %>% dplyr::select(-months_lag,-years_lag,-weeks_lag,-days_lag,
+                               -MA_months,-MA_years,-MA_weeks,-MA_days)
+  
+  list_dfs$df_train <- res 
   
   res <- ARMA_creator(list_dfs$df_forecast,input$number_of_vars,input$var_1,input$var_2,
                       input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
-                      input$num_5,input$num_6)
+                      input$num_5,input$num_6,input$lag_tab,list_dfs$df_train,"yes")
 
   list_dfs$df_forecast<- res 
   
@@ -784,11 +789,11 @@ df_xgb_train_for <- reactive({
 
   res <- final_regression_df_var()
   #res <- make_ts_stationary(res)
-  list_dfs <- split_data_for_ahead(res,5,"forecasted_features")
-
+  list_dfs <- split_data_for_ahead(res,input$n_ahead2,input$ftpye2)
+  broswer()
   res <- ARMA_creator(list_dfs$df_train,input$number_of_vars,input$var_1,input$var_2,
                       input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
-                      input$num_5,input$num_6)
+                      input$num_5,input$num_6,input$lag_tab)
 
   list_dfs$df_train <- res
 
@@ -936,6 +941,11 @@ observeEvent(input$model_spec_for, {                         #Observe event from
   updateTabsetPanel(session, "mod_spec_for", selected = input$model_spec_for)
 })
 
+observeEvent(input$lag_tab, {                         #Observe event from input (model choices)
+  req(input$lag_tab)
+  updateTabsetPanel(session, "lag_tab", selected = input$lag_tab)
+})
+
 
 prediction_xgb <-  eventReactive(input$pred,{
   res <- df_xgb_train()
@@ -962,7 +972,6 @@ output$plot_1_xgb <- renderDygraph({
   full_df <- final_regression_df_var()
   res <- df_xgb_train()
   preds <- prediction_xgb()
-
   preds <- preds %>%
     zoo(seq(from = as.Date(min(res$f_dates)), to = as.Date(max(res$f_dates)), by = "day"))
 
@@ -982,14 +991,13 @@ output$plot_1_xgb_actual <- renderDygraph({
 
   preds <- preds %>%
     zoo(seq(from = as.Date(max(full_df$Dates)) +1, 
-            to = as.Date(max(full_df$Dates)) + 5, by = "day"))
+            to = as.Date(max(full_df$Dates)) + input$n_ahead2, by = "day"))
 
   ts <- full_df %>% pull(Close) %>%
     zoo(seq(from = as.Date(min(full_df$Dates)), to = as.Date(max(full_df$Dates)), by = "day"))
 
- {cbind(actuals=ts, predicted=preds)} %>% dygraph()
-  #%>%
-  #  dyEvent(as.Date(min(res$f_dates)), "Test data", labelLoc = "bottom")
+ {cbind(actuals=ts, predicted=preds)} %>% dygraph() %>%
+    dyEvent(as.Date(max(full_df$Dates)), "Start forecast", labelLoc = "bottom")
 
 
 })

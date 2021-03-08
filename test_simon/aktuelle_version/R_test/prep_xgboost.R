@@ -39,7 +39,7 @@ AR_creator <- function(df,variable,lag){
   
   df <- xts_object %>%
     tk_tbl() %>% dplyr::select(-index)
-  names(df)[1] <- paste(variable,".")
+  names(df)[1] <- paste(variable,"_lag",sep = "")
   df <- as.data.frame(df)
   return(df)
 }
@@ -51,16 +51,17 @@ MA_creator <- function(df,variable,avg_len){
   x <- zoo(df[,variable])
 
   df <- as.data.frame(zoo::rollmean(x, k = avg_len, fill = NA))
-  names(df)[1] <- paste("MA_",variable)
+  names(df)[1] <- paste("MA_",variable,sep = "")
   
   return(df)
 
 }
 #' @export
 #' @rdname xgboost_prep
-
+# need input for advanced or not
+#default for MA 10 days
 ARMA_creator <- function(res,number_of_vars,var_1,var_2,var_3,num_1,num_2,num_3
-                         ,num_4,num_5,num_6){
+                         ,num_4,num_5,num_6,custom_lag,res_pre,forecast_df){
   
   if(number_of_vars == 1){
     list_var <- list(var_1)
@@ -73,8 +74,47 @@ ARMA_creator <- function(res,number_of_vars,var_1,var_2,var_3,num_1,num_2,num_3
     list_ma <- list(num_3,num_5)
   }
   
+if(forecast_df == "no"){
+  if(custom_lag == "default"){
+   names(res)[1] <- "date" 
+   help_df <- res %>% dplyr::select(-date)
+   list_var <- names(help_df)
+   optlags <- NULL
+   for(i in list_var[-1]){
+     lag <- VARselect(help_df[,c("Close",i)],lag.max = 10, type = "const")$selection[["AIC(n)"]]
+     optlags <- c(optlags,lag)
+   }
+   lag <- VARselect(help_df[,"Close"],lag.max = 10, type = "const")$selection[["AIC(n)"]]
+
+   optlags <- c(optlags,lag)
+   
+   list_ma <- rep(5,each=ncol(help_df))
+   
+   bb <- mapply(c,optlags, list_var, SIMPLIFY = T)
+   cc <- mapply(c,list_ma, list_var, SIMPLIFY = T)
+  }else{
   bb <- mapply(c,list_ar, list_var, SIMPLIFY = T)
   cc <- mapply(c,list_ma, list_var, SIMPLIFY = T)
+  }
+}else{
+  if(custom_lag == "default"){
+  names(res)[1] <- "date" 
+  help_df <- res %>% dplyr::select(-date,-days,-weeks,-months,-years)
+  list_var <- names(help_df)
+  optlags <- NULL
+  for(i in list_var){
+    lag <-  sum(str_count(names(res_pre), i))
+    lag <- lag - 2 #df contains original column and MA column
+    optlags <- c(optlags,lag)
+  }
+  list_ma <- rep(5,each=ncol(help_df))
+  bb <- mapply(c,optlags, list_var, SIMPLIFY = T)
+  cc <- mapply(c,list_ma, list_var, SIMPLIFY = T)
+  }else{
+    bb <- mapply(c,optlags, list_var, SIMPLIFY = T)
+    cc <- mapply(c,list_ma, list_var, SIMPLIFY = T)
+  }
+}
 
   for(i in 1:length(list_var)){
     cols_ar <- AR_creator(res,bb[2,i],bb[1,i])
@@ -85,9 +125,9 @@ ARMA_creator <- function(res,number_of_vars,var_1,var_2,var_3,num_1,num_2,num_3
     res <- cbind(res,cols_ma)
   }
   
+  
   return(res)
 }
-
 #' @export
 #' @rdname xgboost_prep
 lag_cols <- function(res){

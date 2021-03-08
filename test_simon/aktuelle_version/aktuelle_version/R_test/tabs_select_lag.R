@@ -67,3 +67,35 @@ model_specification_for <- tabsetPanel(
   )
   
 )
+
+
+custom_lag_tab <- tabsetPanel(
+  id = "lag_tab",
+  type = "hidden",
+  tabPanel("default"),
+  tabPanel("custom",
+           selectInput("correlation_type", "Chose type of correlation:", choices = c("ACF","PACF")),
+           uiOutput("correlation_plot_choice"),
+           numericInput("number_of_vars","Select number of variables which add AR/MA parts:",min = 1, value=1),
+           numeric_features,
+           actionButton("reset_arma", "clear selected")
+           
+  )
+  
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

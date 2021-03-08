@@ -188,12 +188,9 @@ ui <- fluidPage(
                                     selectInput("rw_tests","Choose test to investigate RW hyp",choices = c("Box–Ljung test","Wald-Wolfowitz runs test",
                                                                                                            "ADF")),
                                     uiOutput("random_walk_choice"),
-                                    
-                                    selectInput("correlation_type", "Chose type of correlation:", choices = c("ACF","PACF")),
-                                    uiOutput("correlation_plot_choice"),
-                                    numericInput("number_of_vars","Select number of variables which add AR/MA parts:",min = 1, value=1),
-                                    numeric_features,
-                                    actionButton("reset_arma", "clear selected"),
+                                    radioButtons("lag_tab","How do you want to proceed?",choices = c("default","custom"),
+                                                 selected = "default"),
+                                    custom_lag_tab
                                     
                                     
                                     ),
@@ -203,7 +200,7 @@ ui <- fluidPage(
                                                      radioButtons("model_spec","Choose model specification",choices = c("default","custom","hyperparameter_tuning"),
                                                                   selected = "default"),
                                                      model_specification,
-                                                   numericInput("n_ahead","select forecast",min = 1, value=5,max = 10,
+                                                   numericInput("n_ahead","select forecast",min = 1, value=5,max = 20,
                                                                 step = 1),
                                                    radioButtons("ftpye","Select usage of features",choices = c("no_features","past_features","forecasted_features"),
                                                                 selected = "no_features"),
@@ -216,10 +213,10 @@ ui <- fluidPage(
                                                      radioButtons("model_spec_for","Choose model specification",choices = c("default","custom","hyperparameter_tuning"),
                                                                   selected = "default"),
                                                      model_specification_for,
-                                                     numericInput("n_ahead2","select forecast window (days):",min = 1, value=5,max = 10,
+                                                     numericInput("n_ahead2","select forecast window (days):",min = 1, value=5,max = 20,
                                                                   step = 1),
                                                      radioButtons("ftpye2","Select covariates for forecast",choices = c("no_features","past_features","forecasted_features"),
-                                                                  selected = "forecastcovariates"),
+                                                                  selected = "forecasted_features"),
                                                      actionButton("run2", "Run Model on the full dataset"),
                                                      actionButton("pred2", "Predict")),
                                     conditionalPanel(condition="input.tabs == 'Diagnostics'",       
