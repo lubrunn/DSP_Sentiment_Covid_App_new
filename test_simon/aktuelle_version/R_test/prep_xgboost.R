@@ -88,14 +88,13 @@ ARMA_creator <- function(res,number_of_vars,var_1,var_2,var_3,num_1,num_2,num_3
   return(res)
 }
 
-
 #' @export
 #' @rdname xgboost_prep
 lag_cols <- function(res){
   
-  b <- res %>% dplyr::select(-Dates,-Close) %>%  lag(1)
+  b <- res %>% dplyr::select(-date,-Close) %>%  lag(1)
   
-  res <- res %>% dplyr::select(Dates,Close) %>%  cbind(b)
+  res <- res %>% dplyr::select(date,Close) %>%  cbind(b)
   
   res <- res[-1,]
   
@@ -123,6 +122,7 @@ make_ts_stationary <- function(res){
 
 #' @export
 #' @rdname xgboost_prep
+
 split_data_for <- function(sample,n_ahead,ftype){
   names(sample)[1] <- "date"
   sample <- sample %>%
@@ -136,7 +136,12 @@ split_data_for <- function(sample,n_ahead,ftype){
   out <- NULL
   out$df_train <- sample[1:(n-n_ahead),]
   out$df_forecast <- sample[(n-n_ahead)+1:n,c("date","days","weeks","months","years")]
+  out$y_forecast <- sample[(n-n_ahead)+1:n,"Close"]
+  out$f_dates <- sample[(n-n_ahead)+1:n,"date"]
+  
   out$df_forecast <- drop_na(out$df_forecast)
+  out$y_forecast <- out$y_forecast[1:n_ahead]
+  out$f_dates <-  out$f_dates[1:n_ahead]
   
   n_train <- dim(out$df_train)[1]
   past_features <- out$df_train[(n_train-n_ahead)+1:n_train,]
@@ -144,7 +149,7 @@ split_data_for <- function(sample,n_ahead,ftype){
   
   #out$y_forecast <- past_features %>% dplyr::select(Close)
   
-  if(ftype == "pastvalues"){
+  if(ftype == "past_features"){
   
   # append past X's to test data
   past_features <- past_features %>% dplyr::select(-date,-days,-weeks,-months,-years)
@@ -153,7 +158,7 @@ split_data_for <- function(sample,n_ahead,ftype){
   #out$date_forecast <- out$df_forecast %>% dplyr::select(date)
   
   
-  }else{
+  }else if(ftype == "forecasted_features"){
   covariates <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years) %>% 
       names()
 
@@ -170,7 +175,21 @@ split_data_for <- function(sample,n_ahead,ftype){
   # out$date_forecast <- out$df_forecast %>% dplyr::select(date)
   
     }
-  }
+  }else{
+    help_df <- data.frame(matrix(ncol = ncol(sample)-ncol(out$df_forecast)
+                                 , nrow = n_ahead))
+    x_names <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years) %>% names()
+    colnames(help_df) <- x_names
+    
+    out$df_forecast <- cbind(help_df,out$df_forecast)
+    #move date column to the first position
+    out$df_forecast <- out$df_forecast[,c(which(colnames(out$df_forecast)=="date"),which(colnames(out$df_forecast)!="date"))]
+
+    #numeric
+    
+    out$df_forecast[, x_names] <- lapply(x_names, function(x) as.numeric(out$df_forecast[[x]]))
+ 
+   }
   return(out)
 }
 
@@ -208,10 +227,10 @@ split_data_for_ahead <- function(sample,n_ahead2,ftype2){
   n_train <- dim(out$df_train)[1]
   past_features <- out$df_train[(n_train-n_ahead2)+1:n_train,]
   past_features <- drop_na(past_features)
+
   
-  #out$y_forecast <- past_features %>% dplyr::select(Close)
   
-  if(ftype2 == "pastvalues"){
+  if(ftype2 == "past_features"){
     
     # append past X's to test data
     past_features <- past_features %>% dplyr::select(-date,-days,-weeks,-months,-years)
@@ -220,7 +239,7 @@ split_data_for_ahead <- function(sample,n_ahead2,ftype2){
     #out$date_forecast <- out$df_forecast %>% dplyr::select(date)
     
     
-  }else{
+  }else if(ftype2 == "forecasted_features"){
     covariates <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years) %>% 
       names()
     
@@ -237,7 +256,46 @@ split_data_for_ahead <- function(sample,n_ahead2,ftype2){
       # out$date_forecast <- out$df_forecast %>% dplyr::select(date)
       
     }
+  }else{
+    help_df <- data.frame(matrix(ncol = ncol(sample)-ncol(out$df_forecast)
+                                 , nrow = n_ahead))
+    x_names <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years) %>% names()
+    colnames(help_df) <- x_names
+    
+    out$df_forecast <- cbind(help_df,out$df_forecast)
+    #move date column to the first position
+    out$df_forecast <- out$df_forecast[,c(which(colnames(out$df_forecast)=="date"),which(colnames(out$df_forecast)!="date"))]
+    #numeric
+    
+    out$df_forecast[, x_names] <- lapply(x_names, function(x) as.numeric(out$df_forecast[[x]]))
+    
   }
   return(out)
 }
+
+#' @export
+#' @rdname xgboost_prep
+split_data_eval <- function(sample,n_ahead3){
+  names(sample)[1] <- "date"
+  
+  sample <- sample %>%
+    dplyr::mutate(.,
+                  months = lubridate::month(date),
+                  years = lubridate::year(date),
+                  weeks = lubridate::week(date),
+                  days = lubridate::day(date))
+  
+  n <- dim(sample)[1]
+  out <- NULL
+  out$df_train <- sample[1:(n-n_ahead3),]
+  out$df_forecast <- sample[(n-n_ahead3)+1:n,]
+  out$df_forecast <- drop_na(out$df_forecast)
+  out$y_forecast <- sample[(n-n_ahead3)+1:n,"Close"]
+  out$f_dates <- sample[(n-n_ahead3)+1:n,"date"]
+ 
+  return(out)
+}
+
+
+
 
