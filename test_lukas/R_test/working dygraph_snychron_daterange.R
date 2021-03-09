@@ -79,41 +79,26 @@ server <- function(input, output,session) {
 
   output$sum_stats_plot <- renderDygraph({
     message("renderDygraph")
-    df <- fread("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/plot_data/En_NoFilter/sum_stats_En_NoFilter_rt_200_li_200_lo_long_only.csv")
-    df$created_at <- as.Date(df$created_at)
-
-    #df <- df %>% filter(between(created_at, as.Date(input_dates1), as.Date(input_dates2)))
-    ### time dons
-    df_values <- df %>% select(mean_rt) %>% scale()
-    don <- xts(x = df_values, order.by = df$created_at)
-    dygraph(don) %>%
-      dyRangeSelector(
-        dateWindow = r$dates_desc + 1) # +1 parce que voila...
+   test_func(r$dates_desc)
   })
 }
 
 # Run the application
 shinyApp(ui = ui, server = server)
 
-
-
-test_func <- function(r, input_dates1, input_dates2){
+test_func <- function(dates_desc){
 
   df <- fread("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/plot_data/En_NoFilter/sum_stats_En_NoFilter_rt_200_li_200_lo_long_only.csv")
-   df$created_at <- as.Date(df$created_at)
+  df$created_at <- as.Date(df$created_at)
 
-  #df <- df %>% filter(between(created_at, as.Date(input_dates1), as.Date(input_dates2)))
+  #df <- df%>% filter(between(created_at, as.Date(input_dates1), as.Date(input_dates2)))
   ### time dons
   df_values <- df %>% select(mean_rt) %>% scale()
-   don <- xts(x = df_values, order.by = df$created_at)
-
-   dygraph(don) %>%
+  don <- xts(x = df_values, order.by = df$created_at)
+  dygraph(don) %>%
     dyRangeSelector(
-      dateWindow = r$dates + 1) # +1 parce que voila...
+      dateWindow = dates_desc + 1) # +1 parce que voila...
 
 
-
-
-
-  return(a)
 }
+
