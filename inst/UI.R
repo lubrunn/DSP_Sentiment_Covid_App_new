@@ -61,23 +61,16 @@ twitter_main_panel <- function(){
 
 
 
+
                       ########## main panels for Descritpive reiter
                        mainPanel(
                         tabsetPanel(id = "tabselected",
 
                           ### panel with histograms and summary table
                           tabPanel("Time Series Sentiment & Other Metrics", value = 1,
-                                    #summary statistics table
-                                   tags$head(tags$style(HTML("#sum_stats_table{
-                                   color: black;
-                                 font-size: 20px;
-                                 font-style: bold;
-                                 color: green !important;
-                                 }"
-                                   )
-                                   )),
-                                   tableOutput("sum_stats_table"),
 
+                                   #########################################
+                                   ###########################################
 
                                     # first time series plot
                                     textOutput("number_tweets_info"),
@@ -104,12 +97,58 @@ twitter_main_panel <- function(){
 
                                                      "))
                                    ),
+                                   tags$h4("Time Series"),
                                    dygraphs::dygraphOutput("sum_stats_plot"),
 
                                    # seconds time series plot
+                                   tags$br(),
+
+                                   tags$br(),
+                                   tags$h4("Saved Time Series"),
                                    dygraphs::dygraphOutput('sum_stats_plot2'),
 
+
+
+                                    #########################################
+                                   ###########################################
+
+                                   #summary statistics table
+                                   tags$head(tags$style(HTML("#sum_stats_table{
+                                   color: black;
+                                 font-size: 20px;
+                                 font-style: bold;
+                                 color: green !important;
+                                 }"
+                                   )
+                                   )),
+                                   tags$h4("Summary Statistics"),
+                                   tableOutput("sum_stats_table"),
+
+
+                                   #########################################
+                                   ###########################################
+
+                                   ##### violin plot
+                                   tags$h4("Distrubtion of aggregated tweets"),
+                                   plotOutput("violin_sum"),
+
+                                   #########################################
+                                   ###########################################
+
                                    # histogram
+                                   tags$br(),
+                                   tags$br(),
+
+                                   tags$br(),
+                                   tags$br(),
+                                   textOutput("histo_plot_info"),
+                                   tags$head(tags$style("#histo_plot_info{
+                                 font-size: 20px;
+                                 font-style: bold;
+                                 color: white;
+                                 }"
+                                   )
+                                   ),
                                   plotly::plotlyOutput("histo_plot") %>%
                                      shinycssloaders::withSpinner()
 
@@ -134,6 +173,8 @@ twitter_main_panel <- function(){
                                   tags$br(),
                                   tags$br(),
                                   tags$br(),
+                                  tags$br(),
+                                  tags$hr(),
                                   conditionalPanel(
                                     condition = "input.ngram_sel == 'Bigram'",
                                     tags$h4("Number of Bigrams containing the choosen word (if no word selected shows all tweets in current selection)"),
@@ -265,6 +306,36 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                 twitter_desc_conditional_sum_stats,
 
                                 ## additional elements for histogram
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
                                 tags$br(),
                                 tags$br(),
                                 tags$br(),
