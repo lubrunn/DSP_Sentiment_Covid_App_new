@@ -5,18 +5,20 @@ numeric_features <- tabsetPanel(
   tabPanel("1",
            selectInput("var_1", "Select varaible", choices = ""),
            numericInput("num_1","Chose length of moving average",min=1,value = 1),
-           numericInput("num_2","Chose Autoregressive lags for",min=1,value = 1)
+           numericInput("num_2","Chose Autoregressive lags for",min=1,value = 1),
+           actionButton("addButton", "UPLOAD!"),
+           actionButton("finish", "Finish!")
            
            
-  ),
-  tabPanel("2",
-           selectInput("var_2", "Select varaible", choices = ""), #could I use var_1 here?
-           numericInput("num_3","Chose length of moving average",min=1,value = 1),
-           numericInput("num_4","Chose Autoregressive lags for",min=1,value = 1),
-           selectInput("var_3", "Select varaible", choices = ""),
-           numericInput("num_5","Chose length of moving average",min=1,value = 1),
-           numericInput("num_6","Chose Autoregressive lags for",min=1,value = 1)
-  )
+   )
+  # tabPanel("2",
+  #          selectInput("var_2", "Select varaible", choices = ""), #could I use var_1 here?
+  #          numericInput("num_3","Chose length of moving average",min=1,value = 1),
+  #          numericInput("num_4","Chose Autoregressive lags for",min=1,value = 1),
+  #          selectInput("var_3", "Select varaible", choices = ""),
+  #          numericInput("num_5","Chose length of moving average",min=1,value = 1),
+  #          numericInput("num_6","Chose Autoregressive lags for",min=1,value = 1)
+  # )
   
 )
 
@@ -76,9 +78,8 @@ custom_lag_tab <- tabsetPanel(
   tabPanel("custom",
            selectInput("correlation_type", "Chose type of correlation:", choices = c("ACF","PACF")),
            uiOutput("correlation_plot_choice"),
-           numericInput("number_of_vars","Select number of variables which add AR/MA parts:",min = 1, value=1),
-           numeric_features,
-           actionButton("reset_arma", "clear selected")
+           numeric_features
+           # actionButton("reset_arma", "clear selected")
            
   )
   

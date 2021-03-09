@@ -705,30 +705,54 @@ observeEvent(input$var_2,{
                     choices = filter_by_input_df())
 })
 
-
+#####################################
 
 df_xgb <- reactive({
   
-  req(input$var_1)
-  req(input$var_2)
-  req(input$var_3)
-  req(input$num_1)
-  req(input$num_2)
-  req(input$num_3)
-  req(input$num_4)
-  req(input$num_5)
-  req(input$num_6)
-  req(input$number_of_vars)
-  req(input$lag_tabs)
-  
   res <- final_regression_df_var()
-
-  res <- ARMA_creator(res,input$number_of_vars,input$var_1,input$var_2,
-                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
-                      input$num_5,input$num_6,input$lag_tabs,list_dfs$df_train,"no")
-  
+  res <- ARMA_creator(res)
+ 
 })
 
+
+xchange <- reactiveValues()
+xchange$df_full <- NULL
+xchange$df_full2 <- NULL
+
+xchange$df1 <- NULL
+xchange$df2 <- NULL
+
+observe({
+  if(input$addButton > 0) {
+    if(input$var_1 == "Close"){
+    Ma_part <- MA_creator(final_regression_df_var() ,input$var_1,input$num_1)
+    Ar_part <- AR_creator(final_regression_df_var() ,input$var_1,input$num_2)
+    isolate(xchange$df1 <- Ma_part)
+    isolate(xchange$df2 <-  cbind(final_regression_df_var(),Ar_part))
+    isolate(xchange$df_full <- cbind(xchange$df2,xchange$df1))}
+    
+    else if(input$var_1 == "VIX"){
+      Ma_part <- MA_creator(final_regression_df_var() ,input$var_1,input$num_1)
+      Ar_part <- AR_creator(final_regression_df_var() ,input$var_1,input$num_2)
+      isolate(xchange$df1 <- Ma_part)
+      isolate(xchange$df2 <-  cbind(final_regression_df_var(),Ar_part))
+      isolate(xchange$df_full2 <- cbind(xchange$df2,xchange$df1))
+    }
+  }
+})
+
+custom_df <- reactive({
+  req(input$finish)
+  if(input$finish > 0){
+    df <- cbind(xchange$df_full,xchange$df_full2)
+  }
+  df
+})
+
+output$tableCustom <- renderTable({head(custom_df())}
+                                  , include.rownames=F)
+
+###############################################
 output$df_xgb1 <- DT::renderDataTable({
   DT::datatable(df_xgb(),options = list(
     autoWidth = FALSE, scrollX = TRUE)) %>% DT::formatStyle(names(df_xgb()),
@@ -741,9 +765,9 @@ output$df_xgb1 <- DT::renderDataTable({
 })
 
 
-observeEvent(input$reset_arma,{
-  updateNumericInput(session,"number_of_vars",value = 1)
-})
+# observeEvent(input$reset_arma,{
+#   updateNumericInput(session,"number_of_vars",value = 1)
+# })
 
 
 # no info here.   df_xgb_train uses actual observed covariates
@@ -761,7 +785,7 @@ df_xgb_train <- reactive({
   req(input$num_6)
   req(input$number_of_vars)
   req(input$lag_tabs)
-  
+  browser()
   res <- final_regression_df_var()
 
   res <- make_ts_stationary(res)
