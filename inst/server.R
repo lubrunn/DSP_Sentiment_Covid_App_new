@@ -133,6 +133,18 @@ server <- function(input, output, session) {
   })
 
 
+  output$ControlsGranger <- renderUI({
+    if (input$country_regression == "Germany"){
+      input <- selectizeInput("Controls_GRANGER","Choose control variables:",
+                              c(colnames(global_controls_test_DE())[-1],"DAX"),selected = "VIX",multiple = FALSE)
+      #c(colnames(res[3:length(res)])),multiple = TRUE
+    }else{
+      input <- selectizeInput("Controls_GRANGER","Choose control variables:",
+                              c(colnames(global_controls_test_US())[-1],"DOW"),selected = "VIX",multiple = FALSE)
+    }
+  })
+
+
   granger_data <- reactive({
     req(path_setter()[[3]][1] == "correct_path")
     req(input$Stock_Granger)
@@ -146,14 +158,34 @@ server <- function(input, output, session) {
                            .data$Dates >= .env$input$date_granger[1] & .data$Dates <= .env$input$date_granger[2])[c("Dates", input$Granger_outcome)]
 
     }
-    granger1["zweitevariable"] <- filter(stockdata_DE(),
-                                         .data$name == "ADS.DE" &
-                                           .data$Dates >= .env$input$date_granger[1] & .data$Dates <= .env$input$date_granger[2])[["Open"]]
-    granger1
+
+    if (input$country_granger == "Germany"){
+      global_controls <- global_controls_test_DE()   #load controls
+      global_controls$Date <- as.Date(global_controls$Date) #transform date
+      dax <- GDAXI()  #load dax
+      dax$Date <- as.Date(dax$Date, "%d %b %Y") #transform date
+      dax <- missing_date_imputer(dax,"Close.") #transform time series by imputing missing values
+      colnames(dax)[2] <- "DAX"  #rename ->   !! is not renamed in final dataset !! -> dont know why
+      global_controls <- left_join(dax,global_controls,by = c("Date")) #join final
+
+    }else {
+      global_controls <- global_controls_test_US() #same procedure as above
+      global_controls$Date <- as.Date(global_controls$Date)
+      dow <- DOW()
+      dow$Date <- as.Date(dow$Date, " %b %d, %Y")
+      dow <- missing_date_imputer(dow,"Close.")
+      colnames(dow)[2] <- "DOW"
+      global_controls <- left_join(dow,global_controls,by = c("Date"))
+    }
+    names(global_controls)[1] <- "Dates"
+    granger <- left_join(granger1,global_controls,by = c("Dates"))
+    granger <- granger[c("Dates",input$Granger_outcome,input$Controls_GRANGER)]
+    granger
   })
 
   optlags <- reactive({
     #library(vars)
+    req(input$country_granger)
     VARselect(granger_data()[-1],lag.max = 10, type = "const")$selection[["AIC(n)"]]
   })
 
@@ -170,7 +202,7 @@ server <- function(input, output, session) {
   granger_result <- reactive({
     varobject <- VAR(dickey_fuller()[-1], p = optlags(), type = "const")
     cause <- NULL
-    ifelse(input$direction_granger == TRUE,cause <- "zweitevariable",cause <- input$Granger_outcome)
+    ifelse(input$direction_granger == TRUE,cause <- input$Controls_GRANGER,cause <- input$Granger_outcome)
     granger <- causality(varobject, cause = cause)
     granger$Granger
   })
@@ -198,15 +230,15 @@ server <- function(input, output, session) {
   output$granger_satz <- renderUI({
     if(input$direction_granger == TRUE){
       if (granger_result()["p.value"] < 0.1){
-        str1 <- paste("Zweitevariable granger causes ",input$Granger_outcome,"of",input$Stock_Granger)
+        str1 <- paste(input$Controls_GRANGER, " granger causes ",input$Granger_outcome,"of",input$Stock_Granger)
       } else {
-        str1 <- paste("Zweitevariable does not granger cause ",input$Granger_outcome,"of",input$Stock_Granger)
+        str1 <- paste(input$Controls_GRANGER, " does not granger cause ",input$Granger_outcome,"of",input$Stock_Granger)
       }
     } else {
       if (granger_result()["p.value"] < 0.1){
-        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "granger causes Zweitevariable")
+        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "granger causes ",input$Controls_GRANGER)
       } else {
-        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "does not granger cause Zweitevariable")
+        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "does not granger cause ",input$Controls_GRANGER)
       }
     }
     HTML(paste(str1))
@@ -285,7 +317,7 @@ server <- function(input, output, session) {
       global_controls <- global_controls_test_US() #same procedure as above
       global_controls$Date <- as.Date(global_controls$Date)
       dow <- DOW()
-      dow$Date <- as.Date(dow$Date, "%d %b %Y")
+      dow$Date <- as.Date(dow$Date, " %b %d, %Y")
       dow <- missing_date_imputer(dow,"Close.")
       colnames(dow)[2] <- "DOW"
       global_controls <- left_join(dow,global_controls,by = c("Date"))
@@ -510,7 +542,7 @@ server <- function(input, output, session) {
       global_controls <- global_controls_test_US() #same procedure as above
       global_controls$Date <- as.Date(global_controls$Date)
       dow <- DOW()
-      dow$Date <- as.Date(dow$Date, "%d %b %Y")
+      dow$Date <- as.Date(dow$Date, " %b %d, %Y")
       dow <- missing_date_imputer(dow,"Close.")
       colnames(dow)[2] <- "DOW"
       global_controls <- left_join(dow,global_controls,by = c("Date"))
