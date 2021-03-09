@@ -1508,7 +1508,7 @@ long <- long()
 
 #browser()
       if (input$plot_type_expl == "Frequency Plot"){
-        df <- word_freq_data_wrangler(df, input$dates_desc[1], input$dates_desc[2],
+        df <- word_freq_data_wrangler(df, dates_desc()[1], dates_desc()[2],
                                       input$emo, emoji_words,
                                       input$word_freq_filter,
                                       tolower(input$lang),
@@ -1532,7 +1532,7 @@ long <- long()
   req(input$plot_type_expl == "Word Cloud")
 
     if (input$plot_type_expl == "Word Cloud"){
-      df <- word_freq_data_wrangler(data_expl(), input$dates_desc[1], input$dates_desc[2],
+      df <- word_freq_data_wrangler(data_expl(), dates_desc()[1], dates_desc()[2],
                                     input$emo, emoji_words,
                                     input$word_freq_filter,
                                     tolower(input$lang),
@@ -1548,8 +1548,9 @@ long <- long()
 
 
 ############################## time series bigram plot
-  output$word_freq_time_series <- renderPlot({
-    df <- word_freq_data_wrangler(data_expl(), input$dates_desc[1], input$dates_desc[2],
+  output$word_freq_time_series <- plotly::renderPlotly({
+    req(length(input$dates_desc) > 1)
+    df <- word_freq_data_wrangler(data_expl(), dates_desc()[1], dates_desc()[2],
                                   input$emo, emoji_words,
                                   input$word_freq_filter, input$lang,
                                   input$comp)
