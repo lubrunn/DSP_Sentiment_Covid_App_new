@@ -480,8 +480,8 @@ ui <- fluidPage(
                                    #                c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
                                    #                selected = "Bayer ",multiple = FALSE),
                                    radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
-                                   #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
                                    uiOutput("ControlsGranger"),
+                                   #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
                                    sliderInput("date_granger",label="Timeseries",
                                                value = c(as.Date("2020-02-12"),as.Date("2021-02-12")),
                                                min = as.Date("2020-01-02"),
@@ -494,9 +494,17 @@ ui <- fluidPage(
                                      tabPanel("Information Granger",
                                               htmlOutput("info_granger")),
                                      tabPanel("Visualize",
-                                              plotOutput("stocks_granger")),
+                                              dygraphs::dygraphOutput("stocks_granger"),
+                                              dygraphs::dygraphOutput("second_granger")),
                                      tabPanel("Background-steps",
-                                              htmlOutput("dickey")),
+                                              htmlOutput("grangertext1"),
+                                              verbatimTextOutput("optimallags"),
+                                              htmlOutput("grangertext2"),
+                                              verbatimTextOutput("dickey_fuller"),
+                                              verbatimTextOutput("dickey_fuller_second"),
+                                              htmlOutput("grangertext3"),
+                                              verbatimTextOutput("dickey_fuller_diff"),
+                                              verbatimTextOutput("dickey_fuller_second_diff")),
                                      tabPanel("Results",
                                               verbatimTextOutput("granger_result"),
                                               htmlOutput("granger_satz"))))),
@@ -505,39 +513,46 @@ ui <- fluidPage(
                                    tabs_custom()
                                  ),
                                  mainPanel(
-                                   tabsetPanel(
-                                     tabPanel("regression",
-                                              verbatimTextOutput("testi_table"),
-                                              verbatimTextOutput("senti"),
-                                              verbatimTextOutput("senti_agg"),
-                                              htmlOutput("regression_equation"),
-                                              verbatimTextOutput("regression_result")),
-                                     tabPanel("Quantile Regression",
-                                              plotOutput("plot_dens_Qreg"),
-                                              verbatimTextOutput("regression_result_Qreg")
+                                   tabsetPanel(id = "regressiontabs",
+                                               tabPanel("regression",
+                                                        #verbatimTextOutput("testi_table"),
+                                                        #verbatimTextOutput("senti"),
+                                                        #verbatimTextOutput("senti_agg"),
+                                                        htmlOutput("regression_equation"),
+                                                        verbatimTextOutput("regression_result")),
+                                               tabPanel("Quantile Regression",value=1,
+                                                        #plotOutput("plot_dens_Qreg"),
+                                                        verbatimTextOutput("regression_result_Qreg")
 
-                                     )
+                                               )
                                    )
                                  )
                         ),
                         tabPanel("VAR-forecasting",
                                  sidebarPanel(
                                    tabs_custom_var(),
-                                   numericInput("ahead", "choose how many days to forecast", value = 5, min = 1, max = 100)
+                                   numericInput("ahead", "choose how many days to forecast", value = 5, min = 1, max = 100),
+                                   selectInput("var_which_plot","Select plot to show:",c("Forecasted period only","Full time series"),selected="Forecasted period only")
                                  ),
                                  mainPanel(
                                    tabsetPanel(
+                                     tabPanel("Information VAR"),
+                                     tabPanel("Summary statistics",
+                                              tableOutput("var_summary"),
+                                              plotOutput("correlation_var")
+                                     ),
                                      tabPanel("Validity",
                                               #verbatimTextOutput("datensatz_var"),
-                                              plotOutput("plot_forecast"),
-                                              htmlOutput("accuracy_var"),
+                                              dygraphs::dygraphOutput("plot_forecast"),
+                                              #htmlOutput("accuracy_var"),
+                                              tableOutput("var_metrics"),
                                               verbatimTextOutput("serial_test"),
                                               htmlOutput("var"),
-                                              plotOutput("plot_forecast2")
+                                              #dygraphs::dygraphOutput("plot_forecast2")
                                      ),#close tabpanel validity
                                      tabPanel("Actual Forecast",
                                               verbatimTextOutput("testins"),
-                                              plotOutput("plot_forecast_real"))#close tabpanel actual forecast
+                                              dygraphs::dygraphOutput("plot_forecast_real"))#close tabpanel actual forecast
                                    )))#close tabpanel VAR forecasting
              )#close Navbarmenu
   )#close Navbarpage

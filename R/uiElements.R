@@ -95,7 +95,7 @@ selectize_Stocks_reg <- function() {
                 "Intel Corporation ","Johnson  Johnson ","JPMorgan Chase ","The Coca-Cola Company ","McDonald's Corporation ",
                 "3M Company ","Merck ","Microsoft Corporation ","NIKE ","The Procter  Gamble Company ","The Travelers Companies ","UnitedHealth Group Incorporated ",
                 "Visa ","Verizon Communications ","Walgreens Boots Alliance ","Walmart")
-                ,selected = "adidas ")
+              ,selected = "adidas ")
 
 }
 
@@ -104,67 +104,67 @@ selectize_Stocks_reg <- function() {
 #' @rdname uiElements
 parameter_tabsi <- function(){
   tabsetPanel(
-  id = "industry_tab",
-  type = "hidden",
-  tabPanel("no",
-           selectize_Stocks_reg(),
-           radioButtons("language1","Language of tweets ?",
-                        choices = c("en","de"),inline=T),
-           selectizeInput("aggregation1", "Aggregation", choices = c("Mean","Mean weighted by retweets",
-                                                                     "Mean weighted by likes", "Mean weighted by length"),
-                          select = "Mean"),
-           actionButton("reset1", "clear selected"),
-           radioButtons("minRetweet_stocks1", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
-           radioButtons("tweet_length_stock1","Tweet larger than median length:",
-                        choices = c("yes","no"),selected = "no",inline=T)
+    id = "industry_tab",
+    type = "hidden",
+    tabPanel("no",
+             selectize_Stocks_reg(),
+             radioButtons("language1","Language of tweets ?",
+                          choices = c("en","de"),inline=T),
+             selectizeInput("aggregation1", "Aggregation", choices = c("Mean","Mean weighted by retweets",
+                                                                       "Mean weighted by likes", "Mean weighted by length"),
+                            select = "Mean"),
+             actionButton("reset1", "clear selected"),
+             radioButtons("minRetweet_stocks1", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
+             radioButtons("tweet_length_stock1","Tweet larger than median length:",
+                          choices = c("yes","no"),selected = "no",inline=T)
 
 
-  ),
-  tabPanel("yes",
-           selectInput("industry", "Industry", choices = c("Consumer Cyclical","Financial Services")),
+    ),
+    tabPanel("yes",
+             selectInput("industry", "Industry", choices = c("Consumer Cyclical","Financial Services")),
 
-           radioButtons("language2","Language of tweets ?",
-                        choices = c("en","de"),inline=T),
+             radioButtons("language2","Language of tweets ?",
+                          choices = c("en","de"),inline=T),
 
-           selectizeInput("aggregation2", "Aggregation", choices = c("Mean","Mean weighted by retweets",
-                                                                     "Mean weighted by likes", "Mean weighted by length"),
-                          select = "Mean"),
-           actionButton("reset2", "clear selected"),
-           radioButtons("minRetweet_stocks2", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
-           radioButtons("tweet_length_stock2","Tweet larger than median length:",
-                        choices = c("yes","no"),selected = "no",inline=T)
+             selectizeInput("aggregation2", "Aggregation", choices = c("Mean","Mean weighted by retweets",
+                                                                       "Mean weighted by likes", "Mean weighted by length"),
+                            select = "Mean"),
+             actionButton("reset2", "clear selected"),
+             radioButtons("minRetweet_stocks2", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
+             radioButtons("tweet_length_stock2","Tweet larger than median length:",
+                          choices = c("yes","no"),selected = "no",inline=T)
+
+    )
 
   )
-
-)
 }
 
 #' @export
 #' @rdname uiElements
 parameter_tabs <- function(){
   tabsetPanel(
-  id = "params",
-  type = "hidden",
-  tabPanel("NoFilter",
-           radioButtons("language","Choose Langugage of Tweets:",choices = c("En","De")),
-           selectizeInput("aggregation", "Aggregation", choices = c("Mean","Mean weighted by retweets",
-                                                                    "Mean weighted by likes", "Mean weighted by length"),
-                          select = "Mean"),
-           radioButtons("minRetweet", "Select minimum number of retweets", choices = c("0","10","50","100","200"),selected = "0",inline=T),
-           radioButtons("minLikes", "Select minimum number of likes", choices = c("0","10","50","100","200"),selected = "0",inline=T),
-           radioButtons("tweet_length","Tweet larger than median length:",
-                        choices = c("yes","no"),inline=T)
+    id = "params",
+    type = "hidden",
+    tabPanel("NoFilter",
+             radioButtons("language","Choose Langugage of Tweets:",choices = c("En","De")),
+             selectizeInput("aggregation", "Aggregation", choices = c("Mean","Mean weighted by retweets",
+                                                                      "Mean weighted by likes", "Mean weighted by length"),
+                            select = "Mean"),
+             radioButtons("minRetweet", "Select minimum number of retweets", choices = c("0","10","50","100","200"),selected = "0",inline=T),
+             radioButtons("minLikes", "Select minimum number of likes", choices = c("0","10","50","100","200"),selected = "0",inline=T),
+             radioButtons("tweet_length","Tweet larger than median length:",
+                          choices = c("yes","no"),inline=T)
 
 
-  ),
-  tabPanel("Stocks",
-           radioButtons("industry_sentiment","Sentiment by industry ?",
-                        choices = c("yes","no"),selected = "no",inline=T),
-           parameter_tabsi()
+    ),
+    tabPanel("Stocks",
+             radioButtons("industry_sentiment","Sentiment by industry ?",
+                          choices = c("yes","no"),selected = "no",inline=T),
+             parameter_tabsi()
+
+    )
 
   )
-
-)
 }
 
 
@@ -173,32 +173,36 @@ parameter_tabs <- function(){
 #' @rdname uiElements
 tabs_custom <- function(){
   tabsetPanel(
-  id = "regression_tabs",
-  tabPanel("Model specifcation",
-           radioButtons("country_regression","Which country?",c("Germany","USA"),selected = "Germany"),
-           uiOutput("stock_regression"),
-           radioButtons("regression_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
-           uiOutput("Controls"),
-           actionButton("reset_regression", "clear selected"),
-           #radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
-           #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
-           sliderInput("date_regression",label = "Timeseries",
-                       value = c(as.Date("2020-01-02"),as.Date("2021-02-12")),
-                       min = as.Date("2020-01-02"),
-                       max = as.Date("2021-02-12"),
-                       step = 1,timeFormat = "%F")
+    id = "regression_tabs",
+    tabPanel("Model specifcation",
+             radioButtons("country_regression","Which country?",c("Germany","USA"),selected = "Germany"),
+             uiOutput("stock_regression"),
+             radioButtons("regression_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
+             switchInput("senti_yesno_reg","Include Sentiment?",onLabel="Yes",offLabel="No"),
+             conditionalPanel(
+               condition = "input.regressiontabs==1",
+               numericInput("Quantiles","Choose quantile",value=0.5,min=0.05,max=0.95,step = 0.05)),
+             uiOutput("Controls"),
+             actionButton("reset_regression", "clear selected"),
+             #radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
+             #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
+             sliderInput("date_regression",label = "Timeseries",
+                         value = c(as.Date("2020-01-02"),as.Date("2021-02-12")),
+                         min = as.Date("2020-01-02"),
+                         max = as.Date("2021-02-12"),
+                         step = 1,timeFormat = "%F")
 
 
 
-  ),
-  tabPanel("Filter sentiment input",
-           selectInput("Sentiment_type", "Type of Sentiment:", choices = c("NoFilter","Stocks"),
-                       selected = "NoFilter"),
-           parameter_tabs()
+    ),
+    tabPanel("Filter sentiment input",
+             selectInput("Sentiment_type", "Type of Sentiment:", choices = c("NoFilter","Stocks"),
+                         selected = "NoFilter"),
+             parameter_tabs()
+
+    )
 
   )
-
-)
 }
 
 ################################################################ VAR
@@ -303,16 +307,3 @@ tabs_custom_var <- function(){
 
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
