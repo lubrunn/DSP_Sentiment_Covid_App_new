@@ -31,4 +31,6 @@
 #' @import lubridate
 #' @import GGally
 #' @import psych
+#' @import lmtest
+#' @import sandwich
 NULL
