@@ -100,10 +100,11 @@ time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, 
   selected_metrics_new <- paste(filter_type, selected_metrics_new, sep = "_")
 
   if (num_tweets == T){
+    selected_metrics_new <- c(selected_metrics_new, "N")
     selected_metrics <- c(selected_metrics, "N")
   }
 
-  if (length(selected_metrics) > 1){
+  if (length(selected_metrics_new) > 1){
 
 
     selected_metrics <- stringr::str_replace(selected_metrics, "sentiment_rt", "Retweets weighted Sentiment")
@@ -119,9 +120,9 @@ time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, 
 
 
     df_values <- df %>% select(selected_metrics_new)%>%
-      {if (length(selected_metrics_new) > 1) scale(.) else .}
+      scale()
 
-    colnames(df_values) <- selected_metrics
+    colnames(df_values) <- selected_metrics_new
 
 
     don <- xts::xts(x = df_values, order.by = df$created_at)
@@ -176,7 +177,7 @@ time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, 
     dygraphs::dygraph(dyData,
                       ylab = selected_metrics_new) %>%
       dygraphs::dySeries(label = selected_metrics_new) %>%
-      dygraphs::dyRibbon(data = ribbonData, top = 0.1, bottom = 0.02) %>%
+      dygraphs::dyRibbon(data = ribbonData, top = 0.05, bottom = 0) %>%
       dygraphs::dyOptions(axisLineWidth = 2, drawGrid = FALSE) %>%
       dygraphs::dyLegend() %>%
 
