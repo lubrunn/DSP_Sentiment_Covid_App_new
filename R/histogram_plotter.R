@@ -12,7 +12,7 @@ histogram_plotter <- function(df, date_input1, date_input2, input_bins, input_lo
 
   # count number of tweets per metric bin
   df <- df[created_at >= as.Date(date_input1) &
-             created_at <= as.Date(date_input1),
+             created_at <= as.Date(date_input2),
            list(sum_n = sum(N)),
            by = c(input_metric)]
 
