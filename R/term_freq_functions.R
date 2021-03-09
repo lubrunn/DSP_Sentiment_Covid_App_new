@@ -114,13 +114,20 @@ plotly::ggplotly(p)
 word_filter_time_series_plotter <- function(df){
 
 
-df %>%
+p <- df %>%
    group_by(date) %>%
     summarise(n = sum(N)) %>%
 
 
   ggplot() +
-  geom_line(aes(date, n))
+  geom_line(aes(date, n)) +
+  theme_classic() +
+  theme(text = element_text(size=18)) +
+  labs(x = "Date",
+       y = "N")
+
+
+plotly::ggplotly(p)
 
 }
 
