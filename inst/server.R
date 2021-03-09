@@ -1065,58 +1065,46 @@ long <- long()
 
 
     })
-    #browser()
 
 
 
+    #########################################################################
+    ############################# get data for sum stats table
+    get_data_sum_stats_tables <- reactive({
+      con <- path_setter()
+      con <- con[[1]]
+      string_value <- is.null(con)
+      req(!string_value)
+      df_need <- DBI::dbGetQuery(con,  querry_sum_stats_table())
 
-
-  # ## get data from querry
-  # data_time_series <- reactive({
-  #
-  #
-  #
-  #   con <- path_setter()
-  #
-  #
-  #   con <- con[[1]]
-  #
-  #   string_value <- is.null(con)
-  #   req(!string_value)
-  #   df_need <- DBI::dbGetQuery(con, querry_time_series())
-  #
-  #  df_need
-  # })
-############################### data retriever for histogram
-  data_histo <- reactive({
-
-    lang <- lang_converter()
-    a <- path_setter()
-
-
-
-    # for case no company selected
-    if (is.null(input$comp)){
-  file_path <- file.path(glue("Twitter/plot_data/{lang}_NoFilter/{querry_histo()}"))
-  exists <- file.exists(file_path)
-  shinyFeedback::feedbackDanger("histo_plot", !exists, "Please make sure you picked the correct path. The \n
-                                file cannot be found in the current directory")
-  req(exists)
-    df_need <- data.table::fread(file_path,
-                                 select = 1:3)
-
-    df_need
-    } else { #for case of choosen company
-      file_path <- file.path(glue("Twitter/plot_data/Companies/{input$comp}/{querry_histo()}"))
-      df_need <- data.table::fread(file_path,
-                                   select = 1:3)
       df_need
+    })
+    #########################
+    ################################# sum stats table
+    output$sum_stats_table <- function(){
 
+      df_need <- get_data_sum_stats_tables()
+      sum_stats_table_creator(df_need, input$dates_desc[1], input$dates_desc[2])
     }
-  })
 
 
+    ###### number of tweets display
+    output$number_tweets_info <- renderText({
 
+      df_need <- get_data_sum_stats_tables()
+
+      #convert to date
+      df_need$created_at <- as.Date(df_need$created_at)
+
+
+      df_need <- df_need %>%
+        filter(between(created_at, as.Date(input$dates_desc[1]), as.Date(input$dates_desc[2])))
+
+      glue("For current selection: {round(mean(df_need$N))} tweets on average per day")
+    })
+
+
+    ############################################################################
     ######################### time series plot for retweets etc.
 
   r <- reactiveValues(
@@ -1129,6 +1117,7 @@ long <- long()
 
 
   observeEvent(input$sum_stats_plot_date_window, {
+
     message(crayon::blue("observeEvent_input_sum_stats_plot_date_window"))
     r$change_datewindow <- r$change_datewindow + 1
     if (r$change_datewindow > r$change_datewindow_auto) {
@@ -1136,8 +1125,8 @@ long <- long()
       r$change_dates_auto <- r$change_dates_auto + 1
       r$change_datewindow_auto <- r$change_datewindow
 
-      start <- as.Date(ymd_hms(input$sum_stats_plot_date_window[[1]])+ days(1))
-      stop  <- as.Date(ymd_hms(input$sum_stats_plot_date_window[[2]])+ days(1))
+      start <- as.Date(lubridate::ymd_hms(input$sum_stats_plot_date_window[[1]])+ lubridate::days(1))
+      stop  <- as.Date(lubridate::ymd_hms(input$sum_stats_plot_date_window[[2]])+ lubridate::days(1))
       updateAirDateInput(session = session,
                          inputId = "dates_desc",
                          value = c(start, stop),
@@ -1158,14 +1147,14 @@ long <- long()
       r$change_datewindow_auto <- r$change_datewindow_auto
       r$change_dates_auto <- r$change_dates
 
-      r$dates <- input$dates
+      r$dates <- input$dates_desc
 
     }
   })
 
 
-
-
+  ##################################
+  ################################################### outut time series
   output$sum_stats_plot <- dygraphs::renderDygraph({
     message("renderDygraph")
     req(!is.null(input$value) | input$num_tweets_box == T)
@@ -1182,20 +1171,82 @@ long <- long()
     #   )
   })
 
+  save_plot <- reactiveValues(data = NULL)
+
+  ##### if button is clicked store time series plot in serperate part
+  observeEvent(input$plot_saver_button, {
+
+    req(!is.null(input$value) | input$num_tweets_box == T)
+
+    df <- get_data_sum_stats_tables()
+
+    if (input$num_tweets_box == F){
+      save_plot$plot <- time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r)
+    } else {
+      save_plot$plot <- time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r)
+    }
 
 
 
-####### block metric selection if chosen number of tweets
-  # observeEvent(input$metric,{
-  #  # browser()
-  #   if (input$metric == "N"){
-  #     shinyjs::disable("value")
-  #   } else {
-  #     shinyjs::enable("value")
-  #   }
-  # })
+  })
 
 
+  output$sum_stats_plot2 <-dygraphs::renderDygraph({
+
+
+   save_plot$plot
+    # dygraphs::dygraph(don) %>%
+    #   dygraphs::dyRangeSelector( input$dates_desc + 1, retainDateWindow = T
+    #   )
+  })
+
+
+
+
+
+  ##############################################################################
+  ############################### data retriever for histogram
+  data_histo <- reactive({
+
+    lang <- lang_converter()
+    a <- path_setter()
+
+
+
+    # for case no company selected
+    if (is.null(input$comp)){
+      file_path <- file.path(glue("Twitter/plot_data/{lang}_NoFilter/{querry_histo()}"))
+      exists <- file.exists(file_path)
+      shinyFeedback::feedbackDanger("histo_plot", !exists, "Please make sure you picked the correct path. The \n
+                                file cannot be found in the current directory")
+      req(exists)
+      df_need <- data.table::fread(file_path,
+                                   select = 1:3)
+
+      df_need
+    } else { #for case of choosen company
+      file_path <- file.path(glue("Twitter/plot_data/Companies/{input$comp}/{querry_histo()}"))
+      df_need <- data.table::fread(file_path,
+                                   select = 1:3)
+      df_need
+
+    }
+  })
+
+
+
+  ###########################################################
+  ######################################## histogram output
+  output$histo_plot <- plotly::renderPlotly({
+
+
+   req(input$value)
+
+
+  histogram_plotter(data_histo(), date_input1 = input$dates_desc[1], date_input2 = input$dates_desc[2],
+                    input_bins = input$bins, input_log = input$log_scale)
+
+  })
 
 
   ##################### disable log scale option for sentiment because as negative values
@@ -1214,65 +1265,9 @@ long <- long()
   })
 
 
-  ######################################## histogram output
-  output$histo_plot <- renderPlot({
-   #  df <- data_histo()
-   #
-   # df %>%
-   #      group_by(.[[2]]) %>% summarise(N = sum(N)) %>%
-   #     mutate(metric = case_when(input$log_scale == T ~ log(as.numeric(.[[1]])+ 0.0001),
-   #                                input$log_scale == F ~ as.numeric(.[[1]])),
-   #             bins = cut_interval(metric, n = input$bins)) %>%
-   #
-   #      ggplot(aes(bins, N)) +
-   #      geom_col() +
-   #      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-   #
-   req(input$value)
-   # df <- data_histo()
-   #
-   #   df %>%   group_by(.[[2]]) %>% summarise(N = sum(N)) %>%
-   #     mutate(metric = case_when(input$log_scale == T ~ log(as.numeric(.[[1]])+ 0.0001),
-   #                                input$log_scale == F ~ as.numeric(.[[1]])),
-   #             bins = cut_interval(metric, n = input$bins)) %>%
-   #
-   #      ggplot(aes(bins, N)) +
-   #      geom_col() +
-   #      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-  histogram_plotter(data_histo(), date_input1 = input$dates_desc[1], date_input2 = input$dates_desc[2],
-                    input_bins = input$bins, input_log = input$log_scale)
-
-  })
 
 
 
-
-############################# get data for sum stats table
-  get_data_sum_stats_tables <- reactive({
-    con <- path_setter()
-    con <- con[[1]]
-    string_value <- is.null(con)
-    req(!string_value)
-    df_need <- DBI::dbGetQuery(con,  querry_sum_stats_table())
-
-    df_need
-  })
-
-  ################################# sum stats table
-  output$sum_stats_table <- function(){
-     # browser()
-    df_need <- get_data_sum_stats_tables()
-    sum_stats_table_creator(df_need, input$dates_desc[1], input$dates_desc[2])
-  }
-
-
-  ###### number of tweets display
-  output$number_tweets_info <- renderText({
-    df_need <- get_data_sum_stats_tables()
-
-   glue("For current selection: {round(mean(df_need$N))} tweets on average per day")
-  })
 
 
   ######################################################
@@ -1315,7 +1310,7 @@ long <- long()
       add_on <- "bi"
     }
 
-
+browser()
     if (!is.null(input$comp)) {
       folder <- file.path("Companies")
       file_name <- glue("term_freq_{input$comp}_all_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
@@ -1326,7 +1321,7 @@ long <- long()
                                                               "word",
                                                               "N",
                                                               "emo"),
-                        colClasses = c("created_at" = "Date"))
+                        colClasses = c("date_variable" = "Date"))
     } else {
       folder <- glue("{lang}_NoFilter")
       file_name <- glue("{add_on}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
@@ -1337,7 +1332,7 @@ long <- long()
                                               "word",
                                               "N",
                                               "emo"),
-                        colClasses = c("created_at" = "Date"))
+                        colClasses = c("date" = "Date"))
     }
 
 
