@@ -189,7 +189,13 @@ ui <- fluidPage(
                                                                                                            "ADF")),
                                     uiOutput("random_walk_choice"),
                                     radioButtons("lag_tabs","How do you want to proceed?",choices = c("default","custom"),
-                                                 selected = "default"),
+                                                 selected = "default")  %>% shinyhelper::helper(type = "markdown",
+                                                                                                     title = "Inline Help",
+                                                                                                     content = "network_plot_button",
+                                                                                                     buttonLabel = "Got it!",
+                                                                                                     easyClose = FALSE,
+                                                                                                     fade = TRUE,
+                                                                                                     size = "s"),
                                     custom_lag_tab
                                     
                                     
@@ -198,7 +204,13 @@ ui <- fluidPage(
                                                    #  numericInput("split_at","select training/test split",min = 0.1, value=0.7,max = 1,
                                                     #              step = 0.1),
                                                      radioButtons("model_spec","Choose model specification",choices = c("default","custom","hyperparameter_tuning"),
-                                                                  selected = "default"),
+                                                                  selected = "default" %>% 
+                                                                    helper(type = "inline",
+                                                                           title = "Inline Help",
+                                                                           content = c("This helpfile is defined entirely in the UI!",
+                                                                                       "This is on a new line.",
+                                                                                       "This is some <b>HTML</b>."),
+                                                                           size = "s")),
                                                      model_specification,
                                                    numericInput("n_ahead","select forecast",min = 1, value=5,max = 20,
                                                                 step = 1),
@@ -236,14 +248,14 @@ ui <- fluidPage(
                                               ),
                                 
                                      tabPanel("MA/AR selection",value = "MA/AR selection",
-                                          verbatimTextOutput("rw_hyp"),
+                                          #verbatimTextOutput("rw_hyp"),
                                           conditionalPanel(
                                                 condition = "input.correlation_type == 'ACF' && input.lag_tabs == 'custom'",
                                                   plotOutput("acf_plot_xgb")),
                                           conditionalPanel(
                                                 condition = "input.correlation_type == 'PACF'  && input.lag_tabs == 'custom'",
                                                 plotOutput("pacf_plot_xgb")),
-                                          verbatimTextOutput("df_xgb1")
+                                          DT::dataTableOutput("df_xgb1")
 
                                      ),
                                      tabPanel("Model specification",value = "Model specification",

@@ -29,20 +29,20 @@ split_data <- function(sample,spliti){
 }
 #' @export
 #' @rdname xgboost_prep
-
 AR_creator <- function(df,variable,lag){
   names(df)[1] <- "date"
   df$date <- as.Date(df$date)
   
-  xts_object <- df %>%
-    tk_xts(silent = TRUE)
-  
-  xts_object <- lag.xts(xts_object[,variable], k = 1:lag)
-  df <- xts_object %>%
-    tk_tbl() %>% dplyr::select(-index)
-  names(df)[1] <- paste(variable,"_lag",sep = "")
-  df <- as.data.frame(df)
-
+  # xts_object <- df %>%
+  #   tk_xts(silent = TRUE)
+  # 
+  # xts_object <- lag.xts(xts_object[,variable], k = 1:lag)
+  # df <- xts_object %>%
+  #   tk_tbl() %>% dplyr::select(-index)
+  # colnames(df)
+  df <- df[,c("date",variable)]
+  df <- df %>%  tk_augment_lags(contains(variable), .lags = 1:lag)
+  df <- df[,c(-1,-2)]
   # xts_object <- lag.xts(xts_object[,variable], k = 1:nrow(df))
   # 
   # df <- xts_object %>%

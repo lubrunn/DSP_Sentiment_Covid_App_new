@@ -621,13 +621,13 @@ server <- function(input, output, session) {
   })
 
   #####################################################################################################################
-
-
+  observe_helpers(withMathJax = TRUE, help_dir = "helpers")
+  
   output$datensatz_var <- DT::renderDataTable ({
     DT::datatable(final_regression_df_var()) %>% DT::formatStyle(names(final_regression_df_var()),
-      lineHeight='80%',lineWidth='80%') %>% DT::formatRound(columns= final_regression_df_var() 
-                                                        %>% dplyr::select(-Dates) 
-                                                        %>% names() , 
+      lineHeight='80%',lineWidth='80%') %>% DT::formatRound(columns= final_regression_df_var()
+                                                        %>% dplyr::select(-Dates)
+                                                        %>% names() ,
                                                         digits=2)
   })
 
@@ -666,12 +666,12 @@ output$correlation_plot_choice <- renderUI({
 
 })
 
-# output$Lag_choice <- renderUI({
-#   res <- final_regression_df_var() %>% dplyr::select(-Dates)
-#   input <- selectizeInput("var_list_xgb","Add AR and MA columns for which variables?",
-#                        names(res),selected="")
-#
-# })
+output$Lag_choice <- renderUI({
+  res <- final_regression_df_var() %>% dplyr::select(-Dates)
+  input <- selectizeInput("var_list_xgb","Add AR and MA columns for which variables?",
+                       names(res),selected="")
+
+})
 
 observeEvent(input$number_of_vars, {                         #Observe event from input (model choices)
   req(input$number_of_vars)
@@ -729,10 +729,17 @@ df_xgb <- reactive({
   
 })
 
-
-output$df_xgb1 <- renderPrint ({
-  head(df_xgb())
+output$df_xgb1 <- DT::renderDataTable({
+  DT::datatable(df_xgb(),options = list(
+    autoWidth = FALSE, scrollX = TRUE)) %>% DT::formatStyle(names(df_xgb()),
+                                  lineHeight = '80%',
+                                  lineWidth = '80%') %>% DT::formatRound(columns = df_xgb()
+                                                                                     %>% dplyr::select(-date)
+                                                                                     %>% names() ,
+                                                                                     digits =
+                                                                                       2)
 })
+
 
 observeEvent(input$reset_arma,{
   updateNumericInput(session,"number_of_vars",value = 1)
@@ -760,7 +767,9 @@ df_xgb_train <- reactive({
   res <- make_ts_stationary(res)
 
   list_dfs <- split_data_for(res,input$n_ahead,input$ftpye)
-
+  
+  browser()
+  
   res <- ARMA_creator(list_dfs$df_train,input$number_of_vars,input$var_1,input$var_2,
                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
                      input$num_5,input$num_6,input$lag_tabs,list_dfs$df_train,"no")
@@ -872,32 +881,32 @@ output$correlation_plot <- renderPlot({
 })
 
 
-output$random_walk_choice <- renderUI({
-  res <- final_regression_df_var() %>% dplyr::select(-Dates)
-  input <- selectInput("test_selection","Select variable to test for random walk",
-                       names(res))
-  
-})
+# output$random_walk_choice <- renderUI({
+#   res <- final_regression_df_var() %>% dplyr::select(-Dates)
+#   input <- selectInput("test_selection","Select variable to test for random walk",
+#                        names(res))
+#   
+# })
 
 
 
-output$rw_hyp <- renderPrint({
-  req(input$test_selection)
-  req(input$rw_tests)
-  res <- final_regression_df_var() %>% dplyr::select(-Dates)
-  res <- res[,input$test_selection]
-  if(input$rw_tests == "Box–Ljung test"){
-    Box.test(res, lag = 12, type = "L")
-    #as.numeric(as.matrix(m$statistic))
-  }else if(input$rw_tests == "Wald-Wolfowitz runs test"){
-    runs.test(res)
-    
-  }else{
-    adf.test(res)
-    
-  }
-  
-})
+# output$rw_hyp <- renderPrint({
+#   req(input$test_selection)
+#   req(input$rw_tests)
+#   res <- final_regression_df_var() %>% dplyr::select(-Dates)
+#   res <- res[,input$test_selection]
+#   if(input$rw_tests == "Box–Ljung test"){
+#     Box.test(res, lag = 12, type = "L")
+#     #as.numeric(as.matrix(m$statistic))
+#   }else if(input$rw_tests == "Wald-Wolfowitz runs test"){
+#     runs.test(res)
+#     
+#   }else{
+#     adf.test(res)
+#     
+#   }
+#   
+# })
 #res2 <- df_xgb_train_for()
 
 model_xgbi <- eventReactive(input$run,{
