@@ -68,6 +68,14 @@ twitter_main_panel <- function(){
                           ### panel with histograms and summary table
                           tabPanel("Time Series Sentiment & Other Metrics", value = 1,
                                     #summary statistics table
+                                   tags$head(tags$style(HTML("#sum_stats_table{
+                                   color: black;
+                                 font-size: 20px;
+                                 font-style: bold;
+                                 color: green !important;
+                                 }"
+                                   )
+                                   )),
                                    tableOutput("sum_stats_table"),
 
 
@@ -76,7 +84,7 @@ twitter_main_panel <- function(){
                                    tags$head(tags$style("#number_tweets_info{color: black;
                                  font-size: 20px;
                                  font-style: bold;
-                                 color: white
+                                 color: white;
                                  }"
                                    )
                                    ),
@@ -99,10 +107,10 @@ twitter_main_panel <- function(){
                                    dygraphs::dygraphOutput("sum_stats_plot"),
 
                                    # seconds time series plot
-                                   plotOutput('sum_stats_plot2'),
+                                   dygraphs::dygraphOutput('sum_stats_plot2'),
 
                                    # histogram
-                                   plotOutput("histo_plot") %>%
+                                  plotly::plotlyOutput("histo_plot") %>%
                                      shinycssloaders::withSpinner()
 
 
@@ -204,7 +212,8 @@ twitter_desc_conditional_sum_stats <- conditionalPanel(
   radioButtons("metric", "Select a metric",
                choiceNames = c("Mean", "Standard deviation", "Median"),
                choiceValues = c("mean", "std", "median")),
-  checkboxInput("num_tweets_box", label = "Show the average number of tweets per day", value = F)
+  checkboxInput("num_tweets_box", label = "Show the average number of tweets per day", value = F),
+  actionButton("plot_saver_button", "Save the plot")
 )
 
 #### sidebar layout for descriptives
