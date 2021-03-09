@@ -1230,7 +1230,7 @@ long <- long()
     change_dates = 0,
     change_datewindow_auto = 0,
     change_dates_auto = 0,
-    dates = c( as.Date("2018-11-29"), as.Date("2021-02-18"))
+    dates = c( as.Date("2018-11-30"), as.Date("2021-02-19"))
   )
 
 
