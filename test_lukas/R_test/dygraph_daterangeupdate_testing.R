@@ -103,7 +103,7 @@ test_func <- function(r, input_dates1, input_dates2){
 
   p <- dygraph(don) %>%
     dyRangeSelector(
-      dateWindow = r$dates) # +1 parce que voila...
+      dateWindow = r$dates + 1) # +1 parce que voila...
 
 
   a <- list(a = p, b = r)
