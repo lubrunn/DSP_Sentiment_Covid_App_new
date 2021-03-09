@@ -178,7 +178,7 @@ twitter_main_panel <- function(){
                                   conditionalPanel(
                                     condition = "input.ngram_sel == 'Bigram'",
                                     tags$h4("Number of Bigrams containing the choosen word (if no word selected shows all tweets in current selection)"),
-                                    plotOutput("word_freq_time_series")
+                                  plotly::plotlyOutput("word_freq_time_series")
                                   )
 
 
