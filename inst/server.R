@@ -1227,49 +1227,51 @@ long <- long()
 
   r <- reactiveValues(
     change_datewindow = 0,
-    change_dates = 0,
+    change_dates_desc = 0,
     change_datewindow_auto = 0,
-    change_dates_auto = 0,
-    dates = c( as.Date("2018-11-30"), as.Date("2021-02-19"))
+    change_dates_desc_auto = 0,
+    dates_desc = c( as.Date("2018-11-30"), as.Date("2021-02-19"))
   )
 
 
-  observeEvent(input$sum_stats_plot_date_window, {
+    observeEvent(input$sum_stats_plot_date_window, {
+      message(crayon::blue("observeEvent_input_sum_stats_plot_date_window"))
+      r$change_datewindow <- r$change_datewindow + 1
+      if (r$change_datewindow > r$change_datewindow_auto) {
 
-    message(crayon::blue("observeEvent_input_sum_stats_plot_date_window"))
-    r$change_datewindow <- r$change_datewindow + 1
-    if (r$change_datewindow > r$change_datewindow_auto) {
+        r$change_dates_desc_auto <- r$change_dates_desc_auto + 1
+        r$change_datewindow_auto <- r$change_datewindow
 
-      r$change_dates_auto <- r$change_dates_auto + 1
-      r$change_datewindow_auto <- r$change_datewindow
-
-      start <- as.Date(lubridate::ymd_hms(input$sum_stats_plot_date_window[[1]])+ lubridate::days(1))
-      stop  <- as.Date(lubridate::ymd_hms(input$sum_stats_plot_date_window[[2]])+ lubridate::days(1))
-      updateAirDateInput(session = session,
-                         inputId = "dates_desc",
-                         value = c(start, stop),
-      )
-    } else {
-      if (r$change_datewindow >= 50) {
-        r$change_datewindow_auto <- r$change_datewindow <- 0
+        start <- as.Date(ymd_hms(input$sum_stats_plot_date_window[[1]])+ days(1))
+        stop  <- as.Date(ymd_hms(input$sum_stats_plot_date_window[[2]]) + days(1))
+        updateAirDateInput(session = session,
+                           inputId = "dates_desc",
+                           value = c(start, stop),
+        )
+      } else {
+        if (r$change_datewindow >= 10) {
+          r$change_datewindow_auto <- r$change_datewindow <- 0
+        }
       }
-    }
-  })
+    })
 
-  observeEvent(input$dates_desc, {
-   # browser()
-    message("observeEvent_input_dates")
-    r$change_dates <- r$change_dates + 1
-    if (r$change_dates > r$change_dates_auto) {
-      message("event input_year update")
+    observeEvent(input$dates_desc, {
+      message("observeEvent_input_dates_desc")
+      r$change_dates_desc <- r$change_dates_desc + 1
+      if (r$change_dates_desc > r$change_dates_desc_auto) {
+        message("event input_year update")
 
-      r$change_datewindow_auto <- r$change_datewindow_auto
-      r$change_dates_auto <- r$change_dates
+        r$change_datewindow_auto <- r$change_datewindow_auto + 1
+        r$change_dates_desc_auto <- r$change_dates_desc
 
-      r$dates <- input$dates_desc
+        r$dates_desc <- input$dates_desc
 
-    }
-  })
+      } else {
+        if (r$change_dates_desc >= 10) {
+          r$change_dates_desc_auto <- r$change_dates_desc <- 0
+        }
+      }
+    })
 
 
   ##################################
@@ -1277,14 +1279,15 @@ long <- long()
   output$sum_stats_plot <- dygraphs::renderDygraph({
     message("renderDygraph")
     req(!is.null(input$value) | input$num_tweets_box == T)
+    #validate(need(length(input$dates_desc) > 1, "Cannot plot time series for single day"))
 
     df <- get_data_sum_stats_tables()
 
     if (input$num_tweets_box == F){
-      time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r$dates)
+      time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r$dates_desc)
     } else {
 
-      time_series_plotter2(df, input$metric, input$value, num_tweets = T, input$dates_desc[1], input$dates_desc[2], r$dates)
+      time_series_plotter2(df, input$metric, input$value, num_tweets = T, input$dates_desc[1], input$dates_desc[2], r$dates_desc)
     }
     # dygraphs::dygraph(don) %>%
     #   dygraphs::dyRangeSelector( input$dates_desc + 1, retainDateWindow = T
