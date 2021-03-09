@@ -165,8 +165,8 @@ twitter_main_panel <- function(){
                                      ),
                                      conditionalPanel(
                                        condition = "input.plot_type_expl == 'Word Cloud'",
-                                       "text",
-                                       wordcloud2::wordcloud2Output('wordcloud', height = "1000px", width = "auto")
+                                       uiOutput("cloud"),
+                                       #wordcloud2::wordcloud2Output('wordcloud', height = "1000px", width = "auto")
                                      ),
                                   tags$hr(),
                                   tags$br(),
@@ -367,6 +367,12 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                               condition = "input.tabselected==3",
                               shinyWidgets::materialSwitch(inputId = "emo", label = "Remove Emoji Words?", value = F),
                               selectInput("plot_type_expl", "What kind of plot would you like to see?", choices = c("Frequency Plot", "Word Cloud")),
+
+                              conditionalPanel(
+                                condition = "input.plot_type_expl == 'Word Cloud'",
+                                sliderInput("size_wordcloud", "Change the size of the wordcloud", min = 0.1, max = 10, value = 1, step = 0.1)
+                              ),
+
                               sliderInput("n", "Number of words to show", min = 5, max = 200, value = 15),
 
                               conditionalPanel(
@@ -380,16 +386,13 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                               # word search bigrams
                               conditionalPanel(
                                 condition = "input.ngram_sel == 'Bigram'",
-                                shinyWidgets::searchInput("word_freq_filter", "Enter your search term",
+                                shinyWidgets::searchInput("word_freq_filter", "Show bigrams containing specific terms",
                                                           placeholder = "Placeholder",
                                                           value = "",
                                                           btnSearch = icon("search"),
                                                           btnReset = icon("remove"))
                               ),
-                             # conditionalPanel(
-                               # condition = "input.word_freq_filter != '' & input.plot_type_expl == 'Word Cloud'",
-                                sliderInput("size_wordcloud", "Change the size of the wordcloud", min = 0.5, max = 10, value = 1, step = 0.5),
-                              #),
+
                             )
 
                             )
@@ -514,6 +517,21 @@ network_sidebar <- tabPanel( "Network Analysis",
 
 Sys.setlocale("LC_TIME", "English")
 ui <- fluidPage(
+  #### this gets the dimension of the current window --> helps adjusting width and height of plots that
+  # dont do it automatically
+  tags$head(tags$script('
+                        var dimension = [0, 0];
+                        $(document).on("shiny:connected", function(e) {
+                        dimension[0] = window.innerWidth;
+                        dimension[1] = window.innerHeight;
+                        Shiny.onInputChange("dimension", dimension);
+                        });
+                        $(window).resize(function(e) {
+                        dimension[0] = window.innerWidth;
+                        dimension[1] = window.innerHeight;
+                        Shiny.onInputChange("dimension", dimension);
+                        });
+                        ')),
   shinyjs::useShinyjs(),
   theme = shinythemes::shinytheme("darkly"),
   #shinythemes::themeSelector(),
