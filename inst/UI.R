@@ -160,13 +160,13 @@ twitter_main_panel <- function(){
                                   # mainPanel(
                                      conditionalPanel(
                                        condition = "input.plot_type_expl == 'Frequency Plot'",
-                                       plotOutput("freq_plot", height = "800px")
+                                        plotly::plotlyOutput("freq_plot", height = "1000px")
                                        #uiOutput("plot.ui")
                                      ),
                                      conditionalPanel(
                                        condition = "input.plot_type_expl == 'Word Cloud'",
                                        "text",
-                                       wordcloud2::wordcloud2Output('wordcloud', height = "800px", width = "auto")
+                                       wordcloud2::wordcloud2Output('wordcloud', height = "1000px", width = "auto")
                                      ),
                                   tags$hr(),
                                   tags$br(),
@@ -386,10 +386,10 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                                           btnSearch = icon("search"),
                                                           btnReset = icon("remove"))
                               ),
-                              conditionalPanel(
-                                condition = "input.word_freq_filter != '' & input.plot_type_expl == 'Word Cloud'",
-                                sliderInput("size_wordcloud", "Change the size of the wordcloud", min = 1, max = 5, value = 1)
-                              ),
+                             # conditionalPanel(
+                               # condition = "input.word_freq_filter != '' & input.plot_type_expl == 'Word Cloud'",
+                                sliderInput("size_wordcloud", "Change the size of the wordcloud", min = 0.5, max = 10, value = 1, step = 0.5),
+                              #),
                             )
 
                             )
