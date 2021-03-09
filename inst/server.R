@@ -1507,6 +1507,11 @@ long <- long()
     })
 
 ################## wordcloud
+  output$cloud <- renderUI({
+    wordcloud2::wordcloud2Output("wordcloud", width = (8/12) * 0.925 * input$dimension[1], height = 800)
+
+  })
+
   output$wordcloud <- wordcloud2::renderWordcloud2({
   req(input$plot_type_expl == "Word Cloud")
 
