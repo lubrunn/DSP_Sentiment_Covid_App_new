@@ -79,8 +79,8 @@ return(df)
 word_cloud_plotter <- function(df, input_size = 1){
 
   df    %>%
-     wordcloud2::wordcloud2(size = input_size,shape = 'star',
-                                              color = "random-light", backgroundColor = "grey")
+     wordcloud2::wordcloud2(size = input_size,
+                                              color = "random-light", backgroundColor = "#375a7f")
 }
 
 #################################################################
