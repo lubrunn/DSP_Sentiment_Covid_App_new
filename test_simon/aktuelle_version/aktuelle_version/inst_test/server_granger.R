@@ -621,16 +621,22 @@ server <- function(input, output, session) {
   })
 
   #####################################################################################################################
-
-
-  output$datensatz_var <- renderPrint ({
-    head(final_regression_df_var())
+  observe_helpers(withMathJax = TRUE, help_dir = "helpers")
+  
+  output$datensatz_var <- DT::renderDataTable ({
+    DT::datatable(final_regression_df_var()) %>% DT::formatStyle(names(final_regression_df_var()),
+      lineHeight='80%',lineWidth='80%') %>% DT::formatRound(columns= final_regression_df_var()
+                                                        %>% dplyr::select(-Dates)
+                                                        %>% names() ,
+                                                        digits=2)
   })
 
-  output$summary <- renderPrint({
-    final_regression_df_var() %>% dplyr::select(-Dates) %>%
-      summary()
-
+  output$summary <- renderText({
+    df <- final_regression_df_var() %>% dplyr::select(-Dates) %>% summary() 
+   
+    table <- knitr::kable(df, "html") %>%
+      kable_styling(bootstrap_options = c("striped", "hover"),full_width = F)
+   table
   })
 
 
@@ -660,12 +666,12 @@ output$correlation_plot_choice <- renderUI({
 
 })
 
-# output$Lag_choice <- renderUI({
-#   res <- final_regression_df_var() %>% dplyr::select(-Dates)
-#   input <- selectizeInput("var_list_xgb","Add AR and MA columns for which variables?",
-#                        names(res),selected="")
-#
-# })
+output$Lag_choice <- renderUI({
+  res <- final_regression_df_var() %>% dplyr::select(-Dates)
+  input <- selectizeInput("var_list_xgb","Add AR and MA columns for which variables?",
+                       names(res),selected="")
+
+})
 
 observeEvent(input$number_of_vars, {                         #Observe event from input (model choices)
   req(input$number_of_vars)
@@ -713,19 +719,27 @@ df_xgb <- reactive({
   req(input$num_5)
   req(input$num_6)
   req(input$number_of_vars)
+  req(input$lag_tabs)
   
   res <- final_regression_df_var()
 
   res <- ARMA_creator(res,input$number_of_vars,input$var_1,input$var_2,
                       input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
-                      input$num_5,input$num_6,input$lag_tab,list_dfs$df_train,"no")
+                      input$num_5,input$num_6,input$lag_tabs,list_dfs$df_train,"no")
   
 })
 
-
-output$df_xgb1 <- renderPrint ({
-  head(df_xgb())
+output$df_xgb1 <- DT::renderDataTable({
+  DT::datatable(df_xgb(),options = list(
+    autoWidth = FALSE, scrollX = TRUE)) %>% DT::formatStyle(names(df_xgb()),
+                                  lineHeight = '80%',
+                                  lineWidth = '80%') %>% DT::formatRound(columns = df_xgb()
+                                                                                     %>% dplyr::select(-date)
+                                                                                     %>% names() ,
+                                                                                     digits =
+                                                                                       2)
 })
+
 
 observeEvent(input$reset_arma,{
   updateNumericInput(session,"number_of_vars",value = 1)
@@ -746,25 +760,29 @@ df_xgb_train <- reactive({
   req(input$num_5)
   req(input$num_6)
   req(input$number_of_vars)
-
+  req(input$lag_tabs)
+  
   res <- final_regression_df_var()
-  #res <- make_ts_stationary(res)
+
+  res <- make_ts_stationary(res)
+
   list_dfs <- split_data_for(res,input$n_ahead,input$ftpye)
+  
   browser()
   
   res <- ARMA_creator(list_dfs$df_train,input$number_of_vars,input$var_1,input$var_2,
                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
-                     input$num_5,input$num_6,input$lag_tab,list_dfs$df_train,"no")
-  
-  res <- res %>% dplyr::select(-months_lag,-years_lag,-weeks_lag,-days_lag,
-                               -MA_months,-MA_years,-MA_weeks,-MA_days)
+                     input$num_5,input$num_6,input$lag_tabs,list_dfs$df_train,"no")
+ 
+   res <- res %>% dplyr::select(-months_lag,-years_lag,-weeks_lag,-days_lag,-quarter_lag, 
+                                -semester_lag,-MA_quarter,-MA_semester,-MA_months,-MA_years,-MA_weeks,-MA_days)
+
   
   list_dfs$df_train <- res 
-  
-  res <- ARMA_creator(list_dfs$df_forecast,input$number_of_vars,input$var_1,input$var_2,
-                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
-                      input$num_5,input$num_6,input$lag_tab,list_dfs$df_train,"yes")
 
+  res <- ARMA_creator_for(list_dfs$df_forecast,list_dfs$df_train)
+
+  #rename with columns from train
   list_dfs$df_forecast<- res 
   
   list_dfs
@@ -788,22 +806,26 @@ df_xgb_train_for <- reactive({
   #req(input$n_ahead2)
 
   res <- final_regression_df_var()
-  #res <- make_ts_stationary(res)
+  
+  res <- make_ts_stationary(res)
+  
   list_dfs <- split_data_for_ahead(res,input$n_ahead2,input$ftpye2)
-  broswer()
+
+  
   res <- ARMA_creator(list_dfs$df_train,input$number_of_vars,input$var_1,input$var_2,
                       input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
-                      input$num_5,input$num_6,input$lag_tab)
-
-  list_dfs$df_train <- res
-
-  res <- ARMA_creator(list_dfs$df_forecast,input$number_of_vars,input$var_1,input$var_2,
-                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
-                      input$num_5,input$num_6)
-
-  list_dfs$df_forecast<- res
-
-  list_dfs
+                      input$num_5,input$num_6,input$lag_tabs,list_dfs$df_train,"no")
+  
+  res <- res %>% dplyr::select(-months_lag,-years_lag,-weeks_lag,-days_lag,quarter_lag,
+                               -semester_lag,-MA_quarter,-MA_semester
+                               ,-MA_months,-MA_years,-MA_weeks,-MA_days)
+  
+  list_dfs$df_train <- res 
+  
+  res <- ARMA_creator_for(list_dfs$df_forecast,list_dfs$df_train)
+  
+  list_dfs$df_forecast<- res 
+    list_dfs
 })
 
 # 
@@ -853,36 +875,38 @@ df_xgb_train_for <- reactive({
 
 
 output$correlation_plot <- renderPlot({
+  req(input$var_1)
   corr_plot(final_regression_df_var())
+
 })
 
 
-output$random_walk_choice <- renderUI({
-  res <- final_regression_df_var() %>% dplyr::select(-Dates)
-  input <- selectInput("test_selection","Select variable to test for random walk",
-                       names(res))
-  
-})
+# output$random_walk_choice <- renderUI({
+#   res <- final_regression_df_var() %>% dplyr::select(-Dates)
+#   input <- selectInput("test_selection","Select variable to test for random walk",
+#                        names(res))
+#   
+# })
 
 
 
-output$rw_hyp <- renderPrint({
-  req(input$test_selection)
-  req(input$rw_tests)
-  res <- final_regression_df_var() %>% dplyr::select(-Dates)
-  res <- res[,input$test_selection]
-  if(input$rw_tests == "Box–Ljung test"){
-    Box.test(res, lag = 12, type = "L")
-    #as.numeric(as.matrix(m$statistic))
-  }else if(input$rw_tests == "Wald-Wolfowitz runs test"){
-    runs.test(res)
-    
-  }else{
-    adf.test(res)
-    
-  }
-  
-})
+# output$rw_hyp <- renderPrint({
+#   req(input$test_selection)
+#   req(input$rw_tests)
+#   res <- final_regression_df_var() %>% dplyr::select(-Dates)
+#   res <- res[,input$test_selection]
+#   if(input$rw_tests == "Box–Ljung test"){
+#     Box.test(res, lag = 12, type = "L")
+#     #as.numeric(as.matrix(m$statistic))
+#   }else if(input$rw_tests == "Wald-Wolfowitz runs test"){
+#     runs.test(res)
+#     
+#   }else{
+#     adf.test(res)
+#     
+#   }
+#   
+# })
 #res2 <- df_xgb_train_for()
 
 model_xgbi <- eventReactive(input$run,{
@@ -926,63 +950,79 @@ output$model <- renderPrint({
   model_xgbi()
 })
 
-output$mode2 <- renderPrint({
+output$model2 <- renderPrint({
   model_xgbi$model2()
 })
 
 
-observeEvent(input$model_spec, {                         #Observe event from input (model choices)
-  req(input$model_spec)
-  updateTabsetPanel(session, "mod_spec", selected = input$model_spec)
-})
+ observeEvent(input$model_spec, {                         #Observe event from input (model choices)
+   req(input$model_spec)
+   updateTabsetPanel(session, "mod_spec", selected = input$model_spec)
+ })
 
-observeEvent(input$model_spec_for, {                         #Observe event from input (model choices)
-  req(input$model_spec_for)
-  updateTabsetPanel(session, "mod_spec_for", selected = input$model_spec_for)
-})
+ observeEvent(input$model_spec_for, {                         #Observe event from input (model choices)
+   req(input$model_spec_for)
+   updateTabsetPanel(session, "mod_spec_for", selected = input$model_spec_for)
+ })
 
-observeEvent(input$lag_tab, {                         #Observe event from input (model choices)
-  req(input$lag_tab)
-  updateTabsetPanel(session, "lag_tab", selected = input$lag_tab)
-})
+ observeEvent(input$lag_tabs, {                         #Observe event from input (model choices)
+   req(input$lag_tabs)
+   updateTabsetPanel(session, "lag_tab", selected = input$lag_tabs)
+ })
 
+ 
+ prediction_xgb <-  eventReactive(input$pred,{
 
-prediction_xgb <-  eventReactive(input$pred,{
-  res <- df_xgb_train()
+res <- df_xgb_train()   
   preds <- model_xgbi()  %>%
-      fit(formula = Close ~ .,data = res$df_train[,c(-1)]) %>%
-      predict(new_data = res$df_forecast[,c(-1)])
+       fit(formula = Close ~ .,data = res$df_train[,c(-1)]) %>%
+       predict(new_data = res$df_forecast[,c(-1)])
+df_orig <- final_regression_df_var()
+preds <- cumsum(preds) + df_orig[(nrow(res$df_train)),2]
 
 })
+ output$eval_table <- renderText({
+   preds <- prediction_xgb()
+   res <- df_xgb_train()
+   df_orig <- final_regression_df_var()
+   y <- df_orig  %>% filter(Dates >= min(res$f_dates) & Dates <= max(res$f_dates))
+   rmse <- sqrt(mean(preds[,1] - y[,2])^2)
+   mape <- mean(abs((y[,2] - preds[,1])/y[,2])) * 100
+   metrics <- c(rmse,mape) 
+   knitr::kable(metrics)  
+ })
+ 
 
-prediction_xgb_actual <-  eventReactive(input$pred2,{
-  res <- df_xgb_train_for()
-  preds <-  model_xgbi2()  %>%
-    fit(formula = Close ~ .,data = res$df_train[,c(-1)]) %>%
+ #calc rmse
+ prediction_xgb_actual <-  eventReactive(input$pred2,{
+   res <- df_xgb_train_for()
+   preds <-  model_xgbi2() %>%
+     fit(formula = Close ~ .,data = res$df_train[,c(-1)]) %>%
     predict(new_data = res$df_forecast[,c(-1)])
-  
-})
+   df_orig <- final_regression_df_var()
+   preds <- cumsum(preds) + df_orig[(nrow(res$df_train)),2]
+ })
 
-# output$predictions <- renderTable({
-#   prediction_xgb()
-# })
+ output$predictions <- renderTable({
+   prediction_xgb()
+})
 
 output$plot_1_xgb <- renderDygraph({
 
-  full_df <- final_regression_df_var()
-  res <- df_xgb_train()
+   full_df <- final_regression_df_var()
+   res <- df_xgb_train()
   preds <- prediction_xgb()
   preds <- preds %>%
     zoo(seq(from = as.Date(min(res$f_dates)), to = as.Date(max(res$f_dates)), by = "day"))
 
-  ts <- full_df %>% pull(Close) %>%
-    zoo(seq(from = as.Date(min(res$df_train$date)), to = as.Date(max(res$f_dates)), by = "day"))
+   ts <- full_df %>% pull(Close) %>%
+     zoo(seq(from = as.Date(min(res$df_train$date)), to = as.Date(max(res$f_dates)), by = "day"))
 
- {cbind(actuals=ts, predicted=preds)} %>% dygraph() %>%
+  {cbind(actuals=ts, predicted=preds)} %>% dygraph() %>%
     dyEvent(as.Date(min(res$f_dates)), "Test data", labelLoc = "bottom")
 
 
-})
+ })
 
 output$plot_1_xgb_actual <- renderDygraph({
   full_df <- final_regression_df_var()
@@ -990,17 +1030,17 @@ output$plot_1_xgb_actual <- renderDygraph({
   preds <- prediction_xgb_actual()
 
   preds <- preds %>%
-    zoo(seq(from = as.Date(max(full_df$Dates)) +1, 
+    zoo(seq(from = as.Date(max(full_df$Dates)) +1,
             to = as.Date(max(full_df$Dates)) + input$n_ahead2, by = "day"))
 
   ts <- full_df %>% pull(Close) %>%
     zoo(seq(from = as.Date(min(full_df$Dates)), to = as.Date(max(full_df$Dates)), by = "day"))
 
- {cbind(actuals=ts, predicted=preds)} %>% dygraph() %>%
-    dyEvent(as.Date(max(full_df$Dates)), "Start forecast", labelLoc = "bottom")
+  {cbind(actuals=ts, predicted=preds)} %>% dygraph() %>%
+      dyEvent(as.Date(max(full_df$Dates)), "Start forecast", labelLoc = "bottom")
 
 
-})
+ })
 
 # prediction_xgb_eval <- eventReactive(input$pred,{
 # 

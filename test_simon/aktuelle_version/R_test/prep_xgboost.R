@@ -9,7 +9,9 @@ split_data <- function(sample,spliti){
                   months = lubridate::month(date),
                   years = lubridate::year(date),
                   weeks = lubridate::week(date),
-                  days = lubridate::day(date))
+                  days = lubridate::day(date),
+                  quarter = lubridate::quarter(date,fiscal_start = 1),
+                  semester = lubridate::semester(date))
 
   n_sample <- round(nrow(sample)*spliti)
   split.at = sample[n_sample,"date"]
@@ -25,41 +27,63 @@ split_data <- function(sample,spliti){
 
   return(out)
 }
-
 #' @export
 #' @rdname xgboost_prep
 AR_creator <- function(df,variable,lag){
   names(df)[1] <- "date"
   df$date <- as.Date(df$date)
-
-  xts_object <- df %>%
-    tk_xts(silent = TRUE)
-
-  xts_object <- lag.xts(xts_object[,variable], k = 1:lag)
   
-  df <- xts_object %>%
-    tk_tbl() %>% dplyr::select(-index)
-  names(df)[1] <- paste(variable,"_lag",sep = "")
-  df <- as.data.frame(df)
+  # xts_object <- df %>%
+  #   tk_xts(silent = TRUE)
+  # 
+  # xts_object <- lag.xts(xts_object[,variable], k = 1:lag)
+  # df <- xts_object %>%
+  #   tk_tbl() %>% dplyr::select(-index)
+  # colnames(df)
+  df <- df[,c("date",variable)]
+  df <- df %>%  tk_augment_lags(contains(variable), .lags = 1:lag)
+  df <- df[,c(-1,-2)]
+  # xts_object <- lag.xts(xts_object[,variable], k = 1:nrow(df))
+  # 
+  # df <- xts_object %>%
+  #   tk_tbl() %>% dplyr::select(-index)
+  # names(df)[1] <- paste(variable,"_lag",sep = "") # just tray without
+  # df <- as.data.frame(df)
+  # n <-  lag - nrow(df)
+  # df <- cbind(df, replicate(n,df[,nrow(df)]))
+  # df[,nrow(df):nrow(df)+lag] <- NA
+  # 
+
+  
+
+
+    # df <- rep(NA,nrow(df))
+    # names(df)[0] <- paste(variable,"_lag",sep = "")
+    # df <- as.data.frame(df)
+  
+    
+
   return(df)
 }
 
 #' @export
 #' @rdname xgboost_prep
 MA_creator <- function(df,variable,avg_len){
+  
+ 
   avg_len <- as.numeric(avg_len)
   x <- zoo(df[,variable])
 
   df <- as.data.frame(zoo::rollmean(x, k = avg_len, fill = NA))
   names(df)[1] <- paste("MA_",variable,sep = "")
+
   
   return(df)
 
 }
 #' @export
 #' @rdname xgboost_prep
-# need input for advanced or not
-#default for MA 10 days
+
 ARMA_creator <- function(res,number_of_vars,var_1,var_2,var_3,num_1,num_2,num_3
                          ,num_4,num_5,num_6,custom_lag,res_pre,forecast_df){
   
@@ -99,9 +123,10 @@ if(forecast_df == "no"){
 }else{
   if(custom_lag == "default"){
   names(res)[1] <- "date" 
-  help_df <- res %>% dplyr::select(-date,-days,-weeks,-months,-years)
+  help_df <- res %>% dplyr::select(-date,-days,-weeks,-months,-years,-quarter,-semester)
   list_var <- names(help_df)
   optlags <- NULL
+  
   for(i in list_var){
     lag <-  sum(str_count(names(res_pre), i))
     lag <- lag - 2 #df contains original column and MA column
@@ -125,9 +150,26 @@ if(forecast_df == "no"){
     res <- cbind(res,cols_ma)
   }
   
+  return(res)
+}
+#' @export
+#' @rdname xgboost_prep
+ARMA_creator_for <- function(res,res_pre){
+ 
+  res_pre <- res_pre[1:nrow(res),]
+  list_col <- names(res_pre)[!(names(res_pre) %in% names(res))]  
+  
+  for(i in list_col){
+    res[,i] <- rep(NA,nrow(res))
+  }
+  
+  res[, list_col] <- lapply(list_col, function(x) as.numeric(res[[x]]))
   
   return(res)
 }
+
+
+
 #' @export
 #' @rdname xgboost_prep
 lag_cols <- function(res){
@@ -145,24 +187,25 @@ lag_cols <- function(res){
 #' @rdname xgboost_prep
 
 make_ts_stationary <- function(res){
-  
+    
  for(i in 2:ncol(res)){ 
  optlags <- VARselect(res[,i],lag.max = 10, 
                       type = "const")$selection[["AIC(n)"]]
    
-  while (adf.test(res[,i],k=optlags)$p.value > 0.1) {
+  if(adf.test(res[,i],k=optlags)$p.value > 0.1){
     res[,i] <- c(diff(res[,i],1),NA)
-    res <- drop_na(res)
+    
     }
-  
+ 
   }
-
+  res <- drop_na(res)
+  
   return(res)
 }
-
 #' @export
 #' @rdname xgboost_prep
-
+sample <- res
+n_ahead <- 5
 split_data_for <- function(sample,n_ahead,ftype){
   names(sample)[1] <- "date"
   sample <- sample %>%
@@ -170,12 +213,14 @@ split_data_for <- function(sample,n_ahead,ftype){
                   months = lubridate::month(date),
                   years = lubridate::year(date),
                   weeks = lubridate::week(date),
-                  days = lubridate::day(date))
+                  days = lubridate::day(date),
+                  quarter = lubridate::quarter(date,fiscal_start = 1),
+                  semester = lubridate::semester(date))
   
   n <- dim(sample)[1]
   out <- NULL
   out$df_train <- sample[1:(n-n_ahead),]
-  out$df_forecast <- sample[(n-n_ahead)+1:n,c("date","days","weeks","months","years")]
+  out$df_forecast <- sample[(n-n_ahead)+1:n,c("date","days","weeks","months","years","quarter","semester")]
   out$y_forecast <- sample[(n-n_ahead)+1:n,"Close"]
   out$f_dates <- sample[(n-n_ahead)+1:n,"date"]
   
@@ -192,14 +237,14 @@ split_data_for <- function(sample,n_ahead,ftype){
   if(ftype == "past_features"){
   
   # append past X's to test data
-  past_features <- past_features %>% dplyr::select(-date,-days,-weeks,-months,-years)
+  past_features <- past_features %>% dplyr::select(-date,-days,-weeks,-months,-years,-quarter,-semester)
   
   out$df_forecast <- cbind(out$df_forecast,past_features)
   #out$date_forecast <- out$df_forecast %>% dplyr::select(date)
   
   
   }else if(ftype == "forecasted_features"){
-  covariates <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years) %>% 
+  covariates <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years,-quarter,-semester) %>% 
       names()
 
   for(i in covariates){
@@ -218,7 +263,7 @@ split_data_for <- function(sample,n_ahead,ftype){
   }else{
     help_df <- data.frame(matrix(ncol = ncol(sample)-ncol(out$df_forecast)
                                  , nrow = n_ahead))
-    x_names <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years) %>% names()
+    x_names <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years,-quarter,-semester) %>% names()
     colnames(help_df) <- x_names
     
     out$df_forecast <- cbind(help_df,out$df_forecast)
@@ -242,7 +287,9 @@ split_data_for_ahead <- function(sample,n_ahead2,ftype2){
                   months = lubridate::month(date),
                   years = lubridate::year(date),
                   weeks = lubridate::week(date),
-                  days = lubridate::day(date))
+                  days = lubridate::day(date),
+                  quarter = lubridate::quarter(date,fiscal_start = 1),
+                  semester = lubridate::semester(date))
   
   n <- dim(sample)[1]
   out <- NULL
@@ -262,7 +309,9 @@ split_data_for_ahead <- function(sample,n_ahead2,ftype2){
                   months = lubridate::month(date),
                   years = lubridate::year(date),
                   weeks = lubridate::week(date),
-                  days = lubridate::day(date))
+                  days = lubridate::day(date),
+                  quarter = lubridate::quarter(date,fiscal_start = 1),
+                  semester = lubridate::semester(date))
   
   n_train <- dim(out$df_train)[1]
   past_features <- out$df_train[(n_train-n_ahead2)+1:n_train,]
@@ -273,14 +322,14 @@ split_data_for_ahead <- function(sample,n_ahead2,ftype2){
   if(ftype2 == "past_features"){
     
     # append past X's to test data
-    past_features <- past_features %>% dplyr::select(-date,-days,-weeks,-months,-years)
+    past_features <- past_features %>% dplyr::select(-date,-days,-weeks,-months,-years,-quarter,-semester)
     
     out$df_forecast <- cbind(out$df_forecast,past_features)
     #out$date_forecast <- out$df_forecast %>% dplyr::select(date)
     
     
   }else if(ftype2 == "forecasted_features"){
-    covariates <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years) %>% 
+    covariates <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years,-quarter,-semester) %>% 
       names()
     
     for(i in covariates){
@@ -298,8 +347,8 @@ split_data_for_ahead <- function(sample,n_ahead2,ftype2){
     }
   }else{
     help_df <- data.frame(matrix(ncol = ncol(sample)-ncol(out$df_forecast)
-                                 , nrow = n_ahead))
-    x_names <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years) %>% names()
+                                 , nrow = n_ahead2))
+    x_names <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years,-quarter,-semester) %>% names()
     colnames(help_df) <- x_names
     
     out$df_forecast <- cbind(help_df,out$df_forecast)
@@ -323,7 +372,9 @@ split_data_eval <- function(sample,n_ahead3){
                   months = lubridate::month(date),
                   years = lubridate::year(date),
                   weeks = lubridate::week(date),
-                  days = lubridate::day(date))
+                  days = lubridate::day(date),
+                  quarter = lubridate::quarter(date,fiscal_start = 1),
+                  semester = lubridate::semester(date))
   
   n <- dim(sample)[1]
   out <- NULL

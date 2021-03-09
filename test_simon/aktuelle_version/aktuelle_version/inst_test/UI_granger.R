@@ -188,8 +188,14 @@ ui <- fluidPage(
                                     selectInput("rw_tests","Choose test to investigate RW hyp",choices = c("Box–Ljung test","Wald-Wolfowitz runs test",
                                                                                                            "ADF")),
                                     uiOutput("random_walk_choice"),
-                                    radioButtons("lag_tab","How do you want to proceed?",choices = c("default","custom"),
-                                                 selected = "default"),
+                                    radioButtons("lag_tabs","How do you want to proceed?",choices = c("default","custom"),
+                                                 selected = "default")  %>% shinyhelper::helper(type = "markdown",
+                                                                                                     title = "Inline Help",
+                                                                                                     content = "network_plot_button",
+                                                                                                     buttonLabel = "Got it!",
+                                                                                                     easyClose = FALSE,
+                                                                                                     fade = TRUE,
+                                                                                                     size = "s"),
                                     custom_lag_tab
                                     
                                     
@@ -198,7 +204,13 @@ ui <- fluidPage(
                                                    #  numericInput("split_at","select training/test split",min = 0.1, value=0.7,max = 1,
                                                     #              step = 0.1),
                                                      radioButtons("model_spec","Choose model specification",choices = c("default","custom","hyperparameter_tuning"),
-                                                                  selected = "default"),
+                                                                  selected = "default" %>% 
+                                                                    helper(type = "inline",
+                                                                           title = "Inline Help",
+                                                                           content = c("This helpfile is defined entirely in the UI!",
+                                                                                       "This is on a new line.",
+                                                                                       "This is some <b>HTML</b>."),
+                                                                           size = "s")),
                                                      model_specification,
                                                    numericInput("n_ahead","select forecast",min = 1, value=5,max = 20,
                                                                 step = 1),
@@ -229,19 +241,21 @@ ui <- fluidPage(
                                    tabsetPanel(type = "tabs", id = "tabs",
                                      tabPanel("Variable selection",value="Variable selection",
                       
-                                               verbatimTextOutput("datensatz_var"),
-                                               verbatimTextOutput("summary"),
+                                               DT::dataTableOutput("datensatz_var"),
+                                               tableOutput("summary"),
                                                plotOutput("correlation_plot")
                                               
                                               ),
                                 
                                      tabPanel("MA/AR selection",value = "MA/AR selection",
-                                          verbatimTextOutput("rw_hyp"),
+                                          #verbatimTextOutput("rw_hyp"),
                                           conditionalPanel(
-                                                condition = "input.correlation_type == 'ACF'", plotOutput("acf_plot_xgb")),
+                                                condition = "input.correlation_type == 'ACF' && input.lag_tabs == 'custom'",
+                                                  plotOutput("acf_plot_xgb")),
                                           conditionalPanel(
-                                                condition = "input.correlation_type == 'PACF'", plotOutput("pacf_plot_xgb")),
-                                          verbatimTextOutput("df_xgb1")
+                                                condition = "input.correlation_type == 'PACF'  && input.lag_tabs == 'custom'",
+                                                plotOutput("pacf_plot_xgb")),
+                                          DT::dataTableOutput("df_xgb1")
 
                                      ),
                                      tabPanel("Model specification",value = "Model specification",
@@ -249,7 +263,9 @@ ui <- fluidPage(
                                              # verbatimTextOutput("df_xgb1_test"),
                                               verbatimTextOutput("model"),
                                             # verbatimTextOutput("stuff"),
-                                             dygraphOutput("plot_1_xgb")),
+                                             dygraphOutput("plot_1_xgb"),
+                                             htmlOutput("eval_table")
+                                            ),
                                      tabPanel("Actual forecast",value = "Actual forecast",
                                               verbatimTextOutput("model2"),
                                               dygraphOutput("plot_1_xgb_actual")),
