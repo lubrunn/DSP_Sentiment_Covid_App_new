@@ -11,7 +11,7 @@ emoji_words <- c(
   "grin","bicep","flex","note","popper","fist","car","follow","retweet","year","ago",
   "social media","woman","voltag","star","ball","camera","man","ass","video","cake","cool",
   "fac","smil","see","evil","party","sweat","thumb","big","the","crying","fing",
-  "crossed","god","watch","leaf","food","arrow", "hugg"
+  "crossed","god","watch","leaf","food","arrow", "hugg", "cri"
 
 )
 
@@ -59,6 +59,7 @@ return(df)
 #'@rdname term_freq_computers
 df_filterer <- function(df, input_n){
 
+
 df <- df %>%
   group_by( word) %>%
   summarise(n = sum(N)) %>%
@@ -75,7 +76,7 @@ return(df)
 
 #'@export
 #'@rdname term_freq_computers
-word_cloud_plotter <- function(df, input_size){
+word_cloud_plotter <- function(df, input_size = 1){
 
   df    %>%
      wordcloud2::wordcloud2(size = input_size,shape = 'star',
@@ -87,13 +88,20 @@ word_cloud_plotter <- function(df, input_size){
 
 # term freq bar plot
 term_freq_bar_plot <- function(df){
-  df %>%
+  options(scipen=999)
+p <-   df %>%
 
     ggplot(aes(reorder(x = word, n), y = n)) +
-    geom_col() +
-    coord_flip()
+    geom_col(width = 0.5) +
+  coord_flip() +
+  labs(x = "",
+       y = "N")+
+  theme_classic() +
+  theme(text = element_text(size=18)) +
 
+  scale_y_continuous(expand = c(0, 0))
 
+plotly::ggplotly(p)
 }
 
 
