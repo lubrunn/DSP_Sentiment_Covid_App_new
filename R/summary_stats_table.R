@@ -70,7 +70,7 @@ df_need <-   df_need %>%
   # convert variable names
   df_need[,1] <- c("Retweets", "Likes", "Tweet Length", "Sentiment", "N")
 
-  return(knitr::kable(df_need, caption = glue("Summary Statistics for the selected Metric"), "html") %>%
+  return(knitr::kable(df_need, "html") %>%
            column_spec(1:8, color = "lightgrey") %>%
            column_spec(1, bold = T, color = "white") %>%
            row_spec(1, bold = T) %>%
