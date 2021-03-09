@@ -623,14 +623,20 @@ server <- function(input, output, session) {
   #####################################################################################################################
 
 
-  output$datensatz_var <- renderPrint ({
-    head(final_regression_df_var())
+  output$datensatz_var <- DT::renderDataTable ({
+    DT::datatable(final_regression_df_var()) %>% DT::formatStyle(names(final_regression_df_var()),
+      lineHeight='80%',lineWidth='80%') %>% DT::formatRound(columns= final_regression_df_var() 
+                                                        %>% dplyr::select(-Dates) 
+                                                        %>% names() , 
+                                                        digits=2)
   })
 
-  output$summary <- renderPrint({
-    final_regression_df_var() %>% dplyr::select(-Dates) %>%
-      summary()
-
+  output$summary <- renderText({
+    df <- final_regression_df_var() %>% dplyr::select(-Dates) %>% summary() 
+   
+    table <- knitr::kable(df, "html") %>%
+      kable_styling(bootstrap_options = c("striped", "hover"),full_width = F)
+   table
   })
 
 
@@ -752,15 +758,15 @@ df_xgb_train <- reactive({
   res <- final_regression_df_var()
 
   res <- make_ts_stationary(res)
-  
+
   list_dfs <- split_data_for(res,input$n_ahead,input$ftpye)
 
   res <- ARMA_creator(list_dfs$df_train,input$number_of_vars,input$var_1,input$var_2,
                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
                      input$num_5,input$num_6,input$lag_tabs,list_dfs$df_train,"no")
  
-   res <- res %>% dplyr::select(-months_lag,-years_lag,-weeks_lag,-days_lag,
-                                -MA_months,-MA_years,-MA_weeks,-MA_days)
+   res <- res %>% dplyr::select(-months_lag,-years_lag,-weeks_lag,-days_lag,-quarter_lag, 
+                                -semester_lag,-MA_quarter,-MA_semester,-MA_months,-MA_years,-MA_weeks,-MA_days)
 
   
   list_dfs$df_train <- res 
@@ -801,8 +807,9 @@ df_xgb_train_for <- reactive({
                       input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
                       input$num_5,input$num_6,input$lag_tabs,list_dfs$df_train,"no")
   
-  res <- res %>% dplyr::select(-months_lag,-years_lag,-weeks_lag,-days_lag,
-                               -MA_months,-MA_years,-MA_weeks,-MA_days)
+  res <- res %>% dplyr::select(-months_lag,-years_lag,-weeks_lag,-days_lag,quarter_lag,
+                               -semester_lag,-MA_quarter,-MA_semester
+                               ,-MA_months,-MA_years,-MA_weeks,-MA_days)
   
   list_dfs$df_train <- res 
   
@@ -859,7 +866,9 @@ df_xgb_train_for <- reactive({
 
 
 output$correlation_plot <- renderPlot({
+  req(input$var_1)
   corr_plot(final_regression_df_var())
+
 })
 
 
@@ -963,7 +972,19 @@ df_orig <- final_regression_df_var()
 preds <- cumsum(preds) + df_orig[(nrow(res$df_train)),2]
 
 })
+ output$eval_table <- renderText({
+   preds <- prediction_xgb()
+   res <- df_xgb_train()
+   df_orig <- final_regression_df_var()
+   y <- df_orig  %>% filter(Dates >= min(res$f_dates) & Dates <= max(res$f_dates))
+   rmse <- sqrt(mean(preds[,1] - y[,2])^2)
+   mape <- mean(abs((y[,2] - preds[,1])/y[,2])) * 100
+   metrics <- c(rmse,mape) 
+   knitr::kable(metrics)  
+ })
+ 
 
+ #calc rmse
  prediction_xgb_actual <-  eventReactive(input$pred2,{
    res <- df_xgb_train_for()
    preds <-  model_xgbi2() %>%

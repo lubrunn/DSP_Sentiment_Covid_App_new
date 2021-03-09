@@ -189,7 +189,7 @@ ui <- fluidPage(
                                                                                                            "ADF")),
                                     uiOutput("random_walk_choice"),
                                     radioButtons("lag_tabs","How do you want to proceed?",choices = c("default","custom"),
-                                                 selected = "custom"),
+                                                 selected = "default"),
                                     custom_lag_tab
                                     
                                     
@@ -229,8 +229,8 @@ ui <- fluidPage(
                                    tabsetPanel(type = "tabs", id = "tabs",
                                      tabPanel("Variable selection",value="Variable selection",
                       
-                                               verbatimTextOutput("datensatz_var"),
-                                               verbatimTextOutput("summary"),
+                                               DT::dataTableOutput("datensatz_var"),
+                                               tableOutput("summary"),
                                                plotOutput("correlation_plot")
                                               
                                               ),
@@ -251,7 +251,9 @@ ui <- fluidPage(
                                              # verbatimTextOutput("df_xgb1_test"),
                                               verbatimTextOutput("model"),
                                             # verbatimTextOutput("stuff"),
-                                             dygraphOutput("plot_1_xgb")),
+                                             dygraphOutput("plot_1_xgb"),
+                                             htmlOutput("eval_table")
+                                            ),
                                      tabPanel("Actual forecast",value = "Actual forecast",
                                               verbatimTextOutput("model2"),
                                               dygraphOutput("plot_1_xgb_actual")),
