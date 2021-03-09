@@ -533,7 +533,7 @@ ui <- fluidPage(
                         });
                         ')),
   shinyjs::useShinyjs(),
-  theme = shinythemes::shinytheme("darkly"),
+  theme = shinythemes::shinytheme("superhero"),
   #shinythemes::themeSelector(),
   #titlePanel("Sentiment_Covid_App"),
   navbarPage("APP",
