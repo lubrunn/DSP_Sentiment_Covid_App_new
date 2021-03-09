@@ -25,41 +25,63 @@ split_data <- function(sample,spliti){
 
   return(out)
 }
-
 #' @export
 #' @rdname xgboost_prep
+
 AR_creator <- function(df,variable,lag){
   names(df)[1] <- "date"
   df$date <- as.Date(df$date)
-
+  
   xts_object <- df %>%
     tk_xts(silent = TRUE)
-
-  xts_object <- lag.xts(xts_object[,variable], k = 1:lag)
   
+  xts_object <- lag.xts(xts_object[,variable], k = 1:lag)
   df <- xts_object %>%
     tk_tbl() %>% dplyr::select(-index)
   names(df)[1] <- paste(variable,"_lag",sep = "")
   df <- as.data.frame(df)
+
+  # xts_object <- lag.xts(xts_object[,variable], k = 1:nrow(df))
+  # 
+  # df <- xts_object %>%
+  #   tk_tbl() %>% dplyr::select(-index)
+  # names(df)[1] <- paste(variable,"_lag",sep = "") # just tray without
+  # df <- as.data.frame(df)
+  # n <-  lag - nrow(df)
+  # df <- cbind(df, replicate(n,df[,nrow(df)]))
+  # df[,nrow(df):nrow(df)+lag] <- NA
+  # 
+
+  
+
+
+    # df <- rep(NA,nrow(df))
+    # names(df)[0] <- paste(variable,"_lag",sep = "")
+    # df <- as.data.frame(df)
+  
+    
+
   return(df)
 }
 
 #' @export
 #' @rdname xgboost_prep
 MA_creator <- function(df,variable,avg_len){
+  
+ 
   avg_len <- as.numeric(avg_len)
   x <- zoo(df[,variable])
 
   df <- as.data.frame(zoo::rollmean(x, k = avg_len, fill = NA))
   names(df)[1] <- paste("MA_",variable,sep = "")
+
   
   return(df)
 
 }
 #' @export
 #' @rdname xgboost_prep
-# need input for advanced or not
-#default for MA 10 days
+
 ARMA_creator <- function(res,number_of_vars,var_1,var_2,var_3,num_1,num_2,num_3
                          ,num_4,num_5,num_6,custom_lag,res_pre,forecast_df){
   
@@ -102,6 +124,7 @@ if(forecast_df == "no"){
   help_df <- res %>% dplyr::select(-date,-days,-weeks,-months,-years)
   list_var <- names(help_df)
   optlags <- NULL
+  
   for(i in list_var){
     lag <-  sum(str_count(names(res_pre), i))
     lag <- lag - 2 #df contains original column and MA column
@@ -125,9 +148,26 @@ if(forecast_df == "no"){
     res <- cbind(res,cols_ma)
   }
   
+  return(res)
+}
+#' @export
+#' @rdname xgboost_prep
+ARMA_creator_for <- function(res,res_pre){
+ 
+  res_pre <- res_pre[1:nrow(res),]
+  list_col <- names(res_pre)[!(names(res_pre) %in% names(res))]  
+  
+  for(i in list_col){
+    res[,i] <- rep(NA,nrow(res))
+  }
+  
+  res[, list_col] <- lapply(list_col, function(x) as.numeric(res[[x]]))
   
   return(res)
 }
+
+
+
 #' @export
 #' @rdname xgboost_prep
 lag_cols <- function(res){
@@ -145,18 +185,19 @@ lag_cols <- function(res){
 #' @rdname xgboost_prep
 
 make_ts_stationary <- function(res){
-  
+    
  for(i in 2:ncol(res)){ 
  optlags <- VARselect(res[,i],lag.max = 10, 
                       type = "const")$selection[["AIC(n)"]]
    
-  while (adf.test(res[,i],k=optlags)$p.value > 0.1) {
+  if(adf.test(res[,i],k=optlags)$p.value > 0.1){
     res[,i] <- c(diff(res[,i],1),NA)
-    res <- drop_na(res)
+    
     }
-  
+ 
   }
-
+  res <- drop_na(res)
+  
   return(res)
 }
 
@@ -298,7 +339,7 @@ split_data_for_ahead <- function(sample,n_ahead2,ftype2){
     }
   }else{
     help_df <- data.frame(matrix(ncol = ncol(sample)-ncol(out$df_forecast)
-                                 , nrow = n_ahead))
+                                 , nrow = n_ahead2))
     x_names <- out$df_train %>% dplyr::select(-date,-days,-weeks,-months,-years) %>% names()
     colnames(help_df) <- x_names
     

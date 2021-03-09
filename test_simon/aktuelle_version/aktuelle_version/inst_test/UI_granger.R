@@ -188,8 +188,8 @@ ui <- fluidPage(
                                     selectInput("rw_tests","Choose test to investigate RW hyp",choices = c("Box–Ljung test","Wald-Wolfowitz runs test",
                                                                                                            "ADF")),
                                     uiOutput("random_walk_choice"),
-                                    radioButtons("lag_tab","How do you want to proceed?",choices = c("default","custom"),
-                                                 selected = "default"),
+                                    radioButtons("lag_tabs","How do you want to proceed?",choices = c("default","custom"),
+                                                 selected = "custom"),
                                     custom_lag_tab
                                     
                                     
@@ -238,9 +238,11 @@ ui <- fluidPage(
                                      tabPanel("MA/AR selection",value = "MA/AR selection",
                                           verbatimTextOutput("rw_hyp"),
                                           conditionalPanel(
-                                                condition = "input.correlation_type == 'ACF'", plotOutput("acf_plot_xgb")),
+                                                condition = "input.correlation_type == 'ACF' && input.lag_tabs == 'custom'",
+                                                  plotOutput("acf_plot_xgb")),
                                           conditionalPanel(
-                                                condition = "input.correlation_type == 'PACF'", plotOutput("pacf_plot_xgb")),
+                                                condition = "input.correlation_type == 'PACF'  && input.lag_tabs == 'custom'",
+                                                plotOutput("pacf_plot_xgb")),
                                           verbatimTextOutput("df_xgb1")
 
                                      ),

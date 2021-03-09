@@ -10,7 +10,7 @@
 #' @export
 #' @rdname load_stocks
 ADS <- function(){
-  filename <- "C:/Users/simon/OneDrive - UT Cloud/Eigene Dateien/Data/Yahoo/Germany/Germany_ADS.DE"
+  filename <- "C:/Users/simon/OneDrive - UT Cloud/Eigene Dateien/Data/Yahoo/Germany/Germany_ADS.DE.csv"
   read.csv(filename)
 }
 
