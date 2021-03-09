@@ -1181,9 +1181,13 @@ long <- long()
     df <- get_data_sum_stats_tables()
 
     if (input$num_tweets_box == F){
-      save_plot$plot <- time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r)
+      save_plot$plot <- time_series_plotter2(df, input$metric, input$value, num_tweets = F,
+                                             input$dates_desc[1], input$dates_desc[2], r,
+                                              date_range = F)
     } else {
-      save_plot$plot <- time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r)
+      save_plot$plot <- time_series_plotter2(df, input$metric, input$value, num_tweets = F,
+                                             input$dates_desc[1], input$dates_desc[2], r,
+                                             date_range = F)
     }
 
 
