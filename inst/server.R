@@ -1136,6 +1136,7 @@ long <- long()
     if (input$num_tweets_box == F){
       time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r)
     } else {
+
       time_series_plotter2(df, input$metric, input$value, num_tweets = T, input$dates_desc[1], input$dates_desc[2], r)
     }
     # dygraphs::dygraph(don) %>%
@@ -1303,7 +1304,7 @@ long <- long()
       add_on <- "bi"
     }
 
-browser()
+
     if (!is.null(input$comp)) {
       folder <- file.path("Companies")
       file_name <- glue("term_freq_{input$comp}_all_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
@@ -1346,7 +1347,7 @@ browser()
   })
 
   ######################### freq_plot
-  output$freq_plot <- renderPlot({
+  output$freq_plot <- plotly::renderPlotly({
     # dynamically change height of plot
     #height = function() input$n * 30 + 400,
 
@@ -1380,6 +1381,8 @@ browser()
                                     input$comp)
 
       df <- df_filterer(df, input$n)
+
+
 
       word_cloud_plotter(df, input$size_wordcloud)
     }
