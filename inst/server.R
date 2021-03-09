@@ -999,48 +999,7 @@ server <- function(input, output, session) {
       glue("histo_{value_var}_{input$comp}_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
 
     }
-     # old sql
-      #browser()
-      # if (input$value == "length"){
-      #   tb_metric <- "len"
-      #   col_value <- input$value
-      #
-      # } else if(input$value == "rt") {
-      #
-      #   tb_metric <- input$value
-      #   col_val <- "retweets_count"
-      #
-      # } else if(input$value == "likes") {
-      #   tb_metric <- input$value
-      #   col_val <- "likes_count"
-      # } else if(input$value == "sentiment"){
-      #   tb_metric <- input$value
-      #   col_val <- "sentiment_rd"
-      # } else{
-      #   Sys.sleep(0.2)
-      # }
-      #
-      #
-      #
-      #
-      #
-      # table_name <- glue("histo_{tb_metric}_{tolower(input$lang)}")
-      #
-      # if (table_name %in% c("histo_rt_en", "histo_likes_en", "histo_len_en")){
-      #   date_col <- "date"
-      # } else{
-      #   date_col <- "created_at"
-      # }
-      #
-      # glue("SELECT {col_val}, sum(N) as n  FROM {table_name}  WHERE {date_col} >=  '{input$dates[1]}'
-      # and {date_col} <= '{input$dates[2]}'
-      # and retweets_count_filter = {input$rt} and likes_count_filter = {input$likes} and
-      # tweet_length_filter = {long}
-      #      group by {col_val}")
-
-
-     #if closed
-    }) #reactive closed
+     }) #reactive closed
 
 
 
@@ -1104,6 +1063,19 @@ long <- long()
     })
 
 
+
+
+    ############################################################################
+    ######################### violin plot
+    output$violin_sum <- renderPlot({
+
+      df <- get_data_sum_stats_tables()
+
+      violin_plotter(df, input$value, input$metric)
+
+
+    })
+
     ############################################################################
     ######################### time series plot for retweets etc.
 
@@ -1154,7 +1126,7 @@ long <- long()
 
 
   ##################################
-  ################################################### outut time series
+  ################################################### output time series
   output$sum_stats_plot <- dygraphs::renderDygraph({
     message("renderDygraph")
     req(!is.null(input$value) | input$num_tweets_box == T)
@@ -1164,7 +1136,7 @@ long <- long()
     if (input$num_tweets_box == F){
       time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r)
     } else {
-      time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r)
+      time_series_plotter2(df, input$metric, input$value, num_tweets = T, input$dates_desc[1], input$dates_desc[2], r)
     }
     # dygraphs::dygraph(don) %>%
     #   dygraphs::dyRangeSelector( input$dates_desc + 1, retainDateWindow = T
@@ -1270,6 +1242,23 @@ long <- long()
 
 
 
+  ####################### histogram title
+  output$histo_plot_info <- renderText({
+
+    selected_value <- input$value[1]
+
+    selected_value <- stringr::str_replace(selected_value, "sentiment_rt", "Retweets weighted Sentiment")
+    selected_value <- stringr::str_replace(selected_value, "sentiment_likes", "Likes weighted Sentiment")
+    selected_value <- stringr::str_replace(selected_value, "sentiment_length", "Tweet Length weighted Sentiment")
+    selected_value <- stringr::str_replace(selected_value, "likes", "Likes")
+    selected_value <- stringr::str_replace(selected_value, "rt", "Retweets")
+    selected_value <- stringr::str_replace(selected_value, "tweet_length", "Tweet Length")
+    selected_value <- stringr::str_replace(selected_value, "sentiment", "Sentiment")
+
+
+    glue("Distribution of {selected_value} for indivdual tweets")
+
+  })
 
 
 
