@@ -87,7 +87,7 @@ if (length(selected_metrics) == 1){
 #
 # filter_type = "mean"
 
-time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, input_dates1, input_dates2, r, date_range =T){
+time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, input_dates1, input_dates2, dates, date_range =T){
 
 
 
@@ -135,7 +135,7 @@ time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, 
     dygraphs::dyOptions(axisLineWidth = 2, drawGrid = FALSE) %>%
     dygraphs::dyLegend() %>%
 
-      {if(date_range == T)  dygraphs::dyRangeSelector(.,r$dates) else .} %>%
+      {if(date_range == T)  dygraphs::dyRangeSelector(.,dates + 1) else .} %>%
     dygraphs::dyShading(from = min(df$created_at), to = max(df$created_at), color = "white")
 
 
@@ -181,7 +181,7 @@ time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, 
       dygraphs::dyOptions(axisLineWidth = 2, drawGrid = FALSE) %>%
       dygraphs::dyLegend() %>%
 
-      {if(date_range == T)  dygraphs::dyRangeSelector(.,r$dates) else .} %>%
+      {if(date_range == T)  dygraphs::dyRangeSelector(.,dates + 1) else .} %>%
       dygraphs::dyShading(from = min(df$Date), to = max(df$Date), color = "white")
 
   }
