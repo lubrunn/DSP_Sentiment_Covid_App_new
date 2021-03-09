@@ -1,3 +1,6 @@
+
+library(tidyverse)
+
 time1 <- Sys.time()
 
   df <- arrow::read_feather("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/cleaned_sentiment/En_NoFilter/En_NoFilter_2021-02-19.feather")
@@ -96,16 +99,17 @@ time1 <- Sys.time()
     # We input a JavaScript function.
     #linkWidth = JS("function(d) { return Math.sqrt(d.value); }"),
     linkWidth = 1, # width of the linkgs
-    fontSize = 30, # font size of words
+    fontSize = 20, # font size of words
     zoom = TRUE,
-    opacityNoHover = 100,
+    opacityNoHover = 1,
     #linkDistance = 100, # length of links
-    charge =  -70, # the more negative the furher away nodes,
+    charge =  -200, # the more negative the furher away nodes,
     #linkColour = "red", #color of links
     bounded = F, # if T plot is limited and can not extend outside of box
     # colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);"),# change color scheme
     colourScale = networkD3::JS(ColourScale),
-    linkColour = "lightblue",
+    linkColour = "red",
+    fontFamily = "arial",
     linkDistance =
       JS('function(){d3.select("body").style("background-color", "#313632");return 50;}')
 
@@ -116,8 +120,8 @@ time1 <- Sys.time()
     'function(el, x) {
     d3.select("body").style("background-color", "#313632");
     d3.selectAll(".legend text").style("fill", "white");
-    d3.selectAll("text").style("fill", "#ff2a00");
-    d3.selectAll("text").style("stroke", "white");
+    d3.selectAll("text").style("fill", "white");
+    d3.selectAll("text").style("stroke", "black");
 
   }'
   )
