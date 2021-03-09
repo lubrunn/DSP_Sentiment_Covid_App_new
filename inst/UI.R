@@ -61,22 +61,23 @@ twitter_main_panel <- function(){
 
 
 
+
                       ########## main panels for Descritpive reiter
                        mainPanel(
                         tabsetPanel(id = "tabselected",
 
                           ### panel with histograms and summary table
                           tabPanel("Time Series Sentiment & Other Metrics", value = 1,
-                                    #summary statistics table
-                                   tableOutput("sum_stats_table"),
 
+                                   #########################################
+                                   ###########################################
 
                                     # first time series plot
                                     textOutput("number_tweets_info"),
                                    tags$head(tags$style("#number_tweets_info{color: black;
                                  font-size: 20px;
                                  font-style: bold;
-                                 color: white
+                                 color: white;
                                  }"
                                    )
                                    ),
@@ -96,13 +97,59 @@ twitter_main_panel <- function(){
 
                                                      "))
                                    ),
+                                   tags$h4("Time Series"),
                                    dygraphs::dygraphOutput("sum_stats_plot"),
 
                                    # seconds time series plot
-                                   plotOutput('sum_stats_plot2'),
+                                   tags$br(),
+
+                                   tags$br(),
+                                   tags$h4("Saved Time Series"),
+                                   dygraphs::dygraphOutput('sum_stats_plot2'),
+
+
+
+                                    #########################################
+                                   ###########################################
+
+                                   #summary statistics table
+                                   tags$head(tags$style(HTML("#sum_stats_table{
+                                   color: black;
+                                 font-size: 20px;
+                                 font-style: bold;
+                                 color: green !important;
+                                 }"
+                                   )
+                                   )),
+                                   tags$h4("Summary Statistics"),
+                                   tableOutput("sum_stats_table"),
+
+
+                                   #########################################
+                                   ###########################################
+
+                                   ##### violin plot
+                                   tags$h4("Distrubtion of aggregated tweets"),
+                                   plotOutput("violin_sum"),
+
+                                   #########################################
+                                   ###########################################
 
                                    # histogram
-                                   plotOutput("histo_plot") %>%
+                                   tags$br(),
+                                   tags$br(),
+
+                                   tags$br(),
+                                   tags$br(),
+                                   textOutput("histo_plot_info"),
+                                   tags$head(tags$style("#histo_plot_info{
+                                 font-size: 20px;
+                                 font-style: bold;
+                                 color: white;
+                                 }"
+                                   )
+                                   ),
+                                  plotly::plotlyOutput("histo_plot") %>%
                                      shinycssloaders::withSpinner()
 
 
@@ -113,19 +160,21 @@ twitter_main_panel <- function(){
                                   # mainPanel(
                                      conditionalPanel(
                                        condition = "input.plot_type_expl == 'Frequency Plot'",
-                                       plotOutput("freq_plot", height = "800px")
+                                        plotly::plotlyOutput("freq_plot", height = "1000px")
                                        #uiOutput("plot.ui")
                                      ),
                                      conditionalPanel(
                                        condition = "input.plot_type_expl == 'Word Cloud'",
-                                       "text",
-                                       wordcloud2::wordcloud2Output('wordcloud', height = "800px", width = "auto")
+                                       uiOutput("cloud"),
+                                       #wordcloud2::wordcloud2Output('wordcloud', height = "1000px", width = "auto")
                                      ),
                                   tags$hr(),
                                   tags$br(),
                                   tags$br(),
                                   tags$br(),
                                   tags$br(),
+                                  tags$br(),
+                                  tags$hr(),
                                   conditionalPanel(
                                     condition = "input.ngram_sel == 'Bigram'",
                                     tags$h4("Number of Bigrams containing the choosen word (if no word selected shows all tweets in current selection)"),
@@ -204,7 +253,8 @@ twitter_desc_conditional_sum_stats <- conditionalPanel(
   radioButtons("metric", "Select a metric",
                choiceNames = c("Mean", "Standard deviation", "Median"),
                choiceValues = c("mean", "std", "median")),
-  checkboxInput("num_tweets_box", label = "Show the average number of tweets per day", value = F)
+  checkboxInput("num_tweets_box", label = "Show the average number of tweets per day", value = F),
+  actionButton("plot_saver_button", "Save the plot")
 )
 
 #### sidebar layout for descriptives
@@ -268,6 +318,36 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                 tags$br(),
                                 tags$br(),
                                 tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
+                                tags$br(),
                                 tags$hr(),
                                 tags$h3("Histogram"),
                                 sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 500, value = 50),
@@ -287,6 +367,12 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                               condition = "input.tabselected==3",
                               shinyWidgets::materialSwitch(inputId = "emo", label = "Remove Emoji Words?", value = F),
                               selectInput("plot_type_expl", "What kind of plot would you like to see?", choices = c("Frequency Plot", "Word Cloud")),
+
+                              conditionalPanel(
+                                condition = "input.plot_type_expl == 'Word Cloud'",
+                                sliderInput("size_wordcloud", "Change the size of the wordcloud", min = 0.1, max = 10, value = 1, step = 0.1)
+                              ),
+
                               sliderInput("n", "Number of words to show", min = 5, max = 200, value = 15),
 
                               conditionalPanel(
@@ -300,16 +386,13 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                               # word search bigrams
                               conditionalPanel(
                                 condition = "input.ngram_sel == 'Bigram'",
-                                shinyWidgets::searchInput("word_freq_filter", "Enter your search term",
+                                shinyWidgets::searchInput("word_freq_filter", "Show bigrams containing specific terms",
                                                           placeholder = "Placeholder",
                                                           value = "",
                                                           btnSearch = icon("search"),
                                                           btnReset = icon("remove"))
                               ),
-                              conditionalPanel(
-                                condition = "input.word_freq_filter != '' & input.plot_type_expl == 'Word Cloud'",
-                                sliderInput("size_wordcloud", "Change the size of the wordcloud", min = 1, max = 5, value = 1)
-                              ),
+
                             )
 
                             )
@@ -434,6 +517,21 @@ network_sidebar <- tabPanel( "Network Analysis",
 
 Sys.setlocale("LC_TIME", "English")
 ui <- fluidPage(
+  #### this gets the dimension of the current window --> helps adjusting width and height of plots that
+  # dont do it automatically
+  tags$head(tags$script('
+                        var dimension = [0, 0];
+                        $(document).on("shiny:connected", function(e) {
+                        dimension[0] = window.innerWidth;
+                        dimension[1] = window.innerHeight;
+                        Shiny.onInputChange("dimension", dimension);
+                        });
+                        $(window).resize(function(e) {
+                        dimension[0] = window.innerWidth;
+                        dimension[1] = window.innerHeight;
+                        Shiny.onInputChange("dimension", dimension);
+                        });
+                        ')),
   shinyjs::useShinyjs(),
   theme = shinythemes::shinytheme("darkly"),
   #shinythemes::themeSelector(),
@@ -480,7 +578,8 @@ ui <- fluidPage(
                                    #                c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
                                    #                selected = "Bayer ",multiple = FALSE),
                                    radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
-                                   selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
+                                   uiOutput("ControlsGranger"),
+                                   #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
                                    sliderInput("date_granger",label="Timeseries",
                                                value = c(as.Date("2020-02-12"),as.Date("2021-02-12")),
                                                min = as.Date("2020-01-02"),
@@ -493,9 +592,17 @@ ui <- fluidPage(
                                      tabPanel("Information Granger",
                                               htmlOutput("info_granger")),
                                      tabPanel("Visualize",
-                                              plotOutput("stocks_granger")),
+                                              dygraphs::dygraphOutput("stocks_granger"),
+                                              dygraphs::dygraphOutput("second_granger")),
                                      tabPanel("Background-steps",
-                                              htmlOutput("dickey")),
+                                              htmlOutput("grangertext1"),
+                                              verbatimTextOutput("optimallags"),
+                                              htmlOutput("grangertext2"),
+                                              verbatimTextOutput("dickey_fuller"),
+                                              verbatimTextOutput("dickey_fuller_second"),
+                                              htmlOutput("grangertext3"),
+                                              verbatimTextOutput("dickey_fuller_diff"),
+                                              verbatimTextOutput("dickey_fuller_second_diff")),
                                      tabPanel("Results",
                                               verbatimTextOutput("granger_result"),
                                               htmlOutput("granger_satz"))))),
@@ -504,39 +611,46 @@ ui <- fluidPage(
                                    tabs_custom()
                                  ),
                                  mainPanel(
-                                   tabsetPanel(
-                                     tabPanel("regression",
-                                              verbatimTextOutput("testi_table"),
-                                              verbatimTextOutput("senti"),
-                                              verbatimTextOutput("senti_agg"),
-                                              htmlOutput("regression_equation"),
-                                              verbatimTextOutput("regression_result")),
-                                     tabPanel("Quantile Regression",
-                                              plotOutput("plot_dens_Qreg"),
-                                              verbatimTextOutput("regression_result_Qreg")
+                                   tabsetPanel(id = "regressiontabs",
+                                               tabPanel("regression",
+                                                        #verbatimTextOutput("testi_table"),
+                                                        #verbatimTextOutput("senti"),
+                                                        #verbatimTextOutput("senti_agg"),
+                                                        htmlOutput("regression_equation"),
+                                                        verbatimTextOutput("regression_result")),
+                                               tabPanel("Quantile Regression",value=1,
+                                                        #plotOutput("plot_dens_Qreg"),
+                                                        verbatimTextOutput("regression_result_Qreg")
 
-                                     )
+                                               )
                                    )
                                  )
                         ),
                         tabPanel("VAR-forecasting",
                                  sidebarPanel(
                                    tabs_custom_var(),
-                                   numericInput("ahead", "choose how many days to forecast", value = 5, min = 1, max = 100)
+                                   numericInput("ahead", "choose how many days to forecast", value = 5, min = 1, max = 100),
+                                   selectInput("var_which_plot","Select plot to show:",c("Forecasted period only","Full time series"),selected="Forecasted period only")
                                  ),
                                  mainPanel(
                                    tabsetPanel(
+                                     tabPanel("Information VAR"),
+                                     tabPanel("Summary statistics",
+                                              tableOutput("var_summary"),
+                                              plotOutput("correlation_var")
+                                     ),
                                      tabPanel("Validity",
                                               #verbatimTextOutput("datensatz_var"),
-                                              plotOutput("plot_forecast"),
-                                              htmlOutput("accuracy_var"),
+                                              dygraphs::dygraphOutput("plot_forecast"),
+                                              #htmlOutput("accuracy_var"),
+                                              tableOutput("var_metrics"),
                                               verbatimTextOutput("serial_test"),
                                               htmlOutput("var"),
-                                              plotOutput("plot_forecast2")
+                                              #dygraphs::dygraphOutput("plot_forecast2")
                                      ),#close tabpanel validity
                                      tabPanel("Actual Forecast",
                                               verbatimTextOutput("testins"),
-                                              plotOutput("plot_forecast_real"))#close tabpanel actual forecast
+                                              dygraphs::dygraphOutput("plot_forecast_real"))#close tabpanel actual forecast
                                    )))#close tabpanel VAR forecasting
              )#close Navbarmenu
   )#close Navbarpage

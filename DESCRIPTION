@@ -15,7 +15,8 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Depends:
-    data.table
+    data.table,
+    wordcloud2 (>= 0.2.2)
 Imports: 
     ggplot2,
     feather,

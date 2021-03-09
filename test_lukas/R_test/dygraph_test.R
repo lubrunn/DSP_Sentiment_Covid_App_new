@@ -82,11 +82,42 @@ dygraph(don3, main = "Important Discoveries") %>%
 decreasing <- which(df$mean_sentiment < mean(df$mean_sentiment))
 increasing <- which(df$mean_sentiment >= mean(df$mean_sentiment))
 
-dyData <- xts(df_values3, order.by = df$created_at)
+
+dyData <- xts::xts(df_values3, order.by = df$created_at)
 
 ribbonData <- rep(0, nrow(dyData))
 ribbonData[decreasing] <- 0.5
 ribbonData[increasing] <- 1
 
 dygraph(dyData) %>%
-  dyRibbon(data = ribbonData, top = 0.1, bottom = 0.02)
+  dyRibbon(data = ribbonData, top = 0.05, bottom = 0)
+
+
+
+
+
+
+
+##### testing violin plots
+
+library(data.table)
+library(tidyverse)
+library(plotly)
+df <- fread("C:/Users/lukas/OneDrive - UT Cloud/Data/Twitter/plot_data/En_NoFilter/sum_stats_En_NoFilter_rt_200_li_200_lo_long_only.csv")
+
+
+
+df_test <- rbind(df1, df2)
+p <- df %>%
+  ggplot() +
+  geom_violin(aes(1,mean_rt))
+
+plotly::ggplotly(p)
+
+
+
+df1 <- df$mean_rt %>% data.frame()
+
+
+df1 %>% ggplot() +
+  geom_violin(aes_string(1, names(df1)[1]))

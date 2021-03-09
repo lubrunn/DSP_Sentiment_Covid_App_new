@@ -35,7 +35,23 @@ term_frequency_df <-  df %>%
   #pivot_wider(names_from = word, values_from = N) %>%
 
 
+########################## barplot
+input_n =30
+options(scipen=999)
+df %>%
+  group_by( word) %>%
+  summarise(n = sum(N)) %>%
+  arrange(desc(n)) %>%
+  top_n(input_n, n) %>%
+  ggplot(aes(reorder(x = word, n), y = n)) +
+  geom_col(width = 0.5) +
+  coord_flip() +
+  labs(x = "",
+       y = "N")+
+  theme_classic() +
+  theme(text = element_text(size=18)) +
 
+  scale_y_continuous(expand = c(0, 0))
 
 
 library(wordcloud2)

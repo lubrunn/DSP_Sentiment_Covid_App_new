@@ -133,6 +133,18 @@ server <- function(input, output, session) {
   })
 
 
+  output$ControlsGranger <- renderUI({
+    if (input$country_regression == "Germany"){
+      input <- selectizeInput("Controls_GRANGER","Choose control variables:",
+                              c(colnames(global_controls_test_DE())[-1],"DAX"),selected = "VIX",multiple = FALSE)
+      #c(colnames(res[3:length(res)])),multiple = TRUE
+    }else{
+      input <- selectizeInput("Controls_GRANGER","Choose control variables:",
+                              c(colnames(global_controls_test_US())[-1],"DOW"),selected = "VIX",multiple = FALSE)
+    }
+  })
+
+
   granger_data <- reactive({
     req(path_setter()[[3]][1] == "correct_path")
     req(input$Stock_Granger)
@@ -146,15 +158,35 @@ server <- function(input, output, session) {
                            .data$Dates >= .env$input$date_granger[1] & .data$Dates <= .env$input$date_granger[2])[c("Dates", input$Granger_outcome)]
 
     }
-    granger1["zweitevariable"] <- filter(stockdata_DE(),
-                                         .data$name == "ADS.DE" &
-                                           .data$Dates >= .env$input$date_granger[1] & .data$Dates <= .env$input$date_granger[2])[["Open"]]
-    granger1
+
+    if (input$country_granger == "Germany"){
+      global_controls <- global_controls_test_DE()   #load controls
+      global_controls$Date <- as.Date(global_controls$Date) #transform date
+      dax <- GDAXI()  #load dax
+      dax$Date <- as.Date(dax$Date, "%d %b %Y") #transform date
+      dax <- missing_date_imputer(dax,"Close.") #transform time series by imputing missing values
+      colnames(dax)[2] <- "DAX"  #rename ->   !! is not renamed in final dataset !! -> dont know why
+      global_controls <- left_join(dax,global_controls,by = c("Date")) #join final
+
+    }else {
+      global_controls <- global_controls_test_US() #same procedure as above
+      global_controls$Date <- as.Date(global_controls$Date)
+      dow <- DOW()
+      dow$Date <- as.Date(dow$Date, " %b %d, %Y")
+      dow <- missing_date_imputer(dow,"Close.")
+      colnames(dow)[2] <- "DOW"
+      global_controls <- left_join(dow,global_controls,by = c("Date"))
+    }
+    names(global_controls)[1] <- "Dates"
+    granger <- left_join(granger1,global_controls,by = c("Dates"))
+    granger <- granger[c("Dates",input$Granger_outcome,input$Controls_GRANGER)]
+    granger
   })
 
   optlags <- reactive({
     #library(vars)
-    VARselect(granger_data()[-1],lag.max = 10, type = "const")$selection[["AIC(n)"]]
+    req(is.null(granger_data())==FALSE)
+    VARselect(granger_data()[-1],lag.max = 7, type = "const")$selection[["AIC(n)"]]
   })
 
   dickey_fuller <- reactive({
@@ -170,7 +202,7 @@ server <- function(input, output, session) {
   granger_result <- reactive({
     varobject <- VAR(dickey_fuller()[-1], p = optlags(), type = "const")
     cause <- NULL
-    ifelse(input$direction_granger == TRUE,cause <- "zweitevariable",cause <- input$Granger_outcome)
+    ifelse(input$direction_granger == TRUE,cause <- input$Controls_GRANGER,cause <- input$Granger_outcome)
     granger <- causality(varobject, cause = cause)
     granger$Granger
   })
@@ -178,35 +210,94 @@ server <- function(input, output, session) {
   output$granger_result <- renderPrint({
     granger_result()})
 
-  output$stocks_granger <- renderPlot({
-    req(input$Granger_outcome)
-    ggplot(granger_data(),aes_string("Dates",input$Granger_outcome))+
-      geom_line()
+  # output$stocks_granger <- renderPlot({
+  #   req(input$Granger_outcome)
+  #   ggplot(granger_data(),aes_string("Dates",input$Granger_outcome))+
+  #     geom_line()
+  # })
+
+  output$stocks_granger <- dygraphs::renderDygraph({
+    plotdata <- xts(granger_data()[input$Granger_outcome],order.by=granger_data()[["Dates"]])
+    dygraphs::dygraph(plotdata)
   })
-  output$dickey <- renderUI({
-    str1 <- paste("The optimal lag order for the VAR model is ",optlags()," lags")
+
+
+  output$second_granger <- dygraphs::renderDygraph({
+    plotdata <- xts(granger_data()[input$Controls_GRANGER],order.by=granger_data()[["Dates"]])
+    dygraphs::dygraph(plotdata)
+  })
+
+  output$grangertext1 <- renderUI({
+    str1 <- paste("The optimal lag order for the VAR model using the Akaike information criterium (AIC)  is ",optlags()," lags.")
+    HTML(paste(str1))
+  })
+
+  output$optimallags <- renderPrint({
+    VARselect(granger_data()[-1],lag.max = 7, type = "const")
+  })
+
+  output$grangertext2 <- renderUI({
     if (nrow(dickey_fuller()) != nrow(granger_data())){
-      str2 <- paste("The Dickey Fuller test found one of the timeseries to be non-stationary.")
-      str3 <- paste("Differencing the series ",nrow(granger_data()) - nrow(dickey_fuller()),"times achieved stationarity")
-    } else {
-      str2 <-paste("The Dickey Fuller test found both timeseries to be stationary.")
-      str3 <-paste("Hence, the granger causality analysis can be performed without tranformations")
+      str2 <- paste("The Dickey Fuller test found one of the timeseries to be non-stationary:")
+    }else{
+      str2 <-paste("The Dickey Fuller test found both timeseries to be stationary.
+                   Hence, the granger causality analysis can be performed without tranformations:")
     }
-    HTML(paste(str1,str2,str3, sep = '<br/>'))
   })
+
+
+  #first variable
+  output$dickey_fuller <- renderPrint({
+    adf.test(granger_data()[[2]],k=optlags())
+  })
+  #second variable
+  output$dickey_fuller_second <- renderPrint({
+    adf.test(granger_data()[[3]],k=optlags())
+  })
+
+  output$grangertext3 <- renderUI({
+    req(nrow(dickey_fuller()) != nrow(granger_data()))
+    str3 <- paste("Differencing the series ",nrow(granger_data()) - nrow(dickey_fuller()),"times achieved stationarity:")
+  })
+
+
+  #first variable after differencing
+  output$dickey_fuller_diff <- renderPrint({
+    req(nrow(dickey_fuller()) != nrow(granger_data()))
+    adf.test(dickey_fuller()[[2]],k=optlags())
+  })
+  #second variable after differencing
+  output$dickey_fuller_second_diff <- renderPrint({
+    req(nrow(dickey_fuller()) != nrow(granger_data()))
+    adf.test(dickey_fuller()[[3]],k=optlags())
+  })
+
+
+
+  # output$dickey <- renderUI({
+  #   str1 <- paste("The optimal lag order for the VAR model using the Akaike information criterium (AIC)  is ",optlags()," lags")
+  #   if (nrow(dickey_fuller()) != nrow(granger_data())){
+  #     str2 <- paste("The Dickey Fuller test found one of the timeseries to be non-stationary.")
+  #     str3 <- paste("Differencing the series ",nrow(granger_data()) - nrow(dickey_fuller()),"times achieved stationarity")
+  #   } else {
+  #     str2 <-paste("The Dickey Fuller test found both timeseries to be stationary.")
+  #     str3 <-paste("Hence, the granger causality analysis can be performed without tranformations")
+  #   }
+  #   HTML(paste(str1,str2,str3, sep = '<br/>'))
+  # })
 
   output$granger_satz <- renderUI({
     if(input$direction_granger == TRUE){
       if (granger_result()["p.value"] < 0.1){
-        str1 <- paste("Zweitevariable granger causes ",input$Granger_outcome,"of",input$Stock_Granger)
+        str1 <- paste(input$Controls_GRANGER, " granger causes ",input$Granger_outcome,"of",input$Stock_Granger)
       } else {
-        str1 <- paste("Zweitevariable does not granger cause ",input$Granger_outcome,"of",input$Stock_Granger)
+        str1 <- paste(input$Controls_GRANGER, " does not granger cause ",input$Granger_outcome,"of",input$Stock_Granger)
       }
     } else {
       if (granger_result()["p.value"] < 0.1){
-        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "granger causes Zweitevariable")
+        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "granger causes ",input$Controls_GRANGER)
       } else {
-        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "does not granger cause Zweitevariable")
+        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "does not granger cause ",input$Controls_GRANGER)
       }
     }
     HTML(paste(str1))
@@ -285,7 +376,7 @@ server <- function(input, output, session) {
       global_controls <- global_controls_test_US() #same procedure as above
       global_controls$Date <- as.Date(global_controls$Date)
       dow <- DOW()
-      dow$Date <- as.Date(dow$Date, "%d %b %Y")
+      dow$Date <- as.Date(dow$Date, " %b %d, %Y")
       dow <- missing_date_imputer(dow,"Close.")
       colnames(dow)[2] <- "DOW"
       global_controls <- left_join(dow,global_controls,by = c("Date"))
@@ -298,7 +389,7 @@ server <- function(input, output, session) {
 
 
   df_selected_controls <- reactive({
-    req(input$Controls)
+    #req(input$Controls)
     res <- dataset()
     res <- res[c("Dates",input$regression_outcome,input$Controls)]
     res
@@ -401,7 +492,11 @@ server <- function(input, output, session) {
 
   #merge sentiment with control+dep vars
   final_regression_df <- reactive ({
-    res <- aggri_select()
+    if (input$senti_yesno_reg == TRUE){
+      res <- aggri_select()
+    } else {
+      res <- aggri_select()[1]
+    }
     res$date <- as.Date(res$date)
     res_c <- df_selected_controls()
     res <- left_join(res_c,res, by=c("Dates" = "date"))
@@ -409,45 +504,49 @@ server <- function(input, output, session) {
     res
   })
 
+
+
   #regression
   regression_result <- reactive({
+    req(ncol(final_regression_df())>=2)
     model <- lm(reformulate(".",input$regression_outcome), data = final_regression_df())
-    summary(model)
+    #summary(model)
+    coeftest(model, vcov = vcovHC(model, "HC1"))
   })
 
   #Qregression
   regression_result_Qreg <- reactive({
-    model <- rq(reformulate(".",input$regression_outcome),tau = 0.5,data = final_regression_df())
+    req(ncol(final_regression_df())>=2)
+    model <- rq(reformulate(".",input$regression_outcome),tau = input$Quantiles,data = final_regression_df())
     summary(model)
   })
 
 
-  output$testi_table <- renderPrint ({
-    head(dataset())
-  })
+  # output$testi_table <- renderPrint ({
+  #   head(dataset())
+  # })
 
-  output$senti <- renderPrint ({
-    head(df_selected_controls())
-  })
+  # output$senti <- renderPrint ({
+  #   head(df_selected_controls())
+  # })
 
-  output$senti_agg <- renderPrint ({
-    head(final_regression_df())
-  })
+  # output$senti_agg <- renderPrint ({
+  #   head(final_regression_df())
+  # })
 
   output$regression_result <- renderPrint({
     regression_result()})
 
   output$regression_equation <- renderUI({
-    req(input$Controls)
     str1 <- paste("Linear regression: ",input$regression_outcome,"of ",input$Stock_Regression,"~",paste(input$Controls,collapse = " + "),"<br/>")
     HTML(paste(str1,sep = '<br/>'))
   })
 
 
-  output$plot_dens_Qreg <- renderPlot({
-
-    density_plot_reg(dataset())
-  })
+  # output$plot_dens_Qreg <- renderPlot({
+  #
+  #   density_plot_reg(dataset())
+  # })
 
   output$regression_result_Qreg <- renderPrint({
     regression_result_Qreg()})
@@ -510,7 +609,7 @@ server <- function(input, output, session) {
       global_controls <- global_controls_test_US() #same procedure as above
       global_controls$Date <- as.Date(global_controls$Date)
       dow <- DOW()
-      dow$Date <- as.Date(dow$Date, "%d %b %Y")
+      dow$Date <- as.Date(dow$Date, " %b %d, %Y")
       dow <- missing_date_imputer(dow,"Close.")
       colnames(dow)[2] <- "DOW"
       global_controls <- left_join(dow,global_controls,by = c("Date"))
@@ -636,7 +735,34 @@ server <- function(input, output, session) {
     res
   })
 
-  #####################################################################################################################
+  ####################################################Summary statistics #####################################################
+
+  df_need <- reactive({
+    df_need <- round(describe(final_regression_df_var()[-1])[c(3, 4, 5, 8, 9)], 2)
+    test <- nrow(df_need)
+    test2 <- nrow(df_need)==1
+    if (nrow(df_need == 1)) {
+      row.names(df_need)[1] <- input$regression_outcome_var
+    } else{
+      df_need <- df_need
+    }
+    df_need
+
+  })
+
+
+  output$var_summary <- function(){
+    #colnames(df_need)<- "value"
+    knitr::kable(df_need(), caption = glue("Summary statistics"),colnames = NULL) %>%
+      kableExtra::kable_styling(c("striped","hover"), full_width = F,
+                                position = "center",
+                                font_size = 16)
+  }
+
+  output$correlation_var <- renderPlot({
+    ggpairs(final_regression_df_var()[-1])
+  })
+
 
   ##################################################   Validity    ######################################################
   output$datensatz_var <- renderPrint ({
@@ -705,24 +831,74 @@ server <- function(input, output, session) {
   })
 
   #plot the actual vs. the predicted forecast
-  output$plot_forecast <- renderPlot({
-    plot1 <- data.frame(final_regression_df_var()$Dates[(nrow(forecast_data())+1):(nrow(forecast_data())+input$ahead)],#Dates
-                        forecast_var(),                                                              #forecasted values
-                        actual_values())#actual values
-    colnames(plot1) <- c("a","b","c")
-    ggplot(plot1) +
-      geom_line(aes(a,b),color="red")+
-      geom_line(aes(a,c),color="gold")+
-      labs(x="Date",y="StockPrice",title = "forecasted vs. actual")
+  output$plot_forecast <- dygraphs::renderDygraph({
+    if (input$var_which_plot == "Forecasted period only"){
+      plot <- data.frame(final_regression_df_var()$Dates[(nrow(forecast_data())+1):(nrow(forecast_data())+input$ahead)],#Dates
+                         forecast_var(),                                                              #forecasted values
+                         actual_values())#actual values
+      colnames(plot) <- c("a","forecast","actual")
+      # ggplot(plot1) +
+      #   geom_line(aes(a,b),color="red")+
+      #   geom_line(aes(a,c),color="gold")+
+      #   labs(x="Date",y="StockPrice",title = "forecasted vs. actual")
+      plot <- xts(plot[c("forecast","actual")],order.by=plot[["a"]])
+      dygraphs::dygraph(plot)
+    }else{
+      plot <- data.frame(final_regression_df_var()$Dates,
+                         c(forecast_data()[[1]],forecast_var()),
+                         final_regression_df_var()[2])
+      colnames(plot) <- c("a","forecast","actual")
+      # ggplot(plot2) +
+      #   geom_line(aes(a,b))+
+      #   geom_line(aes(a,c))+
+      #   labs(x="Date",y="StockPrice",title = "forecasted vs. actual, full series")
+      plot <- xts(plot[c("forecast","actual")],order.by=plot[["a"]])
+
+      dygraphs::dygraph(plot) %>%
+        dyEvent(final_regression_df_var()$Dates[(nrow(forecast_data())+1)], "Start of prediction", labelLoc = "bottom")
+
+    }
 
   })
 
-  output$accuracy_var <- renderUI({
-    str1 <- paste("The RMSE is: ",sqrt(mean((forecast_var()-actual_values())^2)))
-    str2 <- paste("The MAE is: ",mean(abs(forecast_var()-actual_values())))
-    HTML(paste(str1,str2, sep = '<br/>'))
+  # output$plot_forecast2 <- dygraphs::renderDygraph({
+  #
+  #   plot2 <- data.frame(final_regression_df_var()$Dates,
+  #                       c(forecast_data()[[1]],forecast_var()),
+  #                       final_regression_df_var()[2])
+  #   colnames(plot2) <- c("a","forecast","actual")
+  #   # ggplot(plot2) +
+  #   #   geom_line(aes(a,b))+
+  #   #   geom_line(aes(a,c))+
+  #   #   labs(x="Date",y="StockPrice",title = "forecasted vs. actual, full series")
+  #   plot2 <- xts(plot2[c("forecast","actual")],order.by=plot2[["a"]])
+  #   dygraphs::dygraph(plot2)
+  #
+  #
+  # })
 
-  })
+  #   output$accuracy_var <- renderUI({
+  #     str1 <- paste("The RMSE is: ",sqrt(mean((forecast_var()-actual_values())^2)))
+  #     str2 <- paste("The MAE is: ",mean(abs(forecast_var()-actual_values())))
+  #     str3 <- paste("The MAPE is:",mean(abs((actual_values()-forecast_var())/actual_values()) * 100)
+  # )
+  #     HTML(paste(str1,str2,str3, sep = '<br/>'))
+  #
+  #   })
+
+  output$var_metrics <- function(){
+
+    df_need <- data.frame(c(sqrt(mean((forecast_var()-actual_values())^2)),
+                            mean(abs(forecast_var()-actual_values())),
+                            mean(abs((actual_values()-forecast_var())/actual_values()) * 100)),
+                          row.names = c("RMSE","MAE","MAPE"))
+    colnames(df_need)<- "value"
+    knitr::kable(df_need, caption = glue("Performance metrics"),colnames = NULL) %>%
+      kableExtra::kable_styling(c("striped","hover"), full_width = F,
+                                position = "center",
+                                font_size = 16)
+  }
+
 
   output$serial_test <- renderPrint({
     serial_test()
@@ -747,18 +923,7 @@ server <- function(input, output, session) {
     HTML(paste(str1,str2, sep = '<br/>'))
   })
 
-  output$plot_forecast2 <- renderPlot({
 
-    plot2 <- data.frame(final_regression_df_var()$Dates,
-                        c(forecast_data()[[1]],forecast_var()),
-                        final_regression_df_var()[2])
-    colnames(plot2) <- c("a","b","c")
-    ggplot(plot2) +
-      geom_line(aes(a,b))+
-      geom_line(aes(a,c))+
-      labs(x="Date",y="StockPrice",title = "forecasted vs. actual, full series")
-
-  })
 
   ##################################################   actual forecast    ######################################################
   forecast_data_real <- reactive({
@@ -818,14 +983,18 @@ server <- function(input, output, session) {
     x
   })
 
-  output$plot_forecast_real <- renderPlot({
+  output$plot_forecast_real <- dygraphs::renderDygraph({
 
-    plot2 <- data.frame(c(final_regression_df_var()[["Dates"]],seq(as.Date(tail(final_regression_df_var()$Dates,1))+1,by = "day",length.out = input$ahead)),
-                        c(forecast_data_real()[[1]],forecast_var_real()))
-    colnames(plot2) <- c("a","b")
-    ggplot(plot2) +
-      geom_line(aes(a,b))+
-      labs(x="Date",y="StockPrice",title = "forecasted series")
+    plot <- data.frame(c(final_regression_df_var()[["Dates"]],seq(as.Date(tail(final_regression_df_var()$Dates,1))+1,by = "day",length.out = input$ahead)),
+                       c(forecast_data_real()[[1]],forecast_var_real()))
+    colnames(plot) <- c("a","b")
+    # ggplot(plot2) +
+    #   geom_line(aes(a,b))+
+    #   labs(x="Date",y="StockPrice",title = "forecasted series")
+    plot <- xts(plot["b"],order.by=plot[["a"]])
+
+    dygraphs::dygraph(plot) %>%
+      dyEvent(max(final_regression_df_var()$Dates), "Start of prediction", labelLoc = "bottom")
 
   })
 
@@ -834,7 +1003,7 @@ server <- function(input, output, session) {
   #   #seq(as.Date(tail(final_regression_df_var()[["Dates"]],1)),by = "day",length.out = input$ahead)
   # })
 
-#################################################################################################### twitter
+  #################################################################################################### twitter
 
   ############################################################################
   ################# Directory ###############################################
@@ -967,48 +1136,7 @@ server <- function(input, output, session) {
       glue("histo_{value_var}_{input$comp}_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
 
     }
-     # old sql
-      #browser()
-      # if (input$value == "length"){
-      #   tb_metric <- "len"
-      #   col_value <- input$value
-      #
-      # } else if(input$value == "rt") {
-      #
-      #   tb_metric <- input$value
-      #   col_val <- "retweets_count"
-      #
-      # } else if(input$value == "likes") {
-      #   tb_metric <- input$value
-      #   col_val <- "likes_count"
-      # } else if(input$value == "sentiment"){
-      #   tb_metric <- input$value
-      #   col_val <- "sentiment_rd"
-      # } else{
-      #   Sys.sleep(0.2)
-      # }
-      #
-      #
-      #
-      #
-      #
-      # table_name <- glue("histo_{tb_metric}_{tolower(input$lang)}")
-      #
-      # if (table_name %in% c("histo_rt_en", "histo_likes_en", "histo_len_en")){
-      #   date_col <- "date"
-      # } else{
-      #   date_col <- "created_at"
-      # }
-      #
-      # glue("SELECT {col_val}, sum(N) as n  FROM {table_name}  WHERE {date_col} >=  '{input$dates[1]}'
-      # and {date_col} <= '{input$dates[2]}'
-      # and retweets_count_filter = {input$rt} and likes_count_filter = {input$likes} and
-      # tweet_length_filter = {long}
-      #      group by {col_val}")
-
-
-     #if closed
-    }) #reactive closed
+     }) #reactive closed
 
 
 
@@ -1033,58 +1161,59 @@ long <- long()
 
 
     })
-    #browser()
 
 
 
+    #########################################################################
+    ############################# get data for sum stats table
+    get_data_sum_stats_tables <- reactive({
+      con <- path_setter()
+      con <- con[[1]]
+      string_value <- is.null(con)
+      req(!string_value)
+      df_need <- DBI::dbGetQuery(con,  querry_sum_stats_table())
 
-
-  # ## get data from querry
-  # data_time_series <- reactive({
-  #
-  #
-  #
-  #   con <- path_setter()
-  #
-  #
-  #   con <- con[[1]]
-  #
-  #   string_value <- is.null(con)
-  #   req(!string_value)
-  #   df_need <- DBI::dbGetQuery(con, querry_time_series())
-  #
-  #  df_need
-  # })
-############################### data retriever for histogram
-  data_histo <- reactive({
-
-    lang <- lang_converter()
-    a <- path_setter()
-
-
-
-    # for case no company selected
-    if (is.null(input$comp)){
-  file_path <- file.path(glue("Twitter/plot_data/{lang}_NoFilter/{querry_histo()}"))
-  exists <- file.exists(file_path)
-  shinyFeedback::feedbackDanger("histo_plot", !exists, "Please make sure you picked the correct path. The \n
-                                file cannot be found in the current directory")
-  req(exists)
-    df_need <- data.table::fread(file_path,
-                                 select = 1:3)
-
-    df_need
-    } else { #for case of choosen company
-      file_path <- file.path(glue("Twitter/plot_data/Companies/{input$comp}/{querry_histo()}"))
-      df_need <- data.table::fread(file_path,
-                                   select = 1:3)
       df_need
+    })
+    #########################
+    ################################# sum stats table
+    output$sum_stats_table <- function(){
 
+      df_need <- get_data_sum_stats_tables()
+      sum_stats_table_creator(df_need, input$dates_desc[1], input$dates_desc[2])
     }
-  })
+
+
+    ###### number of tweets display
+    output$number_tweets_info <- renderText({
+
+      df_need <- get_data_sum_stats_tables()
+
+      #convert to date
+      df_need$created_at <- as.Date(df_need$created_at)
+
+
+      df_need <- df_need %>%
+        filter(between(created_at, as.Date(input$dates_desc[1]), as.Date(input$dates_desc[2])))
+
+      glue("For current selection: {round(mean(df_need$N))} tweets on average per day")
+    })
 
 
 
+
+    ############################################################################
+    ######################### violin plot
+    output$violin_sum <- renderPlot({
+
+      df <- get_data_sum_stats_tables()
+
+      violin_plotter(df, input$value, input$metric)
+
+
+    })
+
+    ############################################################################
     ######################### time series plot for retweets etc.
 
   r <- reactiveValues(
@@ -1097,6 +1226,7 @@ long <- long()
 
 
   observeEvent(input$sum_stats_plot_date_window, {
+
     message(crayon::blue("observeEvent_input_sum_stats_plot_date_window"))
     r$change_datewindow <- r$change_datewindow + 1
     if (r$change_datewindow > r$change_datewindow_auto) {
@@ -1104,8 +1234,8 @@ long <- long()
       r$change_dates_auto <- r$change_dates_auto + 1
       r$change_datewindow_auto <- r$change_datewindow
 
-      start <- as.Date(ymd_hms(input$sum_stats_plot_date_window[[1]])+ days(1))
-      stop  <- as.Date(ymd_hms(input$sum_stats_plot_date_window[[2]])+ days(1))
+      start <- as.Date(lubridate::ymd_hms(input$sum_stats_plot_date_window[[1]])+ lubridate::days(1))
+      stop  <- as.Date(lubridate::ymd_hms(input$sum_stats_plot_date_window[[2]])+ lubridate::days(1))
       updateAirDateInput(session = session,
                          inputId = "dates_desc",
                          value = c(start, stop),
@@ -1126,14 +1256,14 @@ long <- long()
       r$change_datewindow_auto <- r$change_datewindow_auto
       r$change_dates_auto <- r$change_dates
 
-      r$dates <- input$dates
+      r$dates <- input$dates_desc
 
     }
   })
 
 
-
-
+  ##################################
+  ################################################### output time series
   output$sum_stats_plot <- dygraphs::renderDygraph({
     message("renderDygraph")
     req(!is.null(input$value) | input$num_tweets_box == T)
@@ -1143,8 +1273,42 @@ long <- long()
     if (input$num_tweets_box == F){
       time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r)
     } else {
-      time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r)
+
+      time_series_plotter2(df, input$metric, input$value, num_tweets = T, input$dates_desc[1], input$dates_desc[2], r)
     }
+    # dygraphs::dygraph(don) %>%
+    #   dygraphs::dyRangeSelector( input$dates_desc + 1, retainDateWindow = T
+    #   )
+  })
+
+  save_plot <- reactiveValues(data = NULL)
+
+  ##### if button is clicked store time series plot in serperate part
+  observeEvent(input$plot_saver_button, {
+
+    req(!is.null(input$value) | input$num_tweets_box == T)
+
+    df <- get_data_sum_stats_tables()
+
+    if (input$num_tweets_box == F){
+      save_plot$plot <- time_series_plotter2(df, input$metric, input$value, num_tweets = F,
+                                             input$dates_desc[1], input$dates_desc[2], r,
+                                              date_range = F)
+    } else {
+      save_plot$plot <- time_series_plotter2(df, input$metric, input$value, num_tweets = F,
+                                             input$dates_desc[1], input$dates_desc[2], r,
+                                             date_range = F)
+    }
+
+
+
+  })
+
+
+  output$sum_stats_plot2 <-dygraphs::renderDygraph({
+
+
+   save_plot$plot
     # dygraphs::dygraph(don) %>%
     #   dygraphs::dyRangeSelector( input$dates_desc + 1, retainDateWindow = T
     #   )
@@ -1153,17 +1317,50 @@ long <- long()
 
 
 
-####### block metric selection if chosen number of tweets
-  # observeEvent(input$metric,{
-  #  # browser()
-  #   if (input$metric == "N"){
-  #     shinyjs::disable("value")
-  #   } else {
-  #     shinyjs::enable("value")
-  #   }
-  # })
+
+  ##############################################################################
+  ############################### data retriever for histogram
+  data_histo <- reactive({
+
+    lang <- lang_converter()
+    a <- path_setter()
 
 
+
+    # for case no company selected
+    if (is.null(input$comp)){
+      file_path <- file.path(glue("Twitter/plot_data/{lang}_NoFilter/{querry_histo()}"))
+      exists <- file.exists(file_path)
+      shinyFeedback::feedbackDanger("histo_plot", !exists, "Please make sure you picked the correct path. The \n
+                                file cannot be found in the current directory")
+      req(exists)
+      df_need <- data.table::fread(file_path,
+                                   select = 1:3)
+
+      df_need
+    } else { #for case of choosen company
+      file_path <- file.path(glue("Twitter/plot_data/Companies/{input$comp}/{querry_histo()}"))
+      df_need <- data.table::fread(file_path,
+                                   select = 1:3)
+      df_need
+
+    }
+  })
+
+
+
+  ###########################################################
+  ######################################## histogram output
+  output$histo_plot <- plotly::renderPlotly({
+
+
+   req(input$value)
+
+
+  histogram_plotter(data_histo(), date_input1 = input$dates_desc[1], date_input2 = input$dates_desc[2],
+                    input_bins = input$bins, input_log = input$log_scale)
+
+  })
 
 
   ##################### disable log scale option for sentiment because as negative values
@@ -1182,65 +1379,26 @@ long <- long()
   })
 
 
-  ######################################## histogram output
-  output$histo_plot <- renderPlot({
-   #  df <- data_histo()
-   #
-   # df %>%
-   #      group_by(.[[2]]) %>% summarise(N = sum(N)) %>%
-   #     mutate(metric = case_when(input$log_scale == T ~ log(as.numeric(.[[1]])+ 0.0001),
-   #                                input$log_scale == F ~ as.numeric(.[[1]])),
-   #             bins = cut_interval(metric, n = input$bins)) %>%
-   #
-   #      ggplot(aes(bins, N)) +
-   #      geom_col() +
-   #      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-   #
-   req(input$value)
-   # df <- data_histo()
-   #
-   #   df %>%   group_by(.[[2]]) %>% summarise(N = sum(N)) %>%
-   #     mutate(metric = case_when(input$log_scale == T ~ log(as.numeric(.[[1]])+ 0.0001),
-   #                                input$log_scale == F ~ as.numeric(.[[1]])),
-   #             bins = cut_interval(metric, n = input$bins)) %>%
-   #
-   #      ggplot(aes(bins, N)) +
-   #      geom_col() +
-   #      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-  histogram_plotter(data_histo(), date_input1 = input$dates_desc[1], date_input2 = input$dates_desc[2],
-                    input_bins = input$bins, input_log = input$log_scale)
+  ####################### histogram title
+  output$histo_plot_info <- renderText({
+
+    selected_value <- input$value[1]
+
+    selected_value <- stringr::str_replace(selected_value, "sentiment_rt", "Retweets weighted Sentiment")
+    selected_value <- stringr::str_replace(selected_value, "sentiment_likes", "Likes weighted Sentiment")
+    selected_value <- stringr::str_replace(selected_value, "sentiment_length", "Tweet Length weighted Sentiment")
+    selected_value <- stringr::str_replace(selected_value, "likes", "Likes")
+    selected_value <- stringr::str_replace(selected_value, "rt", "Retweets")
+    selected_value <- stringr::str_replace(selected_value, "tweet_length", "Tweet Length")
+    selected_value <- stringr::str_replace(selected_value, "sentiment", "Sentiment")
+
+
+    glue("Distribution of {selected_value} for indivdual tweets")
 
   })
 
 
-
-
-############################# get data for sum stats table
-  get_data_sum_stats_tables <- reactive({
-    con <- path_setter()
-    con <- con[[1]]
-    string_value <- is.null(con)
-    req(!string_value)
-    df_need <- DBI::dbGetQuery(con,  querry_sum_stats_table())
-
-    df_need
-  })
-
-  ################################# sum stats table
-  output$sum_stats_table <- function(){
-     # browser()
-    df_need <- get_data_sum_stats_tables()
-    sum_stats_table_creator(df_need, input$dates_desc[1], input$dates_desc[2])
-  }
-
-
-  ###### number of tweets display
-  output$number_tweets_info <- renderText({
-    df_need <- get_data_sum_stats_tables()
-
-   glue("For current selection: {round(mean(df_need$N))} tweets on average per day")
-  })
 
 
   ######################################################
@@ -1294,7 +1452,7 @@ long <- long()
                                                               "word",
                                                               "N",
                                                               "emo"),
-                        colClasses = c("created_at" = "Date"))
+                        colClasses = c("date_variable" = "Date"))
     } else {
       folder <- glue("{lang}_NoFilter")
       file_name <- glue("{add_on}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
@@ -1305,7 +1463,7 @@ long <- long()
                                               "word",
                                               "N",
                                               "emo"),
-                        colClasses = c("created_at" = "Date"))
+                        colClasses = c("date" = "Date"))
     }
 
 
@@ -1326,7 +1484,7 @@ long <- long()
   })
 
   ######################### freq_plot
-  output$freq_plot <- renderPlot({
+  output$freq_plot <- plotly::renderPlotly({
     # dynamically change height of plot
     #height = function() input$n * 30 + 400,
 
@@ -1349,6 +1507,11 @@ long <- long()
     })
 
 ################## wordcloud
+  output$cloud <- renderUI({
+    wordcloud2::wordcloud2Output("wordcloud", width = (8/12) * 0.925 * input$dimension[1], height = 800)
+
+  })
+
   output$wordcloud <- wordcloud2::renderWordcloud2({
   req(input$plot_type_expl == "Word Cloud")
 
@@ -1360,6 +1523,8 @@ long <- long()
                                     input$comp)
 
       df <- df_filterer(df, input$n)
+
+
 
       word_cloud_plotter(df, input$size_wordcloud)
     }

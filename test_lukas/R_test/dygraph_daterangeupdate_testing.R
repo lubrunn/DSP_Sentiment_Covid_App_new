@@ -41,8 +41,8 @@ server <- function(input, output,session) {
       r$change_dates_auto <- r$change_dates_auto + 1
       r$change_datewindow_auto <- r$change_datewindow
 
-      start <- as.Date(ymd_hms(input$sum_stats_plot_date_window[[1]]))
-      stop  <- as.Date(ymd_hms(input$sum_stats_plot_date_window[[2]]))
+      start <- as.Date(ymd_hms(input$sum_stats_plot_date_window[[1]])+ days(1))
+      stop  <- as.Date(ymd_hms(input$sum_stats_plot_date_window[[2]])+ days(1))
       updateAirDateInput(session = session,
                            inputId = "dates_desc",
                          value = c(start, stop),
@@ -103,7 +103,7 @@ test_func <- function(r, input_dates1, input_dates2){
 
   p <- dygraph(don) %>%
     dyRangeSelector(
-      dateWindow = r$dates + 2) # +1 parce que voila...
+      dateWindow = r$dates) # +1 parce que voila...
 
 
   a <- list(a = p, b = r)
