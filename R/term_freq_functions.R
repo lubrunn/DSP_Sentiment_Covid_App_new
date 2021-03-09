@@ -11,7 +11,7 @@ emoji_words <- c(
   "grin","bicep","flex","note","popper","fist","car","follow","retweet","year","ago",
   "social media","woman","voltag","star","ball","camera","man","ass","video","cake","cool",
   "fac","smil","see","evil","party","sweat","thumb","big","the","crying","fing",
-  "crossed","god","watch","leaf","food","arrow"
+  "crossed","god","watch","leaf","food","arrow", "hugg"
 
 )
 

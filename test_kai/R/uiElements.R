@@ -10,9 +10,9 @@
 #' @rdname uiElements
 sliderinput_dates <- function(){
   sliderInput("dates",label="Timeseries",
-              value = c(min(as.Date(ADS()[["Date"]], "%b %d, %Y")),max(as.Date(ADS()[["Date"]], "%b %d, %Y"))),
-              min = min(as.Date(ADS()[["Date"]], "%b %d, %Y")),
-              max = max(as.Date(ADS()[["Date"]], "%b %d, %Y")),
+              value = c(as.Date("2020-02-12"),as.Date("2021-02-12")),
+              min = as.Date("2020-01-02"),
+              max = as.Date("2021-02-12"),
               step = 1,timeFormat = "%F")
 }
 #plotoutput for german companies
@@ -80,11 +80,22 @@ hover_info_corona <- function() {
 # selectize input for companies
 #' @export
 #' @rdname uiElements
-selectize_Stocks_reg <- function(components1,components2) {
-  full_components <- rbind(components1,components2)
+selectize_Stocks_reg <- function() {
+  #full_components <- rbind(components1,components2)
 
   selectInput("Stock_reg","Chose Company",
-              c(full_components[["Company.Name"]]),selected = "adidas ")
+              c("Covestro ","adidas ","Allianz ","BASF ","Bayer ","Beiersdorf ","Bayerische Motoren Werke ",
+                "Continental ","Daimler ","Deutsche Börse ","Deutsche Bank ","Delivery Hero ","Deutsche Post ",
+                "Deutsche Telekom ","Deutsche Wohnen ","EON ","Fresenius Medical Care ","Fresenius ","HeidelbergCement ",
+                "Henkel ","Infineon Technologies ","Linde ","MERCK ","MULTI-UNITS LUXEMBOURG - Lyxor Euro Government Bond (DR) UCITS ETF - Acc ",
+                "Münchener Rückversicherungs-Gesellschaft ","RWE ","SAP ","Siemens ","Vonovia ","Volkswagen ",
+                "Apple ","Amgen ","American Express Company ","The Boeing Company ","Caterpillar ","salesforcecom ",
+                "Cisco Systems ","Chevron Corporation ","The Walt Disney Company ","Dow ",
+                "The Goldman Sachs Group ","The Home Depot ","Honeywell International ","International Business Machines Corporation ",
+                "Intel Corporation ","Johnson  Johnson ","JPMorgan Chase ","The Coca-Cola Company ","McDonald's Corporation ",
+                "3M Company ","Merck ","Microsoft Corporation ","NIKE ","The Procter  Gamble Company ","The Travelers Companies ","UnitedHealth Group Incorporated ",
+                "Visa ","Verizon Communications ","Walgreens Boots Alliance ","Walmart")
+                ,selected = "adidas ")
 
 }
 
@@ -96,7 +107,7 @@ parameter_tabsi <- function(){
   id = "industry_tab",
   type = "hidden",
   tabPanel("no",
-           selectize_Stocks_reg(COMPONENTS_DE(),COMPONENTS_US()),
+           selectize_Stocks_reg(),
            radioButtons("language1","Language of tweets ?",
                         choices = c("en","de"),inline=T),
            selectizeInput("aggregation1", "Aggregation", choices = c("Mean","Mean weighted by retweets",
@@ -172,9 +183,9 @@ tabs_custom <- function(){
            #radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
            #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
            sliderInput("date_regression",label = "Timeseries",
-                       value = c(min(as.Date(ADS()[["Date"]], "%b %d, %Y")),max(as.Date(ADS()[["Date"]], "%b %d, %Y"))),
-                       min = min(as.Date(ADS()[["Date"]], "%b %d, %Y")),
-                       max = max(as.Date(ADS()[["Date"]], "%b %d, %Y")),
+                       value = c(as.Date("2020-01-02"),as.Date("2021-02-12")),
+                       min = as.Date("2020-01-02"),
+                       max = as.Date("2021-02-12"),
                        step = 1,timeFormat = "%F")
 
 
@@ -199,7 +210,7 @@ parameter_tabsi_var <- function(){
     id = "industry_tab_var",
     type = "hidden",
     tabPanel("no",
-             selectize_Stocks_reg(COMPONENTS_DE(),COMPONENTS_US()),
+             selectize_Stocks_reg(),
              radioButtons("language1_var","Language of tweets ?",
                           choices = c("en","de"),inline=T),
              selectizeInput("aggregation1_var", "Aggregation", choices = c("Mean","Mean weighted by retweets",
@@ -275,9 +286,9 @@ tabs_custom_var <- function(){
              #radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
              #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
              sliderInput("date_regression_var",label = "Timeseries",
-                         value = c(min(as.Date(ADS()[["Date"]], "%b %d, %Y")),max(as.Date(ADS()[["Date"]], "%b %d, %Y"))),
-                         min = min(as.Date(ADS()[["Date"]], "%b %d, %Y")),
-                         max = max(as.Date(ADS()[["Date"]], "%b %d, %Y")),
+                         value = c(as.Date("2020-02-12"),as.Date("2021-02-12")),
+                         min = as.Date("2020-01-02"),
+                         max = as.Date("2021-02-12"),
                          step = 1,timeFormat = "%F")
 
 

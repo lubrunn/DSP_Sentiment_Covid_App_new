@@ -19,8 +19,9 @@
 #'@rdname sum_stats_table_creator
 
 ## setup dataframe for average summary statistics
-sum_stats_table_creator <- function(df_need){
+sum_stats_table_creator <- function(df_need, input_date1, input_date2){
 df_need <-   df_need %>%
+  filter(between(as.Date(created_at), as.Date(input_date1), as.Date(input_date2))) %>%
   select(!contains("sentiment_")) %>%
   select(starts_with(c("mean", "std", "q"))) %>%
   summarise_all(mean) %>%

@@ -3,14 +3,20 @@ server <- function(input, output, session) {
   ############################################################# Stocks
   # load stock dataset
   stockdata_DE <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
+
     load_all_stocks_DE()
   })
 
   stockdata_US <- reactive({
+   req(path_setter()[[3]][1] == "correct_path")
+
     load_all_stocks_US()
   })
 
+
   output$stock_choice <- renderUI({
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_stocks == "Germany"){
       input <- selectizeInput("Stock","Choose Companies:",
                               c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
@@ -31,6 +37,7 @@ server <- function(input, output, session) {
   # plot of the stocks
   output$plot_DE <- renderPlot({
     req(input$Stock)
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_stocks == "Germany"){
       plotdata <- filter(stockdata_DE(),
                          .data$name %in% (c(COMPONENTS_DE()[["Symbol"]],"GDAXI")[c(COMPONENTS_DE()[["Company.Name"]],"GDAXI") %in% .env$input$Stock]) &
@@ -72,6 +79,7 @@ server <- function(input, output, session) {
   ##################################################################### Corona
 
   corona_data <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
     CORONA(input$CoronaCountry,input$dates_corona[1],input$dates_corona[2])
   })
 
@@ -112,6 +120,7 @@ server <- function(input, output, session) {
 
 
   output$Stock_Granger <- renderUI({
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_granger == "Germany"){
       input <- selectizeInput("Stock_Granger","Choose dependent variable:",
                               c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
@@ -124,7 +133,20 @@ server <- function(input, output, session) {
   })
 
 
+  output$ControlsGranger <- renderUI({
+    if (input$country_regression == "Germany"){
+      input <- selectizeInput("Controls_GRANGER","Choose control variables:",
+                              c(colnames(global_controls_test_DE())[-1],"DAX"),selected = "VIX",multiple = FALSE)
+      #c(colnames(res[3:length(res)])),multiple = TRUE
+    }else{
+      input <- selectizeInput("Controls_GRANGER","Choose control variables:",
+                              c(colnames(global_controls_test_US())[-1],"DOW"),selected = "VIX",multiple = FALSE)
+    }
+  })
+
+
   granger_data <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
     req(input$Stock_Granger)
     if (input$country_granger == "Germany"){
       granger1 <- filter(stockdata_DE(),
@@ -136,10 +158,29 @@ server <- function(input, output, session) {
                            .data$Dates >= .env$input$date_granger[1] & .data$Dates <= .env$input$date_granger[2])[c("Dates", input$Granger_outcome)]
 
     }
-    granger1["zweitevariable"] <- filter(stockdata_DE(),
-                                         .data$name == "ADS.DE" &
-                                           .data$Dates >= .env$input$date_granger[1] & .data$Dates <= .env$input$date_granger[2])[["Open"]]
-    granger1
+
+    if (input$country_granger == "Germany"){
+      global_controls <- global_controls_test_DE()   #load controls
+      global_controls$Date <- as.Date(global_controls$Date) #transform date
+      dax <- GDAXI()  #load dax
+      dax$Date <- as.Date(dax$Date, "%d %b %Y") #transform date
+      dax <- missing_date_imputer(dax,"Close.") #transform time series by imputing missing values
+      colnames(dax)[2] <- "DAX"  #rename ->   !! is not renamed in final dataset !! -> dont know why
+      global_controls <- left_join(dax,global_controls,by = c("Date")) #join final
+
+    }else {
+      global_controls <- global_controls_test_US() #same procedure as above
+      global_controls$Date <- as.Date(global_controls$Date)
+      dow <- DOW()
+      dow$Date <- as.Date(dow$Date, " %b %d, %Y")
+      dow <- missing_date_imputer(dow,"Close.")
+      colnames(dow)[2] <- "DOW"
+      global_controls <- left_join(dow,global_controls,by = c("Date"))
+    }
+    names(global_controls)[1] <- "Dates"
+    granger <- left_join(granger1,global_controls,by = c("Dates"))
+    granger <- granger[c("Dates",input$Granger_outcome,input$Controls_GRANGER)]
+    granger
   })
 
   optlags <- reactive({
@@ -160,7 +201,7 @@ server <- function(input, output, session) {
   granger_result <- reactive({
     varobject <- VAR(dickey_fuller()[-1], p = optlags(), type = "const")
     cause <- NULL
-    ifelse(input$direction_granger == TRUE,cause <- "zweitevariable",cause <- input$Granger_outcome)
+    ifelse(input$direction_granger == TRUE,cause <- input$Controls_GRANGER,cause <- input$Granger_outcome)
     granger <- causality(varobject, cause = cause)
     granger$Granger
   })
@@ -188,15 +229,15 @@ server <- function(input, output, session) {
   output$granger_satz <- renderUI({
     if(input$direction_granger == TRUE){
       if (granger_result()["p.value"] < 0.1){
-        str1 <- paste("Zweitevariable granger causes ",input$Granger_outcome,"of",input$Stock_Granger)
+        str1 <- paste(input$Controls_GRANGER, " granger causes ",input$Granger_outcome,"of",input$Stock_Granger)
       } else {
-        str1 <- paste("Zweitevariable does not granger cause ",input$Granger_outcome,"of",input$Stock_Granger)
+        str1 <- paste(input$Controls_GRANGER, " does not granger cause ",input$Granger_outcome,"of",input$Stock_Granger)
       }
     } else {
       if (granger_result()["p.value"] < 0.1){
-        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "granger causes Zweitevariable")
+        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "granger causes ",input$Controls_GRANGER)
       } else {
-        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "does not granger cause Zweitevariable")
+        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "does not granger cause ",input$Controls_GRANGER)
       }
     }
     HTML(paste(str1))
@@ -219,6 +260,7 @@ server <- function(input, output, session) {
 
   ###flexible input for stocks: show either german or us companies
   output$stock_regression <- renderUI({
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression == "Germany"){
       input <- selectizeInput("Stock_Regression","Choose dependent variable:",
                               c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
@@ -237,6 +279,7 @@ server <- function(input, output, session) {
   output$Controls <- renderUI({
     #res <- dataset()
     #res$name <- NULL
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression == "Germany"){
       input <- selectizeInput("Controls","Choose control variables:",
                               c(colnames(global_controls_test_DE())[-1],"DAX"),multiple = TRUE)
@@ -249,6 +292,7 @@ server <- function(input, output, session) {
   })
 
   dataset <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression == "Germany"){
       data_reg <- filter(stockdata_DE(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
                          .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Regression]) &
@@ -272,7 +316,7 @@ server <- function(input, output, session) {
       global_controls <- global_controls_test_US() #same procedure as above
       global_controls$Date <- as.Date(global_controls$Date)
       dow <- DOW()
-      dow$Date <- as.Date(dow$Date, "%d %b %Y")
+      dow$Date <- as.Date(dow$Date, " %b %d, %Y")
       dow <- missing_date_imputer(dow,"Close.")
       colnames(dow)[2] <- "DOW"
       global_controls <- left_join(dow,global_controls,by = c("Date"))
@@ -303,6 +347,7 @@ server <- function(input, output, session) {
 
   dataset_senti <- reactive({
     req(input$Sentiment_type)
+    req(path_setter()[[3]][1] == "correct_path")
     if(input$Sentiment_type == "NoFilter"){
 
       res <- En_NoFilter_0_0_yes()   # still fix as it is not clear yet if sql or csv
@@ -320,6 +365,7 @@ server <- function(input, output, session) {
   })
   # filter
   filtered_df <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
     req(input$Sentiment_type)
     req(input$minRetweet_stocks1)
     req(input$minRetweet_stocks2)
@@ -444,6 +490,7 @@ server <- function(input, output, session) {
   ###################################################### dataset ###############################################################
   ###flexible input for stocks: show either german or us companies
   output$stock_regression_var <- renderUI({
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression_var == "Germany"){
       input <- selectizeInput("Stock_Regression_var","Choose dependent variable:",
                               c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
@@ -457,6 +504,7 @@ server <- function(input, output, session) {
 
 
   output$Controls_var <- renderUI({
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression_var == "Germany"){
       input <- selectizeInput("Controls_var","Choose control variables:",
                               c(colnames(global_controls_test_DE())[-1],"DAX"),multiple = TRUE)
@@ -469,6 +517,7 @@ server <- function(input, output, session) {
   })
 
   dataset_var <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression_var == "Germany"){
       data_reg <- filter(stockdata_DE(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
                          .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Regression_var]) &
@@ -492,7 +541,7 @@ server <- function(input, output, session) {
       global_controls <- global_controls_test_US() #same procedure as above
       global_controls$Date <- as.Date(global_controls$Date)
       dow <- DOW()
-      dow$Date <- as.Date(dow$Date, "%d %b %Y")
+      dow$Date <- as.Date(dow$Date, " %b %d, %Y")
       dow <- missing_date_imputer(dow,"Close.")
       colnames(dow)[2] <- "DOW"
       global_controls <- left_join(dow,global_controls,by = c("Date"))
@@ -522,6 +571,7 @@ server <- function(input, output, session) {
   })
 
   dataset_senti_var <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
     req(input$Sentiment_type_var)
     if(input$Sentiment_type_var == "NoFilter"){
 
@@ -540,6 +590,7 @@ server <- function(input, output, session) {
   })
   # filter
   filtered_df_var <- reactive({
+    req(path_setter()[[3]][1] == "correct_path")
     req(input$Sentiment_type_var)
     req(input$minRetweet_stocks1_var)
     req(input$minRetweet_stocks2_var)
@@ -1001,14 +1052,12 @@ long <- long()
       if (is.null(input$comp)){
       table_name <- glue("sum_stats_{tolower(input$lang)}")
 
-      glue("SELECT *  FROM {table_name}  WHERE created_at >= '{input$dates[1]}'
-      and created_at <= '{input$dates[2]}'
-         and retweets_count = {input$rt} and likes_count = {input$likes} and
+      glue("SELECT *  FROM {table_name}  WHERE
+         retweets_count = {input$rt} and likes_count = {input$likes} and
          tweet_length = {long}" )
       } else { #if company is chosen
-        glue("SELECT *  FROM sum_stats_companies WHERE created_at >= '{input$dates[1]}'
-      and created_at <= '{input$dates[2]}'
-         and retweets_count = {input$rt} and likes_count = {input$likes} and
+        glue("SELECT *  FROM sum_stats_companies WHERE
+         retweets_count = {input$rt} and likes_count = {input$likes} and
          tweet_length = {long} and company  = '{input$comp}' and
              language = '{tolower(input$lang)}'" )
       }
@@ -1068,19 +1117,71 @@ long <- long()
 
 
     ######################### time series plot for retweets etc.
-  output$sum_stats_plot <- renderPlot({
 
+  r <- reactiveValues(
+    change_datewindow = 0,
+    change_dates = 0,
+    change_datewindow_auto = 0,
+    change_dates_auto = 0,
+    dates = c( as.Date("2018-11-30"), as.Date("2021-02-19"))
+  )
+
+
+  observeEvent(input$sum_stats_plot_date_window, {
+    message(crayon::blue("observeEvent_input_sum_stats_plot_date_window"))
+    r$change_datewindow <- r$change_datewindow + 1
+    if (r$change_datewindow > r$change_datewindow_auto) {
+
+      r$change_dates_auto <- r$change_dates_auto + 1
+      r$change_datewindow_auto <- r$change_datewindow
+
+      start <- as.Date(ymd_hms(input$sum_stats_plot_date_window[[1]])+ days(1))
+      stop  <- as.Date(ymd_hms(input$sum_stats_plot_date_window[[2]])+ days(1))
+      updateAirDateInput(session = session,
+                         inputId = "dates_desc",
+                         value = c(start, stop),
+      )
+    } else {
+      if (r$change_datewindow >= 10) {
+        r$change_datewindow_auto <- r$change_datewindow <- 0
+      }
+    }
+  })
+
+  observeEvent(input$dates, {
+    message("observeEvent_input_dates")
+    r$change_dates <- r$change_dates + 1
+    if (r$change_dates > r$change_dates_auto) {
+      message("event input_year update")
+
+      r$change_datewindow_auto <- r$change_datewindow_auto
+      r$change_dates_auto <- r$change_dates
+
+      r$dates <- input$dates
+
+    }
+  })
+
+
+
+
+  output$sum_stats_plot <- dygraphs::renderDygraph({
+    message("renderDygraph")
     req(!is.null(input$value) | input$num_tweets_box == T)
 
     df <- get_data_sum_stats_tables()
 
- if (input$num_tweets_box == F){
-    time_series_plotter(df, input$metric, input$value, num_tweets = F)
- } else {
-   time_series_plotter(df, input$metric, input$value, num_tweets = T)
- }
+    if (input$num_tweets_box == F){
+      time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r)
+    } else {
+      time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r)
+    }
+    # dygraphs::dygraph(don) %>%
+    #   dygraphs::dyRangeSelector( input$dates_desc + 1, retainDateWindow = T
+    #   )
+  })
 
- })
+
 
 
 ####### block metric selection if chosen number of tweets
@@ -1138,7 +1239,7 @@ long <- long()
    #      geom_col() +
    #      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-  histogram_plotter(data_histo(), date_input1 = input$dates[1], date_input2 = input$dates[2],
+  histogram_plotter(data_histo(), date_input1 = input$dates_desc[1], date_input2 = input$dates_desc[2],
                     input_bins = input$bins, input_log = input$log_scale)
 
   })
@@ -1161,7 +1262,7 @@ long <- long()
   output$sum_stats_table <- function(){
      # browser()
     df_need <- get_data_sum_stats_tables()
-    sum_stats_table_creator(df_need)
+    sum_stats_table_creator(df_need, input$dates_desc[1], input$dates_desc[2])
   }
 
 
@@ -1265,7 +1366,7 @@ long <- long()
 
 #browser()
       if (input$plot_type_expl == "Frequency Plot"){
-        df <- word_freq_data_wrangler(df, input$dates[1], input$dates[2],
+        df <- word_freq_data_wrangler(df, input$dates_desc[1], input$dates_desc[2],
                                       input$emo, emoji_words,
                                       input$word_freq_filter,
                                       tolower(input$lang),
@@ -1298,7 +1399,7 @@ long <- long()
 
 ############################## time series bigram plot
   output$word_freq_time_series <- renderPlot({
-    df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
+    df <- word_freq_data_wrangler(data_expl(), input$dates_desc[1], input$dates[2],
                                   input$emo, emoji_words,
                                   input$word_freq_filter, input$lang,
                                   input$comp)
@@ -1319,71 +1420,228 @@ long <- long()
 
   ###### network plot
 
+  data_getter_net <- reactive({
+    lang <- stringr::str_to_title(input$lang_net)
+    network_plot_datagetter(lang, input$dates_net[1], input$dates_net[2], input$comp_net)
+  })
 
-
+  data_filterer_net <- reactive({
+    df <- data_getter_net()
+    network_plot_filterer(df, input$rt, input$likes_net, input$long_net,
+                          input$sentiment_net, input$search_term_net,
+                          input$username_net)
+  })
 
 
   # if button is clicked compute correlations und plot the plot
   observeEvent(input$button_net,{
+
+
+    waitress <- waiter::Waitress$new("nav", max = 4,  theme = "overlay")
+    #Automatically close it when done
+    on.exit(waitress$close())
+
+    waitress$notify()
+
+    ### progress bar elements
+    #hostess <- waiter::Hostess$new("load")
+
+
+
+
+    ################################
+
+
+    insertUI("#placeholder", "beforeEnd", ui = networkD3::forceNetworkOutput("network_plot"))
+
     # insertUI("#network_plotr", "beforeEnd", ui = networkD3::forceNetworkOutput("network_plot") %>%
     #            shinycssloaders::withSpinner())
 
     #insertUI("#placeholder", "afterEnd", ui = networkD3::forceNetworkOutput('network_plot'))
 
+    initial.ok <- input$cancel_net
 
 
     shinyjs::showElement(id = "loading")
     # disable the button after computation started so no new computation can
     # be startedd
 
-#    browser()
-    disable("button_net")
-    lang <- stringr::str_to_title(input$lang_net)
 
+    disable("button_net")
+    enable("cancel_net")
+
+
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
 
     ### read all files for the dates
 
-    df <- network_plot_datagetter(lang, input$dates_net[1], input$dates_net[2], input$comp_net)
+    df <- data_getter_net()
+
+    #hostess$set(2 * 10)
+    waitress$inc(1)
 
 
-    ### set up data for network
-    df <- network_plot_filterer(df, input$rt_net, input$likes_net, input$long_net,
-                                input$sentiment_net, input$search_term_net,
-                                input$username_net, input$n_net,
-                                input$corr_net)
+   if(is.null(df)){
+     enable("button_net")
+     return()
+   }
 
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+
+
+
+      network <- data_filterer_net()
+
+
+      #hostess$set(2 * 10)
+      waitress$inc(1)
+
+
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+    if (input$word_type_net == "word_pairs_net"){
+      network <- network_unnester(network, df, input$emo_net)
+    } else{
+      network <- network_unnester_bigrams(network, input$emo_net)
+    }
+
+      #hostess$set(2 * 10)
+      waitress$inc(1)
+
+
+     if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+    if (input$word_type_net == "word_pairs_net"){
+      df <- network_word_corr(network, input$n_net,
+                                             input$corr_net)
+    } else {
+      df <- network_bigrammer(df, network, input$n_net, input$n_bigrams_net)
+    }
+
+
+
+      # hostess$set(2 * 10)
+      waitress$inc(1)
+
+    # ### set up data for network
+    # df <- network_plot_filterer(df, input$rt_net, input$likes_net, input$long_net,
+    #                             input$sentiment_net, input$search_term_net,
+    #                             input$username_net, input$n_net,
+    #                             input$corr_net)
+
+
+
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+        # if(is.null(df)){
+    #   enable("button_net")
+    #   return()
+    # }
 
 
     # render the network plot
+      if (input$word_type_net == "word_pairs_net"){
     output$network_plot <- networkD3::renderForceNetwork({
 
 
 
 
+
       req(input$button_net)
-      if (is.null(df)) return()
+      #if (is.null(df)) return()
+      validate(need(!is.null(df), message = "No data found for current selection"))
+      if (initial.ok < input$cancel_net) {
+        initial.ok <<- initial.ok + 1
+        validate(need(initial.ok == 0, message = "The computation has been aborted."))
+      }
 
 
-      network_plot_plotter(df)
+      #hostess$set(2 * 10)
+     # waitress$inc(1)
+        network_plot_plotter(df)
+
+
 
     })
+  } else {
+    output$network_plot <- networkD3::renderForceNetwork({
+    req(input$button_net)
+    #if (is.null(df)) return()
+    validate(need(!is.null(df), message = "No data found for current selection"))
+    if (initial.ok < input$cancel_net) {
+      initial.ok <<- initial.ok + 1
+      validate(need(initial.ok == 0, message = "The computation has been aborted."))
+    }
+
+    #hostess$set(2 * 10)
+    #waitress$inc(1)
+    network_plot_plotter_bigrams(df)
+
+
+
+
+})
+
+
+
+  }
     # Hide loading element when done
     # shinyjs::hideElement(id = 'loading')
     enable("button_net")
+    disable("cancel_net")
 
   })
 
 
   observeEvent(input$reset_net,{
-     shinyjs::hide(id = "loading",
-                         "network_plot",
-                   animType = T,
-                   time = 0)
+     # shinyjs::hide(id = "loading",
+     #                     "network_plot",
+     #               animType = T,
+     #               time = 0)
+    removeUI("#network_plot")
   })
 
   # observeEvent(input$button_net, {
   #
+  #
   # })
+  # ##
+
+  ######## message for aborting process
+  observeEvent(input$cancel_net, {
+
+    showNotification("Computation has been aborted", type = "error")
+  })
+
+
+
+
+  output$raw_tweets_net <- DT::renderDataTable({
+    dt <- data_filterer_net()
+
+    DT::datatable(dt, options = list(
+      initComplete = JS(
+        "function(settings, json) {",
+        "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+        "}"))
+    )
+  })
 
 
 

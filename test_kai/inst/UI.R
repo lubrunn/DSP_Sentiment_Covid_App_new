@@ -80,7 +80,23 @@ twitter_main_panel <- function(){
                                  }"
                                    )
                                    ),
-                                     plotOutput('sum_stats_plot'),
+                                     #plotOutput('sum_stats_plot'),
+                                   tags$head(
+                                     # Note the wrapping of the string in HTML()
+                                     tags$style(HTML("
+
+                                        .dygraph-axis-label {
+                                          font-size: 12px;
+                                          color:white;
+                                        }
+                                        .dygraph-legend {
+                                          color: black;
+                                        }
+
+
+                                                     "))
+                                   ),
+                                   dygraphs::dygraphOutput("sum_stats_plot"),
 
                                    # seconds time series plot
                                    plotOutput('sum_stats_plot2'),
@@ -131,11 +147,46 @@ twitter_main_panel <- function(){
                         network_sidebar
                       ),
                       mainPanel(
-                      shinyjs::hidden(div(id = "loading",
-                                          networkD3::forceNetworkOutput("network_plot") %>%
-                          shinycssloaders::withSpinner()))
-                      #tags$div(id = "placeholder")
-                      )),
+                      # shinyjs::hidden(div(id = "loading",
+                      #                     networkD3::forceNetworkOutput("network_plot") %>%
+                      #     shinycssloaders::withSpinner()))
+                      tags$div(id = "placeholder")
+                      ),
+
+
+                      fluidRow(column(12,
+                                      tags$style(HTML("
+                    .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+                    color: #ffffff;
+                    }
+
+                    .dataTables_wrapper .dataTables_paginate .paginate_button{box-sizing:border-box;display:inline-block;min-width:1.5em;padding:0.5em 1em;margin-left:2px;text-align:center;text-decoration:none !important;cursor:pointer;*cursor:hand;color:#ffffff !important;border:1px solid transparent;border-radius:2px}
+
+
+                    .dataTables_length select {
+                           color: #000000;
+                           background-color: #ffffff
+                           }
+
+
+                    .dataTables_filter input {
+                            color: #000000;
+                            background-color: #ffffff
+                           }
+
+                    thead {
+                    color: #ffffff;
+                    }
+
+                     tbody {
+                    color: #000000;
+                    }
+
+                   "
+
+
+                                      )),
+                                      DT::dataTableOutput("raw_tweets_net")))),
              tabPanel("Daily Analysis"),
              tabPanel("Going deeper"))
 
@@ -166,7 +217,7 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                               selectInput("comp","Choose a company (optional)",
                                              c("adidas", "NIKE"),
                                              selected = "",multiple = TRUE),
-                              shinyWidgets::airDatepickerInput("dates", "Date range:",
+                              shinyWidgets::airDatepickerInput("dates_desc", "Date range:",
                                                                range = TRUE,
                                                                value = c("2018-11-30", "2021-02-19"),
                                                                maxDate = "2021-02-19", minDate = "2018-11-30",
@@ -269,6 +320,10 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 #################################### going deeeper sidbarpanel
 network_sidebar <- tabPanel( "Network Analysis",
 
+          waiter::use_waitress(color = "#375a7f"),
+          #waiter::use_waiter(),
+          #waiter::use_hostess(),
+          #waiter::hostess_loader("load", text_color = "white", center_page = TRUE),
 
 
           ###### language selector
@@ -282,7 +337,7 @@ network_sidebar <- tabPanel( "Network Analysis",
           # datepicker
           shinyWidgets::airDatepickerInput("dates_net", "Date range:",
                                            range = TRUE,
-                                           value = c("2020-03-01", "2020-03-02"),
+                                           value = "2020-03-01",
                                            maxDate = "2021-02-19", minDate = "2018-11-30",
                                            clearButton = T, update_on = "close",
                                            multiple = 5),
@@ -297,9 +352,15 @@ network_sidebar <- tabPanel( "Network Analysis",
           # long tweets switch
           shinyWidgets::materialSwitch(inputId = "long_net", label = "Long Tweets only?", value = F),
 
+          # filter out emoji words
+          shinyWidgets::materialSwitch(inputId = "emo_net", label = "Remove Emoji Words?", value = F),
+
+
 
           ### filter by sentiment
-          numericInput("sentiment_net", "Choose a minmium sentiment", min = -1, max = 1, value = -1, step = 0.05),
+          sliderInput("sentiment_net", label = h3("Choose a sentiment range"),
+                      min = -1, max = 1, value = c(-1, 1), step = 0.01, dragRange = T),
+
 
 
 
@@ -309,13 +370,34 @@ network_sidebar <- tabPanel( "Network Analysis",
           textInput("username_net", "Only show tweets for usernames containing the following:"),
 
 
+          ####### type of plot bigram/word pairs
+          selectInput("word_type_net", "Select the type of word combination you would like to analyse", choices = c("Bigram" = "bigrams_net",
+                                                                                                                    "Word Pairs" = "word_pairs_net")),
+
+
 
           ######## adjusting plot
-          numericInput("n_net", "Minimum number of occurences of a word pair in the selected sample",
+          numericInput("n_net", "Minimum number of occurences of a single word in the sample",
                        min = 50, value = 50),
 
-          numericInput("corr_net", "Minimum word correlation of word pairs", value = 0.15, min = 0.15, max = 1,
-                       step = 0.01),
+
+          ### panel in case of word pairs to compute word correlations
+          conditionalPanel(
+            condition = "input.word_type_net == 'word_pairs_net'",
+            numericInput("corr_net", "Minimum word correlation of word pairs", value = 0.15, min = 0.15, max = 1,
+                         step = 0.01)
+
+          ),
+
+
+          ### panel for minium number of time bigrams arise
+          conditionalPanel(
+            condition = "input.word_type_net == 'bigrams_net'",
+            numericInput("n_bigrams_net", "Minimum number of occurences of a Bigram in the selected sample",
+                         min = 50, value = 50)
+          ),
+
+
           actionButton("button_net", "Render Plot") %>%
           shinyhelper::helper(type = "markdown",
                    title = "Inline Help",
@@ -324,7 +406,13 @@ network_sidebar <- tabPanel( "Network Analysis",
                    easyClose = FALSE,
                    fade = TRUE,
                    size = "s"),
-          actionButton("reset_net", "Remove Plot")
+
+          #### removing plot
+          actionButton("reset_net", "Remove Plot"),
+
+
+          ### canceling computation
+          shinyjs::disabled(actionButton("cancel_net", "Cancel Rendering"))
 )
 
 
@@ -353,13 +441,14 @@ ui <- fluidPage(
   navbarPage("APP",
 
              dir_setter_panel(),
-              twitter_main_panel(),
+             twitter_main_panel(),
              tabPanel("Sentiment"),
              tabPanel("Stocks",
                       sidebarPanel(
                         radioButtons("country_stocks","Which country?",c("Germany","USA"),selected = "Germany"),
                         #selectize_Stocks(COMPONENTS_DE()),
                         uiOutput("stock_choice"),
+                        #selectizeInput("stock_choice", choices = "Platzhalter"),
                         radioButtons("stock_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
                         actionButton("reset", "clear selected"),
                         checkboxInput("hovering","Enable hover",value = FALSE),
@@ -391,11 +480,12 @@ ui <- fluidPage(
                                    #                c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
                                    #                selected = "Bayer ",multiple = FALSE),
                                    radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
-                                   selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
+                                   uiOutput("ControlsGranger"),
+                                   #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
                                    sliderInput("date_granger",label="Timeseries",
-                                               value = c(min(as.Date(ADS()[["Date"]], "%b %d, %Y")),max(as.Date(ADS()[["Date"]], "%b %d, %Y"))),
-                                               min = min(as.Date(ADS()[["Date"]], "%b %d, %Y")),
-                                               max = max(as.Date(ADS()[["Date"]], "%b %d, %Y")),
+                                               value = c(as.Date("2020-02-12"),as.Date("2021-02-12")),
+                                               min = as.Date("2020-01-02"),
+                                               max = as.Date("2021-02-12"),
                                                step = 1,timeFormat = "%F"),
                                    checkboxInput("direction_granger","Second variable causes first?",value = TRUE)
                                  ),
