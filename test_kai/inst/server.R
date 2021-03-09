@@ -185,7 +185,8 @@ server <- function(input, output, session) {
 
   optlags <- reactive({
     #library(vars)
-    VARselect(granger_data()[-1],lag.max = 10, type = "const")$selection[["AIC(n)"]]
+    req(is.null(granger_data())==FALSE)
+    VARselect(granger_data()[-1],lag.max = 7, type = "const")$selection[["AIC(n)"]]
   })
 
   dickey_fuller <- reactive({
@@ -209,22 +210,81 @@ server <- function(input, output, session) {
   output$granger_result <- renderPrint({
     granger_result()})
 
-  output$stocks_granger <- renderPlot({
-    req(input$Granger_outcome)
-    ggplot(granger_data(),aes_string("Dates",input$Granger_outcome))+
-      geom_line()
+  # output$stocks_granger <- renderPlot({
+  #   req(input$Granger_outcome)
+  #   ggplot(granger_data(),aes_string("Dates",input$Granger_outcome))+
+  #     geom_line()
+  # })
+
+  output$stocks_granger <- dygraphs::renderDygraph({
+    plotdata <- xts(granger_data()[input$Granger_outcome],order.by=granger_data()[["Dates"]])
+    dygraphs::dygraph(plotdata)
   })
-  output$dickey <- renderUI({
-    str1 <- paste("The optimal lag order for the VAR model is ",optlags()," lags")
+
+
+  output$second_granger <- dygraphs::renderDygraph({
+    plotdata <- xts(granger_data()[input$Controls_GRANGER],order.by=granger_data()[["Dates"]])
+    dygraphs::dygraph(plotdata)
+  })
+
+  output$grangertext1 <- renderUI({
+    str1 <- paste("The optimal lag order for the VAR model using the Akaike information criterium (AIC)  is ",optlags()," lags.")
+    HTML(paste(str1))
+  })
+
+  output$optimallags <- renderPrint({
+    VARselect(granger_data()[-1],lag.max = 7, type = "const")
+  })
+
+  output$grangertext2 <- renderUI({
     if (nrow(dickey_fuller()) != nrow(granger_data())){
-      str2 <- paste("The Dickey Fuller test found one of the timeseries to be non-stationary.")
-      str3 <- paste("Differencing the series ",nrow(granger_data()) - nrow(dickey_fuller()),"times achieved stationarity")
-    } else {
-      str2 <-paste("The Dickey Fuller test found both timeseries to be stationary.")
-      str3 <-paste("Hence, the granger causality analysis can be performed without tranformations")
+      str2 <- paste("The Dickey Fuller test found one of the timeseries to be non-stationary:")
+    }else{
+      str2 <-paste("The Dickey Fuller test found both timeseries to be stationary.
+                   Hence, the granger causality analysis can be performed without tranformations:")
     }
-    HTML(paste(str1,str2,str3, sep = '<br/>'))
   })
+
+
+  #first variable
+  output$dickey_fuller <- renderPrint({
+    adf.test(granger_data()[[2]],k=optlags())
+  })
+  #second variable
+  output$dickey_fuller_second <- renderPrint({
+    adf.test(granger_data()[[3]],k=optlags())
+  })
+
+  output$grangertext3 <- renderUI({
+    req(nrow(dickey_fuller()) != nrow(granger_data()))
+      str3 <- paste("Differencing the series ",nrow(granger_data()) - nrow(dickey_fuller()),"times achieved stationarity:")
+  })
+
+
+  #first variable after differencing
+  output$dickey_fuller_diff <- renderPrint({
+    req(nrow(dickey_fuller()) != nrow(granger_data()))
+    adf.test(dickey_fuller()[[2]],k=optlags())
+  })
+  #second variable after differencing
+  output$dickey_fuller_second_diff <- renderPrint({
+    req(nrow(dickey_fuller()) != nrow(granger_data()))
+    adf.test(dickey_fuller()[[3]],k=optlags())
+  })
+
+
+
+  # output$dickey <- renderUI({
+  #   str1 <- paste("The optimal lag order for the VAR model using the Akaike information criterium (AIC)  is ",optlags()," lags")
+  #   if (nrow(dickey_fuller()) != nrow(granger_data())){
+  #     str2 <- paste("The Dickey Fuller test found one of the timeseries to be non-stationary.")
+  #     str3 <- paste("Differencing the series ",nrow(granger_data()) - nrow(dickey_fuller()),"times achieved stationarity")
+  #   } else {
+  #     str2 <-paste("The Dickey Fuller test found both timeseries to be stationary.")
+  #     str3 <-paste("Hence, the granger causality analysis can be performed without tranformations")
+  #   }
+  #   HTML(paste(str1,str2,str3, sep = '<br/>'))
+  # })
 
   output$granger_satz <- renderUI({
     if(input$direction_granger == TRUE){
@@ -329,7 +389,7 @@ server <- function(input, output, session) {
 
 
   df_selected_controls <- reactive({
-    req(input$Controls)
+    #req(input$Controls)
     res <- dataset()
     res <- res[c("Dates",input$regression_outcome,input$Controls)]
     res
@@ -432,7 +492,11 @@ server <- function(input, output, session) {
 
   #merge sentiment with control+dep vars
   final_regression_df <- reactive ({
-    res <- aggri_select()
+    if (input$senti_yesno_reg == TRUE){
+      res <- aggri_select()
+    } else {
+      res <- aggri_select()[1]
+    }
     res$date <- as.Date(res$date)
     res_c <- df_selected_controls()
     res <- left_join(res_c,res, by=c("Dates" = "date"))
@@ -440,45 +504,49 @@ server <- function(input, output, session) {
     res
   })
 
+
+
   #regression
   regression_result <- reactive({
+    req(ncol(final_regression_df())>=2)
     model <- lm(reformulate(".",input$regression_outcome), data = final_regression_df())
-    summary(model)
+    #summary(model)
+    coeftest(model, vcov = vcovHC(model, "HC1"))
   })
 
   #Qregression
   regression_result_Qreg <- reactive({
-    model <- rq(reformulate(".",input$regression_outcome),tau = 0.5,data = final_regression_df())
+    req(ncol(final_regression_df())>=2)
+    model <- rq(reformulate(".",input$regression_outcome),tau = input$Quantiles,data = final_regression_df())
     summary(model)
   })
 
 
-  output$testi_table <- renderPrint ({
-    head(dataset())
-  })
+  # output$testi_table <- renderPrint ({
+  #   head(dataset())
+  # })
 
-  output$senti <- renderPrint ({
-    head(df_selected_controls())
-  })
+  # output$senti <- renderPrint ({
+  #   head(df_selected_controls())
+  # })
 
-  output$senti_agg <- renderPrint ({
-    head(final_regression_df())
-  })
+  # output$senti_agg <- renderPrint ({
+  #   head(final_regression_df())
+  # })
 
   output$regression_result <- renderPrint({
     regression_result()})
 
   output$regression_equation <- renderUI({
-    req(input$Controls)
     str1 <- paste("Linear regression: ",input$regression_outcome,"of ",input$Stock_Regression,"~",paste(input$Controls,collapse = " + "),"<br/>")
     HTML(paste(str1,sep = '<br/>'))
   })
 
 
-  output$plot_dens_Qreg <- renderPlot({
-
-    density_plot_reg(dataset())
-  })
+  # output$plot_dens_Qreg <- renderPlot({
+  #
+  #   density_plot_reg(dataset())
+  # })
 
   output$regression_result_Qreg <- renderPrint({
     regression_result_Qreg()})
@@ -667,7 +735,34 @@ server <- function(input, output, session) {
     res
   })
 
-  #####################################################################################################################
+  ####################################################Summary statistics #####################################################
+
+  df_need <- reactive({
+    df_need <- round(describe(final_regression_df_var()[-1])[c(3, 4, 5, 8, 9)], 2)
+    test <- nrow(df_need)
+    test2 <- nrow(df_need)==1
+    if (nrow(df_need == 1)) {
+      row.names(df_need)[1] <- input$regression_outcome_var
+    } else{
+      df_need <- df_need
+    }
+    df_need
+
+  })
+
+
+  output$var_summary <- function(){
+    #colnames(df_need)<- "value"
+    knitr::kable(df_need(), caption = glue("Summary statistics"),colnames = NULL) %>%
+      kableExtra::kable_styling(c("striped","hover"), full_width = F,
+                                position = "center",
+                                font_size = 16)
+  }
+
+  output$correlation_var <- renderPlot({
+    ggpairs(final_regression_df_var()[-1])
+  })
+
 
   ##################################################   Validity    ######################################################
   output$datensatz_var <- renderPrint ({
@@ -736,24 +831,74 @@ server <- function(input, output, session) {
   })
 
   #plot the actual vs. the predicted forecast
-  output$plot_forecast <- renderPlot({
-    plot1 <- data.frame(final_regression_df_var()$Dates[(nrow(forecast_data())+1):(nrow(forecast_data())+input$ahead)],#Dates
+  output$plot_forecast <- dygraphs::renderDygraph({
+    if (input$var_which_plot == "Forecasted period only"){
+    plot <- data.frame(final_regression_df_var()$Dates[(nrow(forecast_data())+1):(nrow(forecast_data())+input$ahead)],#Dates
                         forecast_var(),                                                              #forecasted values
                         actual_values())#actual values
-    colnames(plot1) <- c("a","b","c")
-    ggplot(plot1) +
-      geom_line(aes(a,b),color="red")+
-      geom_line(aes(a,c),color="gold")+
-      labs(x="Date",y="StockPrice",title = "forecasted vs. actual")
+    colnames(plot) <- c("a","forecast","actual")
+    # ggplot(plot1) +
+    #   geom_line(aes(a,b),color="red")+
+    #   geom_line(aes(a,c),color="gold")+
+    #   labs(x="Date",y="StockPrice",title = "forecasted vs. actual")
+    plot <- xts(plot[c("forecast","actual")],order.by=plot[["a"]])
+    dygraphs::dygraph(plot)
+  }else{
+    plot <- data.frame(final_regression_df_var()$Dates,
+                        c(forecast_data()[[1]],forecast_var()),
+                        final_regression_df_var()[2])
+    colnames(plot) <- c("a","forecast","actual")
+    # ggplot(plot2) +
+    #   geom_line(aes(a,b))+
+    #   geom_line(aes(a,c))+
+    #   labs(x="Date",y="StockPrice",title = "forecasted vs. actual, full series")
+    plot <- xts(plot[c("forecast","actual")],order.by=plot[["a"]])
+
+    dygraphs::dygraph(plot) %>%
+      dyEvent(final_regression_df_var()$Dates[(nrow(forecast_data())+1)], "Start of prediction", labelLoc = "bottom")
+
+  }
 
   })
 
-  output$accuracy_var <- renderUI({
-    str1 <- paste("The RMSE is: ",sqrt(mean((forecast_var()-actual_values())^2)))
-    str2 <- paste("The MAE is: ",mean(abs(forecast_var()-actual_values())))
-    HTML(paste(str1,str2, sep = '<br/>'))
+  # output$plot_forecast2 <- dygraphs::renderDygraph({
+  #
+  #   plot2 <- data.frame(final_regression_df_var()$Dates,
+  #                       c(forecast_data()[[1]],forecast_var()),
+  #                       final_regression_df_var()[2])
+  #   colnames(plot2) <- c("a","forecast","actual")
+  #   # ggplot(plot2) +
+  #   #   geom_line(aes(a,b))+
+  #   #   geom_line(aes(a,c))+
+  #   #   labs(x="Date",y="StockPrice",title = "forecasted vs. actual, full series")
+  #   plot2 <- xts(plot2[c("forecast","actual")],order.by=plot2[["a"]])
+  #   dygraphs::dygraph(plot2)
+  #
+  #
+  # })
 
-  })
+#   output$accuracy_var <- renderUI({
+#     str1 <- paste("The RMSE is: ",sqrt(mean((forecast_var()-actual_values())^2)))
+#     str2 <- paste("The MAE is: ",mean(abs(forecast_var()-actual_values())))
+#     str3 <- paste("The MAPE is:",mean(abs((actual_values()-forecast_var())/actual_values()) * 100)
+# )
+#     HTML(paste(str1,str2,str3, sep = '<br/>'))
+#
+#   })
+
+  output$var_metrics <- function(){
+
+  df_need <- data.frame(c(sqrt(mean((forecast_var()-actual_values())^2)),
+                          mean(abs(forecast_var()-actual_values())),
+                          mean(abs((actual_values()-forecast_var())/actual_values()) * 100)),
+                        row.names = c("RMSE","MAE","MAPE"))
+  colnames(df_need)<- "value"
+  knitr::kable(df_need, caption = glue("Performance metrics"),colnames = NULL) %>%
+           kableExtra::kable_styling(c("striped","hover"), full_width = F,
+                                     position = "center",
+                                     font_size = 16)
+  }
+
 
   output$serial_test <- renderPrint({
     serial_test()
@@ -778,18 +923,7 @@ server <- function(input, output, session) {
     HTML(paste(str1,str2, sep = '<br/>'))
   })
 
-  output$plot_forecast2 <- renderPlot({
 
-    plot2 <- data.frame(final_regression_df_var()$Dates,
-                        c(forecast_data()[[1]],forecast_var()),
-                        final_regression_df_var()[2])
-    colnames(plot2) <- c("a","b","c")
-    ggplot(plot2) +
-      geom_line(aes(a,b))+
-      geom_line(aes(a,c))+
-      labs(x="Date",y="StockPrice",title = "forecasted vs. actual, full series")
-
-  })
 
   ##################################################   actual forecast    ######################################################
   forecast_data_real <- reactive({
@@ -849,14 +983,18 @@ server <- function(input, output, session) {
     x
   })
 
-  output$plot_forecast_real <- renderPlot({
+  output$plot_forecast_real <- dygraphs::renderDygraph({
 
-    plot2 <- data.frame(c(final_regression_df_var()[["Dates"]],seq(as.Date(tail(final_regression_df_var()$Dates,1))+1,by = "day",length.out = input$ahead)),
+    plot <- data.frame(c(final_regression_df_var()[["Dates"]],seq(as.Date(tail(final_regression_df_var()$Dates,1))+1,by = "day",length.out = input$ahead)),
                         c(forecast_data_real()[[1]],forecast_var_real()))
-    colnames(plot2) <- c("a","b")
-    ggplot(plot2) +
-      geom_line(aes(a,b))+
-      labs(x="Date",y="StockPrice",title = "forecasted series")
+    colnames(plot) <- c("a","b")
+    # ggplot(plot2) +
+    #   geom_line(aes(a,b))+
+    #   labs(x="Date",y="StockPrice",title = "forecasted series")
+    plot <- xts(plot["b"],order.by=plot[["a"]])
+
+    dygraphs::dygraph(plot) %>%
+      dyEvent(max(final_regression_df_var()$Dates), "Start of prediction", labelLoc = "bottom")
 
   })
 

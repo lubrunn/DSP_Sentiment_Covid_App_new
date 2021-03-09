@@ -29,4 +29,8 @@
 #' @import dygraphs
 #' @import xts
 #' @import lubridate
+#' @import GGally
+#' @import psych
+#' @import lmtest
+#' @import sandwich
 NULL

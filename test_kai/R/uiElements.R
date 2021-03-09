@@ -178,6 +178,10 @@ tabs_custom <- function(){
            radioButtons("country_regression","Which country?",c("Germany","USA"),selected = "Germany"),
            uiOutput("stock_regression"),
            radioButtons("regression_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
+           switchInput("senti_yesno_reg","Include Sentiment?",onLabel="Yes",offLabel="No"),
+           conditionalPanel(
+             condition = "input.regressiontabs==1",
+             numericInput("Quantiles","Choose quantile",value=0.5,min=0.05,max=0.95,step = 0.05)),
            uiOutput("Controls"),
            actionButton("reset_regression", "clear selected"),
            #radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
