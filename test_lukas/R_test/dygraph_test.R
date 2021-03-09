@@ -82,14 +82,15 @@ dygraph(don3, main = "Important Discoveries") %>%
 decreasing <- which(df$mean_sentiment < mean(df$mean_sentiment))
 increasing <- which(df$mean_sentiment >= mean(df$mean_sentiment))
 
-dyData <- xts(df_values3, order.by = df$created_at)
+
+dyData <- xts::xts(df_values3, order.by = df$created_at)
 
 ribbonData <- rep(0, nrow(dyData))
 ribbonData[decreasing] <- 0.5
 ribbonData[increasing] <- 1
 
 dygraph(dyData) %>%
-  dyRibbon(data = ribbonData, top = 0.1, bottom = 0.02)
+  dyRibbon(data = ribbonData, top = 0.05, bottom = 0)
 
 
 
