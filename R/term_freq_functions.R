@@ -89,13 +89,15 @@ word_cloud_plotter <- function(df, input_size = 1){
 # term freq bar plot
 term_freq_bar_plot <- function(df){
   options(scipen=999)
+
+df$n <- df$n / 1000
 p <-   df %>%
 
     ggplot(aes(reorder(x = word, n), y = n)) +
     geom_col(width = 0.5) +
   coord_flip() +
   labs(x = "",
-       y = "N")+
+       y = "N (in thousands)")+
   theme_classic() +
   theme(text = element_text(size=18)) +
 
