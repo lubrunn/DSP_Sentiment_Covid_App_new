@@ -1098,6 +1098,15 @@ server <- function(input, output, session) {
 
 
 
+ ################################## date_variable that accounts for single dates
+ dates_desc <- reactive({
+   if (length(input$dates_desc) > 1){
+     input$dates_desc
+   } else {
+     c(input$dates_desc, input$dates_desc)
+   }
+ })
+
 
  ################################### path finder for histo files
   querry_histo <- reactive({
@@ -1241,13 +1250,14 @@ long <- long()
                          value = c(start, stop),
       )
     } else {
-      if (r$change_datewindow >= 10) {
+      if (r$change_datewindow >= 50) {
         r$change_datewindow_auto <- r$change_datewindow <- 0
       }
     }
   })
 
-  observeEvent(input$dates, {
+  observeEvent(input$dates_desc, {
+   # browser()
     message("observeEvent_input_dates")
     r$change_dates <- r$change_dates + 1
     if (r$change_dates > r$change_dates_auto) {
@@ -1271,10 +1281,10 @@ long <- long()
     df <- get_data_sum_stats_tables()
 
     if (input$num_tweets_box == F){
-      time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r)
+      time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2], r$dates)
     } else {
 
-      time_series_plotter2(df, input$metric, input$value, num_tweets = T, input$dates_desc[1], input$dates_desc[2], r)
+      time_series_plotter2(df, input$metric, input$value, num_tweets = T, input$dates_desc[1], input$dates_desc[2], r$dates)
     }
     # dygraphs::dygraph(don) %>%
     #   dygraphs::dyRangeSelector( input$dates_desc + 1, retainDateWindow = T
@@ -1508,15 +1518,16 @@ long <- long()
 
 ################## wordcloud
   output$cloud <- renderUI({
-    wordcloud2::wordcloud2Output("wordcloud", width = (8/12) * 0.925 * input$dimension[1], height = 800)
+    wordcloud2::wordcloud2Output("wordcloud", width = (8/12) * 0.925 * input$dimension[1], height = 1000)
 
   })
 
   output$wordcloud <- wordcloud2::renderWordcloud2({
+  req(path_setter()[[3]] == "correct_path")
   req(input$plot_type_expl == "Word Cloud")
 
     if (input$plot_type_expl == "Word Cloud"){
-      df <- word_freq_data_wrangler(data_expl(), input$dates[1], input$dates[2],
+      df <- word_freq_data_wrangler(data_expl(), input$dates_desc[1], input$dates_desc[2],
                                     input$emo, emoji_words,
                                     input$word_freq_filter,
                                     tolower(input$lang),
@@ -1533,7 +1544,7 @@ long <- long()
 
 ############################## time series bigram plot
   output$word_freq_time_series <- renderPlot({
-    df <- word_freq_data_wrangler(data_expl(), input$dates_desc[1], input$dates[2],
+    df <- word_freq_data_wrangler(data_expl(), input$dates_desc[1], input$dates_desc[2],
                                   input$emo, emoji_words,
                                   input$word_freq_filter, input$lang,
                                   input$comp)
