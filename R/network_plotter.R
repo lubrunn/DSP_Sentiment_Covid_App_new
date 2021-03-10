@@ -16,7 +16,7 @@ network_plot_datagetter <- function(input_lang, input_date1, input_date2, input_
    df_all <- NULL
 
    # source to files for no filter
-   if (is.null(input_company)){
+   if (input_company == "NoFilter"){
 
    path_source <- glue("Twitter/cleaned_sentiment/{input_lang}_NoFilter")
 
