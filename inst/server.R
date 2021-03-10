@@ -20,15 +20,14 @@ server <- function(input, output, session) {
   output$stock_choice <- renderUI({
     validate(need(correct_path() == T, "Please choose the correct path"))
 
-    if (input$country_stocks == "Germany"){
+
       input <- selectizeInput("Stock","Choose Companies:",
-                              c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
+                              c(COMPONENTS_DE()[["Company.Name"]],"DAX" = "GDAXI",
+                                COMPONENTS_US()[["Company.Name"]],"DJI" = "DOW"),
                               selected = "Bayer ",multiple = TRUE)
-    } else {
-      input <- selectizeInput("Stock","Choose Companies:",
-                              c(COMPONENTS_US()[["Company.Name"]],"DOW"),
-                              selected = "Apple ",multiple = TRUE)
-    }
+
+
+
   })
 
 
@@ -1931,6 +1930,28 @@ long <- long()
 
 
 
-######################################################################### add companies choice
+
+#########################################################################
+#########################################################################
+#############################comparison tab #############################
+#########################################################################
+#########################################################################
+
+
+  #### get stock data for comparison tab
+  get_stock_data_comp <- reactive({
+    data.table::fread("Yahoo/Full/all_full.csv")
+  })
+
+
+  ###### plot stocks
+  output$stocks_comp <- dygraphs::renderDygraph({
+
+    stock_plotter(get_stock_data_comp(), input$stocks_metric_comp, input$stocks_comp)
+  })
+
+
+
+
 
 }
