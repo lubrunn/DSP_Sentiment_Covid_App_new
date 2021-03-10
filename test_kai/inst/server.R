@@ -504,8 +504,35 @@ server <- function(input, output, session) {
     res
   })
 
+  ####################################################Summary statistics  Regression #####################################################
+
+  df_need_reg <- reactive({
+    df_need <- round(describe(final_regression_df())[c(3, 4, 5, 8, 9)], 2)
+    test <- nrow(df_need)
+    test2 <- nrow(df_need)==1
+    if (nrow(df_need == 1)) {
+      row.names(df_need)[1] <- input$regression_outcome
+    } else{
+      df_need <- df_need
+    }
+    df_need
+
+  })
 
 
+  output$reg_summary <- function(){
+    #colnames(df_need)<- "value"
+    knitr::kable(df_need_reg(), caption = glue("Summary statistics"),colnames = NULL) %>%
+      kableExtra::kable_styling(c("striped","hover"), full_width = F,
+                                position = "center",
+                                font_size = 16)
+  }
+
+  output$correlation_reg <- renderPlot({
+    ggpairs(final_regression_df())
+  })
+
+###################################################################################
   #regression
   regression_result <- reactive({
     req(ncol(final_regression_df())>=2)

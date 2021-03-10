@@ -514,7 +514,12 @@ ui <- fluidPage(
                                  ),
                                  mainPanel(
                                    tabsetPanel(id = "regressiontabs",
-                                     tabPanel("regression",
+                                     tabPanel("Information Regression"),
+                                     tabPanel("Summary Statistics",
+                                              tableOutput("reg_summary"),
+                                              plotOutput("correlation_reg")
+                                              ),
+                                     tabPanel("Linear Regression",
                                               #verbatimTextOutput("testi_table"),
                                               #verbatimTextOutput("senti"),
                                               #verbatimTextOutput("senti_agg"),
@@ -537,7 +542,7 @@ ui <- fluidPage(
                                  mainPanel(
                                    tabsetPanel(
                                      tabPanel("Information VAR"),
-                                     tabPanel("Summary statistics",
+                                     tabPanel("Summary Statistics",
                                               tableOutput("var_summary"),
                                               plotOutput("correlation_var")
                                      ),
