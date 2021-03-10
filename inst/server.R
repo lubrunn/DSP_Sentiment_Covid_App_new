@@ -1205,7 +1205,8 @@ long <- long()
       df_need <- df_need %>%
         filter(between(created_at, as.Date(dates_desc()[1]), as.Date(dates_desc()[2])))
 
-      glue("For current selection: {round(mean(df_need$N))} tweets on average per day")
+      glue("For current selection: {round(mean(df_need$N))} tweets on average per day with \n
+           {round(sum(df_need$N))} tweets in total")
     })
 
 
@@ -1498,32 +1499,43 @@ long <- long()
 
   })
 
+
+
+  word_freq_df <- reactive({
+
+    if (input$ngram_sel == "Unigram"){
+      input_word_freq_filter <- ""
+    } else {
+      input_word_freq_filter <- input$word_freq_filter
+    }
+    word_freq_data_wrangler(data_expl(), dates_desc()[1], dates_desc()[2],
+                                                    input$emo, emoji_words,
+                                                    input_word_freq_filter,
+                                                    tolower(input$lang),
+                                                    input$comp)})
+
   ######################### freq_plot
   output$freq_plot <- plotly::renderPlotly({
     # dynamically change height of plot
     #height = function() input$n * 30 + 400,
 
 
-      df <- data_expl()
 
-#browser()
-      if (input$plot_type_expl == "Frequency Plot"){
-        df <- word_freq_data_wrangler(df, dates_desc()[1], dates_desc()[2],
-                                      input$emo, emoji_words,
-                                      input$word_freq_filter,
-                                      tolower(input$lang),
-                                      input$comp)
 
-        df <- df_filterer(df, input$n)
+
+
+
+        df <- df_filterer(word_freq_df() , input$n_freq)
 
         term_freq_bar_plot(df)
 
-      }
+
     })
 
 ################## wordcloud
   output$cloud <- renderUI({
-    wordcloud2::wordcloud2Output("wordcloud", width = (8/12) * 0.925 * input$dimension[1], height = 1000)
+    wordcloud2::wordcloud2Output("wordcloud", width = (8/12) * 0.925 * input$dimension[1], height = 1000) %>%
+      shinycssloaders::withSpinner(type = 5)
 
   })
 
@@ -1531,32 +1543,55 @@ long <- long()
   req(path_setter()[[3]] == "correct_path")
   req(input$plot_type_expl == "Word Cloud")
 
-    if (input$plot_type_expl == "Word Cloud"){
-      df <- word_freq_data_wrangler(data_expl(), dates_desc()[1], dates_desc()[2],
-                                    input$emo, emoji_words,
-                                    input$word_freq_filter,
-                                    tolower(input$lang),
-                                    input$comp)
 
-      df <- df_filterer(df, input$n)
+
+
+      df <- df_filterer(word_freq_df(), input$n_freq_wc)
 
 
 
       word_cloud_plotter(df, input$size_wordcloud)
-    }
+
   })
+
+
+
+####################################### number unique words
+  output$number_words <- renderUI({
+
+
+    ###### number of total tweets
+    df_need <- get_data_sum_stats_tables()
+    #convert to date
+    df_need$created_at <- as.Date(df_need$created_at)
+    # filter dates
+    df_need <- df_need %>%
+      filter(between(created_at, as.Date(dates_desc()[1]), as.Date(dates_desc()[2])))
+    # get number of total tweets
+    number_tweets <- round(sum(df_need$N))
+
+
+    #### number of unqiue words/bigrams
+    number_words <-  unique_words(word_freq_df())
+
+   HTML(glue("Number of unique {tolower(input$ngram_sel)}s for current selection: {number_words} <br>
+         Number of tweets for current selection: {number_tweets}"))
+
+  })
+
+
 
 
 ############################## time series bigram plot
-  output$word_freq_time_series <- plotly::renderPlotly({
-    req(length(input$dates_desc) > 1)
-    df <- word_freq_data_wrangler(data_expl(), dates_desc()[1], dates_desc()[2],
-                                  input$emo, emoji_words,
-                                  input$word_freq_filter, input$lang,
-                                  input$comp)
-
-     word_filter_time_series_plotter(df)
-  })
+  # output$word_freq_time_series <- plotly::renderPlotly({
+  #   req(length(input$dates_desc) > 1)
+  #   df <- word_freq_data_wrangler(data_expl(), dates_desc()[1], dates_desc()[2],
+  #                                 input$emo, emoji_words,
+  #                                 input$word_freq_filter, input$lang,
+  #                                 input$comp)
+  #
+  #    word_filter_time_series_plotter(df)
+  # })
 
 
 
@@ -1603,7 +1638,7 @@ long <- long()
     ################################
 
 
-    insertUI("#placeholder", "beforeEnd", ui = networkD3::forceNetworkOutput("network_plot"))
+    insertUI("#placeholder", "beforeEnd", ui = networkD3::forceNetworkOutput("network_plot", height ="800px"))
 
     # insertUI("#network_plotr", "beforeEnd", ui = networkD3::forceNetworkOutput("network_plot") %>%
     #            shinycssloaders::withSpinner())
