@@ -1189,7 +1189,7 @@ server <- function(input, output, session) {
 
 
     # for no filter
-    if (is.null(input$comp)){
+    if (input$comp == "NoFilter"){
     glue("histo_{value_var}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
     } else { #for chosen company
       req(!is.null(input$comp))
@@ -1211,17 +1211,17 @@ server <- function(input, output, session) {
 
 long <- long()
 #browser()
-      if (is.null(input$comp)){
+      if (input$comp == "NoFilter"){
       table_name <- glue("sum_stats_{tolower(input$lang)}")
 
-      glue("SELECT *  FROM {table_name}  WHERE
+      glue('SELECT *  FROM {table_name}  WHERE
          retweets_count = {input$rt} and likes_count = {input$likes} and
-         tweet_length = {long}" )
+         tweet_length = {long}' )
       } else { #if company is chosen
-        glue("SELECT *  FROM sum_stats_companies WHERE
+        glue('SELECT *  FROM sum_stats_companies WHERE
          retweets_count = {input$rt} and likes_count = {input$likes} and
-         tweet_length = {long} and company  = '{input$comp}' and
-             language = '{tolower(input$lang)}'" )
+         tweet_length = {long} and company  = "{input$comp}" and
+             language = "{tolower(input$lang)}"' )
       }
 
 
@@ -1414,7 +1414,7 @@ long <- long()
 
 
     # for case no company selected
-    if (is.null(input$comp)){
+    if (input$comp == "NoFilter"){
       file_path <- file.path(glue("Twitter/plot_data/{lang}_NoFilter/{querry_histo()}"))
       exists <- file.exists(file_path)
       shinyFeedback::feedbackDanger("histo_plot", !exists, "Please make sure you picked the correct path. The \n
@@ -1529,7 +1529,7 @@ long <- long()
     }
 
 
-    if (!is.null(input$comp)) {
+    if (input$comp != "NoFilter") {
       folder <- file.path("Companies")
       file_name <- glue("term_freq_{input$comp}_all_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
       file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
@@ -1676,7 +1676,6 @@ long <- long()
   ###### network plot
 
   data_getter_net_react <- reactive({
-
 
 
     lang <- stringr::str_to_title(input$lang_net)
