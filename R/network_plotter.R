@@ -196,6 +196,10 @@ network_bigrammer <- function(df, network, input_n, input_bigrams_n){
 
   network <- network[N > input_bigrams_n]
 
+  if (dim(network)[1]== 0){
+    return(NULL)
+  }
+
   network[, c("item1", "item2") := tstrsplit(ngram, " ", fixed=TRUE)]
 
   network <- network[, c("item1", "item2","N")]
