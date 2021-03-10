@@ -185,13 +185,13 @@ ui <- fluidPage(
                                     conditionalPanel(condition="input.tabs == 'Variable selection'",       
                                                      tabs_custom_var),
                                     conditionalPanel(condition="input.tabs == 'MA/AR selection'",
-                                    selectInput("rw_tests","Choose test to investigate RW hyp",choices = c("Box–Ljung test","Wald-Wolfowitz runs test",
-                                                                                                           "ADF")),
-                                    uiOutput("random_walk_choice"),
+                                    # selectInput("rw_tests","Choose test to investigate RW hyp",choices = c("Box–Ljung test","Wald-Wolfowitz runs test",
+                                    #                                                                        "ADF")),
+                                   # uiOutput("random_walk_choice"),
                                     radioButtons("lag_tabs","How do you want to proceed?",choices = c("default","custom"),
                                                  selected = "default")  %>% shinyhelper::helper(type = "markdown",
                                                                                                      title = "Inline Help",
-                                                                                                     content = "network_plot_button",
+                                                                                                     content = "default_lag_selection",
                                                                                                      buttonLabel = "Got it!",
                                                                                                      easyClose = FALSE,
                                                                                                      fade = TRUE,
@@ -255,8 +255,9 @@ ui <- fluidPage(
                                           conditionalPanel(
                                                 condition = "input.correlation_type == 'PACF'  && input.lag_tabs == 'custom'",
                                                 plotOutput("pacf_plot_xgb")),
-                                          DT::dataTableOutput("df_xgb1")
-
+                                          DT::dataTableOutput("df_xgb1"),
+                                          tableOutput("tableCustom")
+                                          
                                      ),
                                      tabPanel("Model specification",value = "Model specification",
                                             # verbatimTextOutput("df_xgb1_train"),
@@ -270,9 +271,9 @@ ui <- fluidPage(
                                               verbatimTextOutput("model2"),
                                               dygraphOutput("plot_1_xgb_actual")),
                   
-                                     tabPanel("Diagnostics",value = "Diagnostics")
-                                             # plotOutput("Residuals"),
-                                            #  plotOutput("Feature_imp")
+                                     tabPanel("Diagnostics",value = "Diagnostics",
+                                              plotOutput("Residuals"),
+                                              plotOutput("Feature_imp"))
                                       
                                     )
                                  )

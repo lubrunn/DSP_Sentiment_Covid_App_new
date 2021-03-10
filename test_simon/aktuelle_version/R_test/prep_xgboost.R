@@ -83,31 +83,22 @@ MA_creator <- function(df,variable,avg_len){
 }
 #' @export
 #' @rdname xgboost_prep
-
-ARMA_creator <- function(res,number_of_vars,var_1,var_2,var_3,num_1,num_2,num_3
-                         ,num_4,num_5,num_6,custom_lag,res_pre,forecast_df){
+# input variable for "Close"
+ARMA_creator <- function(res){
   
-  if(number_of_vars == 1){
-    list_var <- list(var_1)
-    list_ar <- list(num_2)
-    list_ma <- list(num_1)
-    
-  }else{
-    list_var <- list(var_2,var_3)
-    list_ar <- list(num_4,num_6)
-    list_ma <- list(num_3,num_5)
-  }
-  
-if(forecast_df == "no"){
-  if(custom_lag == "default"){
-   names(res)[1] <- "date" 
+   names(res)[1] <- "date"
+   
    help_df <- res %>% dplyr::select(-date)
+   
    list_var <- names(help_df)
+   
    optlags <- NULL
-   for(i in list_var[-1]){
+                                  #or just rename to y
+   for(i in list_var[-1]){      #insert here
      lag <- VARselect(help_df[,c("Close",i)],lag.max = 10, type = "const")$selection[["AIC(n)"]]
      optlags <- c(optlags,lag)
    }
+                            # insert here
    lag <- VARselect(help_df[,"Close"],lag.max = 10, type = "const")$selection[["AIC(n)"]]
 
    optlags <- c(optlags,lag)
@@ -116,30 +107,8 @@ if(forecast_df == "no"){
    
    bb <- mapply(c,optlags, list_var, SIMPLIFY = T)
    cc <- mapply(c,list_ma, list_var, SIMPLIFY = T)
-  }else{
-  bb <- mapply(c,list_ar, list_var, SIMPLIFY = T)
-  cc <- mapply(c,list_ma, list_var, SIMPLIFY = T)
-  }
-}else{
-  if(custom_lag == "default"){
-  names(res)[1] <- "date" 
-  help_df <- res %>% dplyr::select(-date,-days,-weeks,-months,-years,-quarter,-semester)
-  list_var <- names(help_df)
-  optlags <- NULL
+
   
-  for(i in list_var){
-    lag <-  sum(str_count(names(res_pre), i))
-    lag <- lag - 2 #df contains original column and MA column
-    optlags <- c(optlags,lag)
-  }
-  list_ma <- rep(5,each=ncol(help_df))
-  bb <- mapply(c,optlags, list_var, SIMPLIFY = T)
-  cc <- mapply(c,list_ma, list_var, SIMPLIFY = T)
-  }else{
-    bb <- mapply(c,optlags, list_var, SIMPLIFY = T)
-    cc <- mapply(c,list_ma, list_var, SIMPLIFY = T)
-  }
-}
 
   for(i in 1:length(list_var)){
     cols_ar <- AR_creator(res,bb[2,i],bb[1,i])
@@ -172,10 +141,10 @@ ARMA_creator_for <- function(res,res_pre){
 
 #' @export
 #' @rdname xgboost_prep
-lag_cols <- function(res){
-  
+lag_cols <- function(res){    #input variable for "Close"
+                              #insert here
   b <- res %>% dplyr::select(-date,-Close) %>%  lag(1)
-  
+                              #insert here
   res <- res %>% dplyr::select(date,Close) %>%  cbind(b)
   
   res <- res[-1,]
@@ -203,9 +172,7 @@ make_ts_stationary <- function(res){
   return(res)
 }
 #' @export
-#' @rdname xgboost_prep
-sample <- res
-n_ahead <- 5
+#' @rdname xgboost_prep           # insert variable for "Close"
 split_data_for <- function(sample,n_ahead,ftype){
   names(sample)[1] <- "date"
   sample <- sample %>%
@@ -221,7 +188,7 @@ split_data_for <- function(sample,n_ahead,ftype){
   out <- NULL
   out$df_train <- sample[1:(n-n_ahead),]
   out$df_forecast <- sample[(n-n_ahead)+1:n,c("date","days","weeks","months","years","quarter","semester")]
-  out$y_forecast <- sample[(n-n_ahead)+1:n,"Close"]
+  out$y_forecast <- sample[(n-n_ahead)+1:n,"Close"] #insert here
   out$f_dates <- sample[(n-n_ahead)+1:n,"date"]
   
   out$df_forecast <- drop_na(out$df_forecast)
@@ -381,7 +348,7 @@ split_data_eval <- function(sample,n_ahead3){
   out$df_train <- sample[1:(n-n_ahead3),]
   out$df_forecast <- sample[(n-n_ahead3)+1:n,]
   out$df_forecast <- drop_na(out$df_forecast)
-  out$y_forecast <- sample[(n-n_ahead3)+1:n,"Close"]
+  out$y_forecast <- sample[(n-n_ahead3)+1:n,"Close"] #insert here
   out$f_dates <- sample[(n-n_ahead3)+1:n,"date"]
  
   return(out)
