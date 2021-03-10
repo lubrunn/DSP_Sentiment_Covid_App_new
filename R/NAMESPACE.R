@@ -33,4 +33,5 @@
 #' @import psych
 #' @import lmtest
 #' @import sandwich
+#' @import plotly
 NULL
