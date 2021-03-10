@@ -1061,14 +1061,14 @@ server <- function(input, output, session) {
 
     req(path_setter()[[3]][1] == "correct_path")
 
-    filename <- "shiny/images/twitter_image.png"
+    filename <- "shiny/images/twitter_logo_wordcloud2.png"
 
 
 
     list(src = filename,
          alt = "This is the Twitter Logo",
          contentType = "Images/png",
-         height = 400, width = 400)
+         height = "100%", width = "80%")
   }, deleteFile = F)
 
 
@@ -1100,6 +1100,11 @@ server <- function(input, output, session) {
 
  ################################## date_variable that accounts for single dates
  dates_desc <- reactive({
+
+   validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+   validate(need(!is.null(input$dates_desc), "Please select a date."))
+
+
    if (length(input$dates_desc) > 1){
      input$dates_desc
    } else {
@@ -1110,6 +1115,11 @@ server <- function(input, output, session) {
 
  ################################### path finder for histo files
   querry_histo <- reactive({
+    validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+    validate(need(!is.null(input$dates_desc), "Please select a date."))
+
+
+
     if (input$long == T){
       long_name <- "long_only"
     } else{
@@ -1176,6 +1186,10 @@ long <- long()
     #########################################################################
     ############################# get data for sum stats table
     get_data_sum_stats_tables <- reactive({
+      validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+      validate(need(!is.null(input$dates_desc), "Please select a date."))
+
+
       con <- path_setter()
       con <- con[[1]]
       string_value <- is.null(con)
@@ -1187,7 +1201,6 @@ long <- long()
     #########################
     ################################# sum stats table
     output$sum_stats_table <- function(){
-
       df_need <- get_data_sum_stats_tables()
       sum_stats_table_creator(df_need, dates_desc()[1], dates_desc()[2])
     }
@@ -1215,9 +1228,11 @@ long <- long()
     ############################################################################
     ######################### violin plot
     output$violin_sum <- renderPlot({
+      validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+      validate(need(!is.null(input$dates_desc), "Please select a date."))
+
 
       df <- get_data_sum_stats_tables()
-
       violin_plotter(df, input$value, input$metric)
 
 
@@ -1278,9 +1293,12 @@ long <- long()
   ##################################
   ################################################### output time series
   output$sum_stats_plot <- dygraphs::renderDygraph({
+
     message("renderDygraph")
     req(!is.null(input$value) | input$num_tweets_box == T)
-    validate(need(length(input$dates_desc) > 1, "Cannot plot time series for single day"))
+    validate(need(length(input$dates_desc) != 1, "Cannot plot time series for single day"))
+    validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+    validate(need(!is.null(input$dates_desc), "Please select a date."))
 
     df <- get_data_sum_stats_tables()
 
@@ -1299,6 +1317,9 @@ long <- long()
 
   ##### if button is clicked store time series plot in serperate part
   observeEvent(input$plot_saver_button, {
+
+    validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+    validate(need(!is.null(input$dates_desc), "Please select a date."))
 
     req(!is.null(input$value) | input$num_tweets_box == T)
     validate(need(length(input$dates_desc) > 1, "Cannot plot time series for single day"))
@@ -1322,8 +1343,6 @@ long <- long()
 
 
   output$sum_stats_plot2 <-dygraphs::renderDygraph({
-
-
    save_plot$plot
     # dygraphs::dygraph(don) %>%
     #   dygraphs::dyRangeSelector( input$dates_desc + 1, retainDateWindow = T
@@ -1337,8 +1356,11 @@ long <- long()
   ##############################################################################
   ############################### data retriever for histogram
   data_histo <- reactive({
+    validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+     validate(need(!is.null(input$dates_desc), "Please select a date."))
 
-    lang <- lang_converter()
+
+     lang <- lang_converter()
     a <- path_setter()
 
 
@@ -1368,7 +1390,7 @@ long <- long()
   ###########################################################
   ######################################## histogram output
   output$histo_plot <- plotly::renderPlotly({
-
+    validate(need(!is.null(input$dates_desc), "Please select a date."))
 
    req(input$value)
 
@@ -1502,6 +1524,8 @@ long <- long()
 
 
   word_freq_df <- reactive({
+    validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+    validate(need(!is.null(input$dates_desc), "Please select a date."))
 
     if (input$ngram_sel == "Unigram"){
       input_word_freq_filter <- ""
@@ -1524,7 +1548,6 @@ long <- long()
 
 
 
-
         df <- df_filterer(word_freq_df() , input$n_freq)
 
         term_freq_bar_plot(df)
@@ -1540,9 +1563,7 @@ long <- long()
   })
 
   output$wordcloud <- wordcloud2::renderWordcloud2({
-  req(path_setter()[[3]] == "correct_path")
   req(input$plot_type_expl == "Word Cloud")
-
 
 
 
@@ -1558,7 +1579,6 @@ long <- long()
 
 ####################################### number unique words
   output$number_words <- renderUI({
-
 
     ###### number of total tweets
     df_need <- get_data_sum_stats_tables()
@@ -1606,13 +1626,16 @@ long <- long()
 
   ###### network plot
 
-  data_getter_net <- reactive({
+  data_getter_net_react <- reactive({
+
+
+
     lang <- stringr::str_to_title(input$lang_net)
     network_plot_datagetter(lang, input$dates_net[1], input$dates_net[2], input$comp_net)
   })
 
-  data_filterer_net <- reactive({
-    df <- data_getter_net()
+  data_filterer_net_react <- reactive({
+    df <- data_getter_net_react()
     network_plot_filterer(df, input$rt, input$likes_net, input$long_net,
                           input$sentiment_net, input$search_term_net,
                           input$username_net)
@@ -1622,7 +1645,17 @@ long <- long()
   # if button is clicked compute correlations und plot the plot
   observeEvent(input$button_net,{
 
+    validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+    validate(need(!is.null(input$dates_net), "Please select a date."))
 
+
+    ##### disable render plot button so no mutliple firing possible
+    disable("button_net")
+    ### enable the cancel computation button only during rendering
+    enable("cancel_net")
+
+
+    #### start waitress for progress bar
     waitress <- waiter::Waitress$new("nav", max = 4,  theme = "overlay")
     #Automatically close it when done
     on.exit(waitress$close())
@@ -1653,8 +1686,7 @@ long <- long()
     # be startedd
 
 
-    disable("button_net")
-    enable("cancel_net")
+
 
 
     if (initial.ok < input$cancel_net) {
@@ -1664,13 +1696,13 @@ long <- long()
 
     ### read all files for the dates
 
-    df <- data_getter_net()
+    df <- data_getter_net_react()
 
     #hostess$set(2 * 10)
     waitress$inc(1)
 
 
-   if(is.null(df)){
+   if(is.null(df) | dim(df)[1] == 0){
      enable("button_net")
      return()
    }
@@ -1683,8 +1715,12 @@ long <- long()
 
 
 
-      network <- data_filterer_net()
+      network <- data_filterer_net_react()
 
+      if(is.null(network) | dim(network)[1] == 0){
+        enable("button_net")
+        return()
+      }
 
       #hostess$set(2 * 10)
       waitress$inc(1)
@@ -1700,7 +1736,11 @@ long <- long()
     } else{
       network <- network_unnester_bigrams(network, input$emo_net)
     }
-
+      validate(need(dim(network)[1] > 0, "No data found for current selection"))
+      if(is.null(network) | dim(network)[1] == 0){
+        enable("button_net")
+        return()
+      }
       #hostess$set(2 * 10)
       waitress$inc(1)
 
@@ -1717,16 +1757,16 @@ long <- long()
       df <- network_bigrammer(df, network, input$n_net, input$n_bigrams_net)
     }
 
+      if(is.null(df) | length(df) == 0){
+        enable("button_net")
+        return()
+      }
+
 
 
       # hostess$set(2 * 10)
       waitress$inc(1)
 
-    # ### set up data for network
-    # df <- network_plot_filterer(df, input$rt_net, input$likes_net, input$long_net,
-    #                             input$sentiment_net, input$search_term_net,
-    #                             input$username_net, input$n_net,
-    #                             input$corr_net)
 
 
 
@@ -1735,10 +1775,7 @@ long <- long()
       validate(need(initial.ok == 0, message = "The computation has been aborted."))
     }
 
-        # if(is.null(df)){
-    #   enable("button_net")
-    #   return()
-    # }
+
 
 
     # render the network plot
@@ -1819,7 +1856,11 @@ long <- long()
 
 
   output$raw_tweets_net <- DT::renderDataTable({
-    dt <- data_filterer_net()
+    validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+    validate(need(!is.null(input$dates_net), "Please select a date."))
+
+
+    dt <- data_filterer_net_react()
 
     DT::datatable(dt, options = list(
       initComplete = JS(
