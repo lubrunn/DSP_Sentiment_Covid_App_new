@@ -290,11 +290,11 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                               ####### all three
                               radioButtons("lang", "Select Language", choices = c("EN", "DE")),
 
-                              selectInput("comp","Choose a company (optional)",
-                                             c("adidas", "NIKE"),
-                                             selected = "",multiple = TRUE),
+                              selectInput("comp","Choose tweets",
+                                             company_terms,
+                                             selected = "NoFilter"),
                               shinyWidgets::airDatepickerInput("dates_desc", "Date range:",
-                                                               range = TRUE,
+                                                               range = T,
                                                                value = c("2018-11-30", "2021-02-19"),
                                                                maxDate = "2021-02-19", minDate = "2018-11-30",
                                                                clearButton = T, update_on = "close"),
@@ -454,9 +454,9 @@ network_sidebar <- shinyWidgets::dropdown(
           radioButtons("lang_net", "Select Language", choiceNames = c("English Tweets", "German Tweets"),
                        choiceValues = c("en", "de")),
           # company selector
-          selectInput("comp_net","Choose a company (optional)",
-                      c("adidas", "NIKE"),
-                      selected = "",multiple = TRUE),
+          selectInput("comp_net","Choose tweets for",
+                      company_terms,
+                      selected = "NoFilter"),
 
           # datepicker
           shinyWidgets::airDatepickerInput("dates_net", "Date range:",
