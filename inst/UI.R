@@ -117,7 +117,7 @@ twitter_main_panel <- function(){
                                    color: black;
                                  font-size: 20px;
                                  font-style: bold;
-                                 color: green !important;
+                                 color: white !important;
                                  }"
                                    )
                                    )),
