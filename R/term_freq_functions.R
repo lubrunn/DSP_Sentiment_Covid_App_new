@@ -11,7 +11,7 @@ emoji_words <- c(
   "grin","bicep","flex","note","popper","fist","car","follow","retweet","year","ago",
   "social media","woman","voltag","star","ball","camera","man","ass","video","cake","cool",
   "fac","smil","see","evil","party","sweat","thumb","big","the","crying","fing",
-  "crossed","god","watch","leaf","food","arrow", "hugg", "cri"
+  "crossed","god","watch","leaf","food","arrow", "hugg", "cri", "tone"
 
 )
 
@@ -47,6 +47,11 @@ df <-  df %>%
 return(df)
 }
 
+###### compute total number of unique words/bigrams
+unique_words <- function(df){
+  length(unique(df$word))
+}
+
 
 
 #############################################################
@@ -80,7 +85,7 @@ word_cloud_plotter <- function(df, input_size = 1){
 
   df    %>%
      wordcloud2::wordcloud2(size = input_size,
-                                              color = "random-light", backgroundColor = "#375a7f")
+                                              color = "random-light", backgroundColor = "#2b3e50")
 }
 
 #################################################################
@@ -93,8 +98,8 @@ term_freq_bar_plot <- function(df){
 df$n <- df$n / 1000
 p <-   df %>%
 
-    ggplot(aes(reorder(x = word, n), y = n)) +
-    geom_col(width = 0.5) +
+    ggplot(aes(reorder(x = word, n), y = n, label = word)) +
+    geom_col(width = 0.5, color = "#4e5d6c") +
   coord_flip() +
   labs(x = "",
        y = "N (in thousands)")+
@@ -103,7 +108,8 @@ p <-   df %>%
 
   scale_y_continuous(expand = c(0, 0))
 
-plotly::ggplotly(p)
+plotly::ggplotly(p,
+                 tooltip = c("label", "y"))
 }
 
 
@@ -130,5 +136,11 @@ p <- df %>%
 plotly::ggplotly(p)
 
 }
+
+
+
+
+
+
 
 
