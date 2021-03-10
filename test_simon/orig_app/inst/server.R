@@ -2086,9 +2086,10 @@ observe({
     if((input$var_1 == "Close") | (input$var_1 == "Open")){ # here  OR statments for y 
       Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
       Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
-      isolate(xchange$df1 <- Ma_part)
-      isolate(xchange$df2 <-  cbind(final_regression_diff(),Ar_part))
-      isolate(xchange$df_full <- cbind(xchange$df2,xchange$df1))}
+    
+      #isolate(xchange$df1 <- Ma_part)
+      isolate(xchange$df_full <-  cbind(final_regression_diff(),Ar_part,Ma_part))}
+      #isolate(xchange$df_full <- cbind(xchange$df2,xchange$df1))}
     else if(input$var_1 == "VIX"){
       Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
       Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
@@ -2105,26 +2106,41 @@ observe({
   }
 })
 
-
-observeEvent(input$reset_cus,{
+ 
+observe({
+  if(input$reset_cus > 0) {
   xchange$df_full <- NULL
   xchange$df_full2 <- NULL
   xchange$df_full3 <- NULL
   xchange$df_full4 <- NULL
-  xchange$df_full5 <- NULL
+  xchange$df_full5 <- NULL}
 })
 
-custom_df <- reactive({
-  req(input$finish)
-  if(input$finish > 0){
-    list_dfs <- c(xchange$df_full,xchange$df_full2,xchange$df_full3)
-    df <- data.frame((sapply(list_dfs,c)))
-    df <- df %>% dplyr::select(-contains("."))
-    
-  }
-  df
+custom_df <- eventReactive(input$finish, { 
+      list_dfs <- c(xchange$df_full,xchange$df_full2,xchange$df_full3)
+      df <- data.frame((sapply(list_dfs,c)))
+      df <- df %>% dplyr::select(-contains("."))
+      df$Dates <- as.Date(df$Dates)
+      cols <- setdiff(colnames(df), "date")
+      df <- df[,cols]
+      df
 })
 
+
+# custom_df <- reactive({
+#   if(input$finish > 0){
+#     list_dfs <- c(xchange$df_full,xchange$df_full2,xchange$df_full3)
+#     df <- data.frame((sapply(list_dfs,c)))
+#     df <- df %>% dplyr::select(-contains("."))
+#     df$Dates <- as.Date(df$Dates)
+#     browser()
+#     cols <- setdiff(colnames(df), "date")
+#     df <- df[,cols]
+#     
+#   }
+#   df
+# })
+# 
 
 output$tableCustom <- DT::renderDataTable({
   DT::datatable(custom_df(),options = list(
@@ -2228,7 +2244,9 @@ prediction_xgb <-  eventReactive(input$pred,{
     predict(new_data = res$df_forecast[,c(-1)])
   
   df_orig <- final_regression_df_xgb()
-  
+  browser()
+  a <- df_orig$Close[1]
+  abc <- diffinv(res$df_train$y, xi = a)
   preds <- cumsum(preds) + df_orig[(nrow(res$df_train)),2]
   
 })
@@ -2256,19 +2274,19 @@ output$forecast_xgb <- renderDygraph({
   res <- df_xgb_train()
   preds <- prediction_xgb()
   preds <- preds %>%
-    zoo(seq(from = as.Date(min(res$f_dates)), to = as.Date(max(res$f_dates)), by = "day"))
+    zoo(seq(from = as.Date(min(res$f_dates) + 1), to = as.Date(max(res$f_dates) + 1), by = "day"))
   
   if(input$forecast_plot_choice == "Full time series"){
 
     ts <- full_df %>% pull(Close) %>%
-      zoo(seq(from = as.Date(min(res$df_train$date)), to = as.Date(max(res$f_dates)), by = "day"))
+      zoo(seq(from = as.Date(min(full_df$Dates)), to = as.Date(max(full_df$Dates)), by = "day"))
     
     {cbind(actuals=ts, predicted=preds)} %>% dygraph() %>%
       dyEvent(as.Date(min(res$f_dates)), "Start of prediction", labelLoc = "bottom")
     
   }else{
     ts <- full_df %>% pull(Close) %>%
-      zoo(seq(from = as.Date(min(res$f_dates)), to = as.Date(max(res$f_dates)), by = "day"))
+      zoo(seq(from = as.Date(min(full_df$Dates)), to = as.Date(max(full_df$Dates)), by = "day"))
     
     {cbind(actuals=ts, predicted=preds)} %>% dygraph()
     
