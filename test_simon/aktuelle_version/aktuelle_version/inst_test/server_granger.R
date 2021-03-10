@@ -662,16 +662,16 @@ output$pacf_plot_xgb <- renderPlot({
 output$correlation_plot_choice <- renderUI({
   res <- final_regression_df_var() %>% dplyr::select(-Dates)
   input <- selectInput("correlation_var","Select variable for ACF/PACF plot:",
-                           names(res))
+                           names(res),selected = NULL,multiple = FALSE)
 
 })
-
-output$Lag_choice <- renderUI({
-  res <- final_regression_df_var() %>% dplyr::select(-Dates)
-  input <- selectizeInput("var_list_xgb","Add AR and MA columns for which variables?",
-                       names(res),selected="")
-
-})
+# 
+# output$Lag_choice <- renderUI({
+#   res <- final_regression_df_var() %>% dplyr::select(-Dates)
+#   input <- selectizeInput("var_list_xgb","Add AR and MA columns for which variables?",
+#                        names(res),selected="")
+# 
+# })
 
 observeEvent(input$number_of_vars, {                         #Observe event from input (model choices)
   req(input$number_of_vars)
