@@ -17,8 +17,15 @@ dir_setter_panel <- function() {
              tags$p(),
              tags$p("Please choose the directory containing the folder containig \n
                the data called 'Data'."),
-             shinyFiles::shinyDirButton("directory", "Folder select", "Please select a folder"
+             shinyFiles::shinyDirButton("directory", "Select folder", "Please select a folder"
              ),
+             ## in case dir path chooser not working enter manually
+             tags$br(),
+             tags$br(),
+             tags$p("In the case that choosing a path through the 'Select Folder' button \
+             is not possible you can also enter your path manually"),
+             textInput("dir_path_man", ""),
+             actionButton("dir_path_man_btn", "Set path")
 
            ),
            column(8,
@@ -117,7 +124,7 @@ twitter_main_panel <- function(){
                                    color: black;
                                  font-size: 20px;
                                  font-style: bold;
-                                 color: green !important;
+                                 color: white !important;
                                  }"
                                    )
                                    )),
@@ -283,11 +290,11 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                               ####### all three
                               radioButtons("lang", "Select Language", choices = c("EN", "DE")),
 
-                              selectInput("comp","Choose a company (optional)",
-                                             c("adidas", "NIKE"),
-                                             selected = "",multiple = TRUE),
+                              selectInput("comp","Choose tweets",
+                                             company_terms,
+                                             selected = "NoFilter"),
                               shinyWidgets::airDatepickerInput("dates_desc", "Date range:",
-                                                               range = TRUE,
+                                                               range = T,
                                                                value = c("2018-11-30", "2021-02-19"),
                                                                maxDate = "2021-02-19", minDate = "2018-11-30",
                                                                clearButton = T, update_on = "close"),
@@ -447,9 +454,9 @@ network_sidebar <- shinyWidgets::dropdown(
           radioButtons("lang_net", "Select Language", choiceNames = c("English Tweets", "German Tweets"),
                        choiceValues = c("en", "de")),
           # company selector
-          selectInput("comp_net","Choose a company (optional)",
-                      c("adidas", "NIKE"),
-                      selected = "",multiple = TRUE),
+          selectInput("comp_net","Choose tweets for",
+                      company_terms,
+                      selected = "NoFilter"),
 
           # datepicker
           shinyWidgets::airDatepickerInput("dates_net", "Date range:",

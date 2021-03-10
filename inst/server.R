@@ -3,20 +3,23 @@ server <- function(input, output, session) {
   ############################################################# Stocks
   # load stock dataset
   stockdata_DE <- reactive({
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
 
     load_all_stocks_DE()
   })
 
   stockdata_US <- reactive({
-   req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
 
     load_all_stocks_US()
   })
 
 
   output$stock_choice <- renderUI({
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     if (input$country_stocks == "Germany"){
       input <- selectizeInput("Stock","Choose Companies:",
                               c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
@@ -37,7 +40,8 @@ server <- function(input, output, session) {
   # plot of the stocks
   output$plot_DE <- renderPlot({
     req(input$Stock)
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     if (input$country_stocks == "Germany"){
       plotdata <- filter(stockdata_DE(),
                          .data$name %in% (c(COMPONENTS_DE()[["Symbol"]],"GDAXI")[c(COMPONENTS_DE()[["Company.Name"]],"GDAXI") %in% .env$input$Stock]) &
@@ -79,7 +83,8 @@ server <- function(input, output, session) {
   ##################################################################### Corona
 
   corona_data <- reactive({
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     CORONA(input$CoronaCountry,input$dates_corona[1],input$dates_corona[2])
   })
 
@@ -120,7 +125,8 @@ server <- function(input, output, session) {
 
 
   output$Stock_Granger <- renderUI({
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     if (input$country_granger == "Germany"){
       input <- selectizeInput("Stock_Granger","Choose dependent variable:",
                               c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
@@ -146,7 +152,8 @@ server <- function(input, output, session) {
 
 
   granger_data <- reactive({
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     req(input$Stock_Granger)
     if (input$country_granger == "Germany"){
       granger1 <- filter(stockdata_DE(),
@@ -320,7 +327,8 @@ server <- function(input, output, session) {
 
   ###flexible input for stocks: show either german or us companies
   output$stock_regression <- renderUI({
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     if (input$country_regression == "Germany"){
       input <- selectizeInput("Stock_Regression","Choose dependent variable:",
                               c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
@@ -339,7 +347,8 @@ server <- function(input, output, session) {
   output$Controls <- renderUI({
     #res <- dataset()
     #res$name <- NULL
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     if (input$country_regression == "Germany"){
       input <- selectizeInput("Controls","Choose control variables:",
                               c(colnames(global_controls_test_DE())[-1],"DAX"),multiple = TRUE)
@@ -352,7 +361,8 @@ server <- function(input, output, session) {
   })
 
   dataset <- reactive({
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     if (input$country_regression == "Germany"){
       data_reg <- filter(stockdata_DE(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
                          .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Regression]) &
@@ -407,7 +417,8 @@ server <- function(input, output, session) {
 
   dataset_senti <- reactive({
     req(input$Sentiment_type)
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     if(input$Sentiment_type == "NoFilter"){
 
       res <- En_NoFilter_0_0_yes()   # still fix as it is not clear yet if sql or csv
@@ -425,7 +436,8 @@ server <- function(input, output, session) {
   })
   # filter
   filtered_df <- reactive({
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     req(input$Sentiment_type)
     req(input$minRetweet_stocks1)
     req(input$minRetweet_stocks2)
@@ -558,7 +570,8 @@ server <- function(input, output, session) {
   ###################################################### dataset ###############################################################
   ###flexible input for stocks: show either german or us companies
   output$stock_regression_var <- renderUI({
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     if (input$country_regression_var == "Germany"){
       input <- selectizeInput("Stock_Regression_var","Choose dependent variable:",
                               c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
@@ -572,7 +585,8 @@ server <- function(input, output, session) {
 
 
   output$Controls_var <- renderUI({
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     if (input$country_regression_var == "Germany"){
       input <- selectizeInput("Controls_var","Choose control variables:",
                               c(colnames(global_controls_test_DE())[-1],"DAX"),multiple = TRUE)
@@ -585,7 +599,8 @@ server <- function(input, output, session) {
   })
 
   dataset_var <- reactive({
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     if (input$country_regression_var == "Germany"){
       data_reg <- filter(stockdata_DE(),                                                                               #nur hier nach datum filtern, rest wird draufgemerged
                          .data$name %in% (c(COMPONENTS_DE()[["Symbol"]], "GDAXI")[c(COMPONENTS_DE()[["Company.Name"]], "GDAXI") %in% .env$input$Stock_Regression_var]) &
@@ -639,7 +654,8 @@ server <- function(input, output, session) {
   })
 
   dataset_senti_var <- reactive({
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     req(input$Sentiment_type_var)
     if(input$Sentiment_type_var == "NoFilter"){
 
@@ -658,7 +674,8 @@ server <- function(input, output, session) {
   })
   # filter
   filtered_df_var <- reactive({
-    req(path_setter()[[3]][1] == "correct_path")
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     req(input$Sentiment_type_var)
     req(input$minRetweet_stocks1_var)
     req(input$minRetweet_stocks2_var)
@@ -1018,8 +1035,9 @@ server <- function(input, output, session) {
     cat("\ninput$directory value:\n\n")
     print(input$directory)
   })
-  path_setter <- reactive({
-    #browser()
+
+  ##### set wd with shinyfiles
+ observeEvent(input$directory,{
     if (is.integer(input$directory)) {
       setwd(volumes)
 
@@ -1028,29 +1046,56 @@ server <- function(input, output, session) {
     } else {
 
       path <- shinyFiles::parseDirPath(volumes, input$directory)
+
       setwd(path)
-      con <- DBI::dbConnect(RSQLite::SQLite(), "SQLiteStudio/databases/clean_database.db")
 
-      file_needed <- "SQLiteStudio"
-      if(dir.exists(file_needed)) {
-        #setwd(file_path)
-        output_str <- glue("Current path {getwd()}")
-      } else {
-        #setwd(file_path)
-        output_str <- "Current path selection does not seem correct. \n
-                Are you sure it is set correctly?"
-      }
-
-      path_outputs <- list(a = con, b = output_str, c = "correct_path")
-      path_outputs
 
 
     }
   })
+
+
+ ####### manually entered path
+ observeEvent(input$dir_path_man_btn, {
+
+
+   setwd(input$dir_path_man)
+ })
+
+ correct_path <- reactive({
+   input$dir_path_man_btn
+   input$directory
+   dir.exists("SQLiteStudio")
+ })
+
+  ####### output text as feedback for user
   output$directorypath <- renderText({
-    path_outputs <- path_setter()
-    path_outputs[[2]][1]
+    input$directory
+    input$dir_path_man_btn
+    if(dir.exists("SQLiteStudio")) {
+      glue("Current path is set to: {getwd()} ")
+
+    } else {
+      glue("Current path is set to: {getwd()}. Data could not be found in this  \n
+      directory. Are you sure it is set correctly?")
+    }
   })
+
+
+
+
+###### connect to database when path has been set correctly
+  database_connector <- function(){
+
+
+    if(dir.exists("SQLiteStudio")) {
+      con <- DBI::dbConnect(RSQLite::SQLite(), "SQLiteStudio/databases/clean_database.db")
+
+      con
+    }
+  }
+
+
 
 
   ###############################################################################
@@ -1059,16 +1104,16 @@ server <- function(input, output, session) {
 
   output$twitter_logo <- renderImage({
 
-    req(path_setter()[[3]][1] == "correct_path")
+    req( correct_path()== T)
 
-    filename <- "shiny/images/twitter_image.png"
+    filename <- "shiny/images/twitter_logo_wordcloud2.png"
 
 
 
     list(src = filename,
          alt = "This is the Twitter Logo",
          contentType = "Images/png",
-         height = 400, width = 400)
+         height = "100%", width = "80%")
   }, deleteFile = F)
 
 
@@ -1081,8 +1126,9 @@ server <- function(input, output, session) {
 
   ######## disconnect from database after exit
   cancel.onSessionEnded <- session$onSessionEnded(function() {
-    req(path_setter())
-    con <- path_setter[[1]][1]
+    validate(need(correct_path() == T, "Please choose the correct path"))
+    req(database_connector())
+    con <- database_connector()
     DBI::dbDisconnect(con)
   })
 
@@ -1100,6 +1146,11 @@ server <- function(input, output, session) {
 
  ################################## date_variable that accounts for single dates
  dates_desc <- reactive({
+
+   validate(need(correct_path() == T, "Please choose the correct path"))
+   validate(need(!is.null(input$dates_desc), "Please select a date."))
+
+
    if (length(input$dates_desc) > 1){
      input$dates_desc
    } else {
@@ -1110,6 +1161,11 @@ server <- function(input, output, session) {
 
  ################################### path finder for histo files
   querry_histo <- reactive({
+    validate(need(correct_path() == T, "Please choose the correct path"))
+    validate(need(!is.null(input$dates_desc), "Please select a date."))
+
+
+
     if (input$long == T){
       long_name <- "long_only"
     } else{
@@ -1133,7 +1189,7 @@ server <- function(input, output, session) {
 
 
     # for no filter
-    if (is.null(input$comp)){
+    if (input$comp == "NoFilter"){
     glue("histo_{value_var}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
     } else { #for chosen company
       req(!is.null(input$comp))
@@ -1155,17 +1211,17 @@ server <- function(input, output, session) {
 
 long <- long()
 #browser()
-      if (is.null(input$comp)){
+      if (input$comp == "NoFilter"){
       table_name <- glue("sum_stats_{tolower(input$lang)}")
 
-      glue("SELECT *  FROM {table_name}  WHERE
+      glue('SELECT *  FROM {table_name}  WHERE
          retweets_count = {input$rt} and likes_count = {input$likes} and
-         tweet_length = {long}" )
+         tweet_length = {long}' )
       } else { #if company is chosen
-        glue("SELECT *  FROM sum_stats_companies WHERE
+        glue('SELECT *  FROM sum_stats_companies WHERE
          retweets_count = {input$rt} and likes_count = {input$likes} and
-         tweet_length = {long} and company  = '{input$comp}' and
-             language = '{tolower(input$lang)}'" )
+         tweet_length = {long} and company  = "{input$comp}" and
+             language = "{tolower(input$lang)}"' )
       }
 
 
@@ -1176,8 +1232,13 @@ long <- long()
     #########################################################################
     ############################# get data for sum stats table
     get_data_sum_stats_tables <- reactive({
-      con <- path_setter()
-      con <- con[[1]]
+      validate(need(correct_path() == T, "Please choose the correct path"))
+      validate(need(database_connector(), "Could not connect to database"))
+      validate(need(!is.null(input$dates_desc), "Please select a date."))
+
+
+      con <- database_connector()
+
       string_value <- is.null(con)
       req(!string_value)
       df_need <- DBI::dbGetQuery(con,  querry_sum_stats_table())
@@ -1187,7 +1248,6 @@ long <- long()
     #########################
     ################################# sum stats table
     output$sum_stats_table <- function(){
-
       df_need <- get_data_sum_stats_tables()
       sum_stats_table_creator(df_need, dates_desc()[1], dates_desc()[2])
     }
@@ -1215,9 +1275,11 @@ long <- long()
     ############################################################################
     ######################### violin plot
     output$violin_sum <- renderPlot({
+      #validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+      validate(need(!is.null(input$dates_desc), "Please select a date."))
+
 
       df <- get_data_sum_stats_tables()
-
       violin_plotter(df, input$value, input$metric)
 
 
@@ -1278,9 +1340,12 @@ long <- long()
   ##################################
   ################################################### output time series
   output$sum_stats_plot <- dygraphs::renderDygraph({
+
     message("renderDygraph")
     req(!is.null(input$value) | input$num_tweets_box == T)
-    validate(need(length(input$dates_desc) > 1, "Cannot plot time series for single day"))
+    validate(need(length(input$dates_desc) != 1, "Cannot plot time series for single day"))
+    #validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+    validate(need(!is.null(input$dates_desc), "Please select a date."))
 
     df <- get_data_sum_stats_tables()
 
@@ -1299,6 +1364,9 @@ long <- long()
 
   ##### if button is clicked store time series plot in serperate part
   observeEvent(input$plot_saver_button, {
+
+    #validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+    validate(need(!is.null(input$dates_desc), "Please select a date."))
 
     req(!is.null(input$value) | input$num_tweets_box == T)
     validate(need(length(input$dates_desc) > 1, "Cannot plot time series for single day"))
@@ -1322,8 +1390,6 @@ long <- long()
 
 
   output$sum_stats_plot2 <-dygraphs::renderDygraph({
-
-
    save_plot$plot
     # dygraphs::dygraph(don) %>%
     #   dygraphs::dyRangeSelector( input$dates_desc + 1, retainDateWindow = T
@@ -1337,14 +1403,18 @@ long <- long()
   ##############################################################################
   ############################### data retriever for histogram
   data_histo <- reactive({
+    #validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+     validate(need(!is.null(input$dates_desc), "Please select a date."))
+    validate(need(correct_path() == T, "Please choose the correct path"))
 
-    lang <- lang_converter()
-    a <- path_setter()
+
+     lang <- lang_converter()
+
 
 
 
     # for case no company selected
-    if (is.null(input$comp)){
+    if (input$comp == "NoFilter"){
       file_path <- file.path(glue("Twitter/plot_data/{lang}_NoFilter/{querry_histo()}"))
       exists <- file.exists(file_path)
       shinyFeedback::feedbackDanger("histo_plot", !exists, "Please make sure you picked the correct path. The \n
@@ -1368,7 +1438,7 @@ long <- long()
   ###########################################################
   ######################################## histogram output
   output$histo_plot <- plotly::renderPlotly({
-
+    validate(need(!is.null(input$dates_desc), "Please select a date."))
 
    req(input$value)
 
@@ -1439,7 +1509,8 @@ long <- long()
       tweet_length_filter <- 0
     }
 
-    correct_path <- path_setter()[[3]]
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
     # if (correct_path == "correct_path"){
     #   Sys.sleep(0.2)
     # } else{
@@ -1458,7 +1529,7 @@ long <- long()
     }
 
 
-    if (!is.null(input$comp)) {
+    if (input$comp != "NoFilter") {
       folder <- file.path("Companies")
       file_name <- glue("term_freq_{input$comp}_all_rt_{input$rt}_li_{input$likes}_lo_{long}.csv")
       file_path <- file.path("Twitter/term_freq",folder, subfolder, file_name)
@@ -1502,6 +1573,8 @@ long <- long()
 
 
   word_freq_df <- reactive({
+    #validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+    validate(need(!is.null(input$dates_desc), "Please select a date."))
 
     if (input$ngram_sel == "Unigram"){
       input_word_freq_filter <- ""
@@ -1524,7 +1597,6 @@ long <- long()
 
 
 
-
         df <- df_filterer(word_freq_df() , input$n_freq)
 
         term_freq_bar_plot(df)
@@ -1540,9 +1612,7 @@ long <- long()
   })
 
   output$wordcloud <- wordcloud2::renderWordcloud2({
-  req(path_setter()[[3]] == "correct_path")
   req(input$plot_type_expl == "Word Cloud")
-
 
 
 
@@ -1558,7 +1628,6 @@ long <- long()
 
 ####################################### number unique words
   output$number_words <- renderUI({
-
 
     ###### number of total tweets
     df_need <- get_data_sum_stats_tables()
@@ -1606,23 +1675,45 @@ long <- long()
 
   ###### network plot
 
-  data_getter_net <- reactive({
+  data_getter_net_react <- reactive({
+
+
     lang <- stringr::str_to_title(input$lang_net)
     network_plot_datagetter(lang, input$dates_net[1], input$dates_net[2], input$comp_net)
   })
 
-  data_filterer_net <- reactive({
-    df <- data_getter_net()
+  data_filterer_net_react <- reactive({
+    df <- data_getter_net_react()
     network_plot_filterer(df, input$rt, input$likes_net, input$long_net,
                           input$sentiment_net, input$search_term_net,
                           input$username_net)
   })
 
 
+  observe({
+    if (correct_path() == F){
+      removeUI("#network_plot")
+      shinyjs::disable("button_net")
+    } else {
+      shinyjs::enable("button_net")
+    }
+  })
+
   # if button is clicked compute correlations und plot the plot
   observeEvent(input$button_net,{
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
+    #validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+    validate(need(!is.null(input$dates_net), "Please select a date."))
 
 
+    ##### disable render plot button so no mutliple firing possible
+    disable("button_net")
+    ### enable the cancel computation button only during rendering
+    enable("cancel_net")
+
+
+    #### start waitress for progress bar
     waitress <- waiter::Waitress$new("nav", max = 4,  theme = "overlay")
     #Automatically close it when done
     on.exit(waitress$close())
@@ -1653,8 +1744,7 @@ long <- long()
     # be startedd
 
 
-    disable("button_net")
-    enable("cancel_net")
+
 
 
     if (initial.ok < input$cancel_net) {
@@ -1664,13 +1754,13 @@ long <- long()
 
     ### read all files for the dates
 
-    df <- data_getter_net()
+    df <- data_getter_net_react()
 
     #hostess$set(2 * 10)
     waitress$inc(1)
 
 
-   if(is.null(df)){
+   if(is.null(df) | dim(df)[1] == 0){
      enable("button_net")
      return()
    }
@@ -1683,8 +1773,12 @@ long <- long()
 
 
 
-      network <- data_filterer_net()
+      network <- data_filterer_net_react()
 
+      if(is.null(network) | dim(network)[1] == 0){
+        enable("button_net")
+        return()
+      }
 
       #hostess$set(2 * 10)
       waitress$inc(1)
@@ -1700,7 +1794,11 @@ long <- long()
     } else{
       network <- network_unnester_bigrams(network, input$emo_net)
     }
-
+      validate(need(dim(network)[1] > 0, "No data found for current selection"))
+      if(is.null(network) | dim(network)[1] == 0){
+        enable("button_net")
+        return()
+      }
       #hostess$set(2 * 10)
       waitress$inc(1)
 
@@ -1717,16 +1815,16 @@ long <- long()
       df <- network_bigrammer(df, network, input$n_net, input$n_bigrams_net)
     }
 
+      if(is.null(df) | length(df) == 0){
+        enable("button_net")
+        return()
+      }
+
 
 
       # hostess$set(2 * 10)
       waitress$inc(1)
 
-    # ### set up data for network
-    # df <- network_plot_filterer(df, input$rt_net, input$likes_net, input$long_net,
-    #                             input$sentiment_net, input$search_term_net,
-    #                             input$username_net, input$n_net,
-    #                             input$corr_net)
 
 
 
@@ -1735,10 +1833,7 @@ long <- long()
       validate(need(initial.ok == 0, message = "The computation has been aborted."))
     }
 
-        # if(is.null(df)){
-    #   enable("button_net")
-    #   return()
-    # }
+
 
 
     # render the network plot
@@ -1819,7 +1914,11 @@ long <- long()
 
 
   output$raw_tweets_net <- DT::renderDataTable({
-    dt <- data_filterer_net()
+    validate(need(correct_path() == T, "Please choose the correct path"))
+    validate(need(!is.null(input$dates_net), "Please select a date."))
+
+
+    dt <- data_filterer_net_react()
 
     DT::datatable(dt, options = list(
       initComplete = JS(

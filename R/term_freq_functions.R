@@ -39,7 +39,7 @@ df <-  df %>%
   {if (input_emo == T) filter(., emo == F &
                                 !grepl(paste(emoji_words, collapse = "|"), word) ) else .} %>% ##filter out emoji words if chosen
 
- {if (!is.null(input_comp)) filter(.,!grepl(corpus::stem_snowball(input_comp), word)) else .} %>% #filter out company name if chosen
+ {if (input_comp != "NoFilter") filter(.,!grepl(corpus::stem_snowball(input_comp), word)) else .} %>% #filter out company name if chosen
 
   {if (search_term != "") filter(.,grepl(search_term, word)) else .} %>% # only keep what contain search term
   select(-emo)

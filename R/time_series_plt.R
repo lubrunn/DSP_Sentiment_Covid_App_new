@@ -97,8 +97,9 @@ time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, 
 #}
   # replace tweet length with length
   selected_metrics_new <-   stringr::str_replace(selected_metrics, "tweet_length", "length")
+  if(!is.null(selected_metrics)){
   selected_metrics_new <- paste(filter_type, selected_metrics_new, sep = "_")
-
+}
   if (num_tweets == T){
     selected_metrics_new <- c(selected_metrics_new, "N")
     selected_metrics <- c(selected_metrics, "N")
@@ -151,8 +152,9 @@ time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, 
     #### change selected metrics name into nice name
     df <- df %>% select(created_at, selected_metrics_new)
 
+    if (selected_metrics != "N"){
     selected_metrics_new <- regmatches(selected_metrics_new, regexpr("_", selected_metrics_new), invert = TRUE)[[1]][2]
-
+    }
 
 
     selected_metrics_new <- stringr::str_replace(selected_metrics_new, "sentiment_rt", "Retweets weighted Sentiment")
