@@ -17,8 +17,15 @@ dir_setter_panel <- function() {
              tags$p(),
              tags$p("Please choose the directory containing the folder containig \n
                the data called 'Data'."),
-             shinyFiles::shinyDirButton("directory", "Folder select", "Please select a folder"
+             shinyFiles::shinyDirButton("directory", "Select folder", "Please select a folder"
              ),
+             ## in case dir path chooser not working enter manually
+             tags$br(),
+             tags$br(),
+             tags$p("In the case that choosing a path through the 'Select Folder' button \
+             is not possible you can also enter your path manually"),
+             textInput("dir_path_man", ""),
+             actionButton("dir_path_man_btn", "Set path")
 
            ),
            column(8,
