@@ -98,14 +98,14 @@ twitter_main_panel <- function(){
                                                      "))
                                    ),
                                    tags$h4("Time Series"),
-                                   dygraphs::dygraphOutput("sum_stats_plot"),
+                                   dygraphs::dygraphOutput("sum_stats_plot")%>% shinycssloaders::withSpinner(type = 5),
 
                                    # seconds time series plot
                                    tags$br(),
 
                                    tags$br(),
                                    tags$h4("Saved Time Series"),
-                                   dygraphs::dygraphOutput('sum_stats_plot2'),
+                                   dygraphs::dygraphOutput('sum_stats_plot2')%>% shinycssloaders::withSpinner(type = 5),
 
 
 
@@ -122,7 +122,7 @@ twitter_main_panel <- function(){
                                    )
                                    )),
                                    tags$h4("Summary Statistics"),
-                                   tableOutput("sum_stats_table"),
+                                   tableOutput("sum_stats_table")%>% shinycssloaders::withSpinner(type = 5),
 
 
                                    #########################################
@@ -130,7 +130,7 @@ twitter_main_panel <- function(){
 
                                    ##### violin plot
                                    tags$h4("Distrubtion of aggregated tweets"),
-                                   plotOutput("violin_sum"),
+                                   plotOutput("violin_sum")%>% shinycssloaders::withSpinner(type = 5),
 
                                    #########################################
                                    ###########################################
@@ -150,36 +150,38 @@ twitter_main_panel <- function(){
                                    )
                                    ),
                                   plotly::plotlyOutput("histo_plot") %>%
-                                     shinycssloaders::withSpinner()
+                                     shinycssloaders::withSpinner(type = 5)
 
 
                                    ),
 
                           ##### main panel with wod frequency and raw tweets
                           tabPanel("Exploratory Output", value = 3,
-                                  # mainPanel(
+
+                                   tags$br(),
+                                   htmlOutput("number_words"),
                                      conditionalPanel(
                                        condition = "input.plot_type_expl == 'Frequency Plot'",
-                                        plotly::plotlyOutput("freq_plot", height = "1000px")
+                                        plotly::plotlyOutput("freq_plot", height = "1000px")%>% shinycssloaders::withSpinner(type = 5)
                                        #uiOutput("plot.ui")
                                      ),
                                      conditionalPanel(
                                        condition = "input.plot_type_expl == 'Word Cloud'",
                                        uiOutput("cloud"),
                                        #wordcloud2::wordcloud2Output('wordcloud', height = "1000px", width = "auto")
-                                     ),
-                                  tags$hr(),
-                                  tags$br(),
-                                  tags$br(),
-                                  tags$br(),
-                                  tags$br(),
-                                  tags$br(),
-                                  tags$hr(),
-                                  conditionalPanel(
-                                    condition = "input.ngram_sel == 'Bigram'",
-                                    tags$h4("Number of Bigrams containing the choosen word (if no word selected shows all tweets in current selection)"),
-                                  plotly::plotlyOutput("word_freq_time_series")
-                                  )
+                                     )
+                                  # tags$hr(),
+                                  # tags$br(),
+                                  # tags$br(),
+                                  # tags$br(),
+                                  # tags$br(),
+                                  # tags$br(),
+                                  # tags$hr(),
+                                  # conditionalPanel(
+                                  #   condition = "input.ngram_sel == 'Bigram'",
+                                  #   tags$h4("Number of Bigrams containing the choosen word (if no word selected shows all tweets in current selection)"),
+                                  # plotly::plotlyOutput("word_freq_time_series") %>% shinycssloaders::withSpinner(type = 5)
+                                  # )
 
 
                                    )
@@ -192,17 +194,34 @@ twitter_main_panel <- function(){
 
              # andere reiter
              tabPanel("Going Deeper",
-                      sidebarPanel(
-                        network_sidebar
-                      ),
-                      mainPanel(
-                      # shinyjs::hidden(div(id = "loading",
-                      #                     networkD3::forceNetworkOutput("network_plot") %>%
-                      #     shinycssloaders::withSpinner()))
-                      tags$div(id = "placeholder")
-                      ),
+                      #sidebarPanel(
+                        network_sidebar,
+                      tags$style(HTML('#sw-content-dropdown, .sw-dropdown-in {background-color: #4e5d6c;
+                                      margin: 0 0;}'))
 
+                      #)
+                      ,
+                      #mainPanel(
+                      # conditionalPanel(
+                      #   condition = "input.button_net == 0",
+                      #   shinyjs::hidden(div(id = "loading",
+                      #                       networkD3::forceNetworkOutput("network_plot_placeholder")
+                      #
+                      # ),
+                      tags$br(),
+                      tags$h4("Word Network Analysis", color = "white"),
+                      tags$br(),
+                      tags$div(id = "placeholder", style = "height: 800px; width: 90%;"),
+                      tags$br(),
+                      tags$br(),
+                     # ),
 
+                      ###### datatable
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$h4("Raw twitter data for current selection"),
                       fluidRow(column(12,
                                       tags$style(HTML("
                     .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
@@ -362,18 +381,30 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
 
                               ),
-
+                            ######################################################################################
+                            #####################################################################################
+                            ############################### Word Frequencies ####################################
+                            #####################################################################################
                             conditionalPanel(
                               condition = "input.tabselected==3",
                               shinyWidgets::materialSwitch(inputId = "emo", label = "Remove Emoji Words?", value = F),
-                              selectInput("plot_type_expl", "What kind of plot would you like to see?", choices = c("Frequency Plot", "Word Cloud")),
+                              selectInput("plot_type_expl", "What kind of plot would you like to see?", choices = c("Frequency Plot", "Word Cloud")
+                                          ),
 
                               conditionalPanel(
                                 condition = "input.plot_type_expl == 'Word Cloud'",
                                 sliderInput("size_wordcloud", "Change the size of the wordcloud", min = 0.1, max = 10, value = 1, step = 0.1)
                               ),
+                              conditionalPanel(
+                                condition = "input.plot_type_expl == 'Frequency Plot'",
+                                sliderInput("n_freq", "Number of words to show", min = 5, max = 100, value = 20)
 
-                              sliderInput("n", "Number of words to show", min = 5, max = 200, value = 15),
+                              ),
+                              conditionalPanel(
+                                condition = "input.plot_type_expl != 'Frequency Plot'",
+                                sliderInput("n_freq_wc", "Number of words to show", min = 5, max = 1000, value = 100)
+                              ),
+
 
                               conditionalPanel(
 
@@ -401,9 +432,12 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
 
 #################################### going deeeper sidbarpanel
-network_sidebar <- tabPanel( "Network Analysis",
+#tabPanel( "Network Analysis",
+network_sidebar <- shinyWidgets::dropdown(
+  icon = icon("align-justify"),tooltip = tooltipOptions(title = "Set filters for network anylsis"),
+  circle = T,
 
-          waiter::use_waitress(color = "#375a7f"),
+          waiter::use_waitress(color = "#616f7d"),
           #waiter::use_waiter(),
           #waiter::use_hostess(),
           #waiter::hostess_loader("load", text_color = "white", center_page = TRUE),
@@ -496,7 +530,9 @@ network_sidebar <- tabPanel( "Network Analysis",
 
           ### canceling computation
           shinyjs::disabled(actionButton("cancel_net", "Cancel Rendering"))
-)
+
+          )
+#)
 
 
 #############################################################################
