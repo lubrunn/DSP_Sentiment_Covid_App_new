@@ -288,7 +288,7 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
 
                               ####### all three
-                              radioButtons("lang", "Select Language", choices = c("EN", "DE")),
+                              radioButtons("lang", "Select Language", choices = c("EN", "DE"), inline = T),
 
                               selectInput("comp","Choose tweets",
                                              company_terms,
@@ -584,34 +584,128 @@ ui <- fluidPage(
              dir_setter_panel(),
              twitter_main_panel(),
              tabPanel("Sentiment"),
-             tabPanel("Stocks",
+             # tabPanel("Stocks",
+             #          sidebarPanel(
+             #            radioButtons("country_stocks","Which country?",c("Germany","USA"),selected = "Germany"),
+             #            #selectize_Stocks(COMPONENTS_DE()),
+             #            uiOutput("stock_choice"),
+             #            #selectizeInput("stock_choice", choices = "Platzhalter"),
+             #            radioButtons("stock_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
+             #            actionButton("reset", "clear selected"),
+             #            checkboxInput("hovering","Enable hover",value = FALSE),
+             #            sliderinput_dates()
+             #          ),
+             #          mainPanel(
+             #            plot_stocks_DE(),
+             #            hover_info_DE()
+             #          ),#close MainPanel
+             # ),#close tabPanel stock
+             # tabPanel("Corona",
+             #          sidebarPanel(
+             #            selectize_corona(),
+             #            checkboxGroupInput("CoronaCountry","Country",c("Germany","United States"),selected = "Germany"),
+             #            sliderinput_dates_corona(),
+             #            checkboxInput("hovering_corona","Enable hover",value = FALSE)
+             #          ),
+             #          mainPanel(
+             #            plot_corona(),
+             #            hover_info_corona()
+             #          )
+             # ),#close tabPanel Corona
+
+
+
+
+
+
+
+
+             tabPanel("Comparison",
                       sidebarPanel(
-                        radioButtons("country_stocks","Which country?",c("Germany","USA"),selected = "Germany"),
+                        tags$hr(),
+
+
+                        ######## stocks
+                        tags$h4("Stocks"),
+
                         #selectize_Stocks(COMPONENTS_DE()),
-                        uiOutput("stock_choice"),
+                        selectInput("stocks_comp", "Select a company or index",
+                                    company_terms_stock, multiple = T,
+                                    selected = "AAPL"),
                         #selectizeInput("stock_choice", choices = "Platzhalter"),
-                        radioButtons("stock_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
+                        radioButtons("stocks_metric_comp","Which variable?",c("Return","Adj.Close" = "Adj.Close"),
+                                     selected = "Return", inline = T),
                         actionButton("reset", "clear selected"),
-                        checkboxInput("hovering","Enable hover",value = FALSE),
-                        sliderinput_dates()
-                      ),
-                      mainPanel(
-                        plot_stocks_DE(),
-                        hover_info_DE()
-                      ),#close MainPanel
-             ),#close tabPanel stock
-             tabPanel("Corona",
-                      sidebarPanel(
+
+
+                        tags$br(),
+                        tags$br(),
+                        tags$hr(),
+
+
+
+                        ######## covid
+                        tags$h4("COVID-19"),
+                        tags$br(),
+
+
+
                         selectize_corona(),
                         checkboxGroupInput("CoronaCountry","Country",c("Germany","United States"),selected = "Germany"),
                         sliderinput_dates_corona(),
-                        checkboxInput("hovering_corona","Enable hover",value = FALSE)
+                        checkboxInput("hovering_corona","Enable hover",value = FALSE),
+
+
+                        tags$br(),
+                        tags$br(),
+                        tags$hr(),
+
+
+
+
+                        ####### twitter
+                        tags$h4("Twitter"),
+                        tags$br(),
+
+
+
+                        radioButtons("lang_twitter_comp", "Select Language", choices = c("EN", "DE"), inline = T),
+
+                        selectInput("comp_twitter_comp","Choose tweets",
+                                    company_terms,
+                                    selected = "NoFilter", multiple = T),
+
+
+
+                        radioButtons("rt_twitter_comp", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
+                                     inline = T),
+                        radioButtons("likes_twitter_comp", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
+                                     inline = T),
+                        #switchInput(inputId = "long", value = TRUE),
+                        shinyWidgets::materialSwitch(inputId = "long_twitter_comp", label = "Long Tweets only?", value = F),
+
                       ),
                       mainPanel(
-                        plot_corona(),
-                        hover_info_corona()
+                        dygraphs::dygraphOutput("stocks_comp"),
+                        tags$br(),
+                        tags$br(),
+                        tags$hr(),
+                        dygraphs::dygraphOutput("covid_comp"),
+                        tags$br(),
+                        tags$br(),
+                        tags$hr(),
+                        dygraphs::dygraphOutput("twitter_comp")
+
                       )
              ),#close tabPanel Corona
+
+
+
+
+
+
+
+
              navbarMenu("Model",
                         tabPanel("Granger",
                                  sidebarPanel(
@@ -698,3 +792,10 @@ ui <- fluidPage(
              )#close Navbarmenu
   )#close Navbarpage
 )#close fluidpage
+
+
+
+
+
+
+
