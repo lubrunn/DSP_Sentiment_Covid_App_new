@@ -492,7 +492,8 @@ ui <- fluidPage(
                                  mainPanel(
                                    tabsetPanel(
                                      tabPanel("Information Granger",
-                                              htmlOutput("info_granger")),
+                                              htmlOutput("info_granger"),
+                                              withMathJax()),
                                      tabPanel("Visualize",
                                               dygraphs::dygraphOutput("stocks_granger"),
                                               dygraphs::dygraphOutput("second_granger")),
@@ -514,7 +515,9 @@ ui <- fluidPage(
                                  ),
                                  mainPanel(
                                    tabsetPanel(id = "regressiontabs",
-                                     tabPanel("Information Regression"),
+                                     tabPanel("Information Regression",
+                                              htmlOutput("info_regression"),
+                                              withMathJax()),
                                      tabPanel("Summary Statistics",
                                               tableOutput("reg_summary"),
                                               plotOutput("correlation_reg")
