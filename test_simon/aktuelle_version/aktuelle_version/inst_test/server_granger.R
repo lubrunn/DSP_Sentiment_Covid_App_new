@@ -721,7 +721,7 @@ final_regression_diff <- reactive({
 
 observe({
   if(input$addButton > 0) {
-    if(input$var_1 == "Close"){ # here  OR statments for y
+    if(input$var_1 == "Close"){ # here  OR statments for y 
     Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
     Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
     isolate(xchange$df1 <- Ma_part)
@@ -925,7 +925,7 @@ output$correlation_plot <- renderPlot({
 # })
 #res2 <- df_xgb_train_for()
 
-model_xgbi <- eventReactive(input$run,{
+model_xgbi <- eventReactive(input$run,{#maybe rename y column to y
   req(input$model_spec)
   if(input$model_spec == "default"){
     res <- df_xgb_train()
@@ -944,7 +944,7 @@ model_xgbi <- eventReactive(input$run,{
 })
 
 
-model_xgbi2 <- eventReactive(input$run2,{
+model_xgbi2 <- eventReactive(input$run2,{#maybe rename y column to y
   req(input$model_spec_for)
   if(input$model_spec_for == "default"){
     res <- df_xgb_train_for()
@@ -990,7 +990,7 @@ output$model2 <- renderPrint({
  prediction_xgb <-  eventReactive(input$pred,{
 
 res <- df_xgb_train()   
-  preds <- model_xgbi()  %>%
+  preds <- model_xgbi()  %>%# dynamic "Close" variable or just rename to y
        fit(formula = Close ~ .,data = res$df_train[,c(-1)]) %>%
        predict(new_data = res$df_forecast[,c(-1)])
 df_orig <- final_regression_df_var()
