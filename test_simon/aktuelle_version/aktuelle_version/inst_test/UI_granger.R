@@ -271,9 +271,9 @@ ui <- fluidPage(
                                               verbatimTextOutput("model2"),
                                               dygraphOutput("plot_1_xgb_actual")),
                   
-                                     tabPanel("Diagnostics",value = "Diagnostics")
-                                             # plotOutput("Residuals"),
-                                            #  plotOutput("Feature_imp")
+                                     tabPanel("Diagnostics",value = "Diagnostics",
+                                              plotOutput("Residuals"),
+                                              plotOutput("Feature_imp"))
                                       
                                     )
                                  )

@@ -640,12 +640,12 @@ server <- function(input, output, session) {
   })
 
 
-training_data <- renderPrint({
-  req(input$data_split)
-  res <- final_regression_df_var()
-  res_list<- split_data(res,input$data_split)
-  res_train <- res_list[["df.train"]]
-})
+# training_data <- renderPrint({
+#   req(input$data_split)
+#   res <- final_regression_df_var()
+#   res_list<- split_data(res,input$data_split)
+#   res_train <- res_list[["df.train"]]
+# })
 
 
 output$acf_plot_xgb <- renderPlot({
@@ -678,20 +678,18 @@ observeEvent(input$number_of_vars, {                         #Observe event from
   updateTabsetPanel(session, "tabs_for_var", selected = as.character(input$number_of_vars))
 })
 
-
 observeEvent(input$Controls_var,{
   res <- final_regression_df_var() %>% dplyr::select(-Dates)
   updateSelectInput(session, "var_1",
                     choices = names(res))
 })
-
-
-observeEvent(input$Controls_var,{
-  res <- final_regression_df_var() %>% dplyr::select(-Dates)
-  updateSelectInput(session, "var_2",
-                    choices = names(res))
-})
+# observeEvent(input$Controls_var,{
+#   res <- final_regression_df_var() %>% dplyr::select(-Dates)
+#   updateSelectInput(session, "var_2",
+#                     choices = names(res))
+# })
 # 
+
  filter_by_input_df <- reactive({
    req(input$var_2)
    res <- final_regression_df_var() %>% dplyr::select(-Dates)
@@ -700,57 +698,76 @@ observeEvent(input$Controls_var,{
    res
  })
 
-observeEvent(input$var_2,{
-  updateSelectInput(session, "var_3",
-                    choices = filter_by_input_df())
-})
+# observeEvent(input$var_2,{
+#   updateSelectInput(session, "var_3",
+#                     choices = filter_by_input_df())
+# })
 
 #####################################
-
-df_xgb <- reactive({
-  
-  res <- final_regression_df_var()
-  res <- ARMA_creator(res)
- 
-})
-
 
 xchange <- reactiveValues()
 xchange$df_full <- NULL
 xchange$df_full2 <- NULL
+xchange$df_full3 <- NULL
 
 xchange$df1 <- NULL
 xchange$df2 <- NULL
 
+final_regression_diff <- reactive({
+    res <- final_regression_df_var()
+    res <- make_ts_stationary(res)
+  res
+})
+
 observe({
   if(input$addButton > 0) {
-    if(input$var_1 == "Close"){
-    Ma_part <- MA_creator(final_regression_df_var() ,input$var_1,input$num_1)
-    Ar_part <- AR_creator(final_regression_df_var() ,input$var_1,input$num_2)
+    if(input$var_1 == "Close"){ # here  OR statments for y
+    Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
+    Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
     isolate(xchange$df1 <- Ma_part)
-    isolate(xchange$df2 <-  cbind(final_regression_df_var(),Ar_part))
+    isolate(xchange$df2 <-  cbind(final_regression_diff(),Ar_part))
     isolate(xchange$df_full <- cbind(xchange$df2,xchange$df1))}
-    
     else if(input$var_1 == "VIX"){
-      Ma_part <- MA_creator(final_regression_df_var() ,input$var_1,input$num_1)
-      Ar_part <- AR_creator(final_regression_df_var() ,input$var_1,input$num_2)
+      Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
+      Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
       isolate(xchange$df1 <- Ma_part)
-      isolate(xchange$df2 <-  cbind(final_regression_df_var(),Ar_part))
+      isolate(xchange$df2 <-  cbind(final_regression_diff(),Ar_part))
       isolate(xchange$df_full2 <- cbind(xchange$df2,xchange$df1))
+    }else if(input$var_1 == "coronavirus"){
+      Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
+      Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
+      isolate(xchange$df1 <- Ma_part)
+      isolate(xchange$df2 <-  cbind(final_regression_diff(),Ar_part))
+      isolate(xchange$df_full3 <- cbind(xchange$df2,xchange$df1))
     }
   }
+})
+
+observeEvent(input$reset_cus,{
+  xchange$df_full <- NULL
+  xchange$df_full2 <- NULL
+  xchange$df_full3 <- NULL
 })
 
 custom_df <- reactive({
   req(input$finish)
   if(input$finish > 0){
-    df <- cbind(xchange$df_full,xchange$df_full2)
+    list_dfs <- c(xchange$df_full,xchange$df_full2,xchange$df_full3)
+    df <- data.frame((sapply(list_dfs,c)))
+    df <- df %>% dplyr::select(-contains("."))
+    
   }
   df
 })
 
 output$tableCustom <- renderTable({head(custom_df())}
                                   , include.rownames=F)
+df_xgb <- reactive({
+  
+  res <- final_regression_df_var()
+  res <- ARMA_creator(res)
+  
+})
 
 ###############################################
 output$df_xgb1 <- DT::renderDataTable({
@@ -769,45 +786,33 @@ output$df_xgb1 <- DT::renderDataTable({
 #   updateNumericInput(session,"number_of_vars",value = 1)
 # })
 
-
-# no info here.   df_xgb_train uses actual observed covariates
+df_xgb <- reactive({
+  
+  res <- final_regression_df_var()
+  res <- ARMA_creator(res)
+  
+})
 
 df_xgb_train <- reactive({
-  
-  req(input$var_1)
-  req(input$var_2)
-  req(input$var_3)
-  req(input$num_1)
-  req(input$num_2)
-  req(input$num_3)
-  req(input$num_4)
-  req(input$num_5)
-  req(input$num_6)
-  req(input$number_of_vars)
-  req(input$lag_tabs)
-  browser()
+  if(input$lag_tabs == "default"){
   res <- final_regression_df_var()
-
   res <- make_ts_stationary(res)
-
   list_dfs <- split_data_for(res,input$n_ahead,input$ftpye)
+  res <- ARMA_creator(res)
   
-  browser()
-  
-  res <- ARMA_creator(list_dfs$df_train,input$number_of_vars,input$var_1,input$var_2,
-                     input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
-                     input$num_5,input$num_6,input$lag_tabs,list_dfs$df_train,"no")
- 
-   res <- res %>% dplyr::select(-months_lag,-years_lag,-weeks_lag,-days_lag,-quarter_lag, 
+  res <- res %>% dplyr::select(-months_lag,-years_lag,-weeks_lag,-days_lag,-quarter_lag, 
                                 -semester_lag,-MA_quarter,-MA_semester,-MA_months,-MA_years,-MA_weeks,-MA_days)
 
-  
   list_dfs$df_train <- res 
-
+  }else{
+  res <- custom_df()
+  list_dfs <- split_data_for(res,input$n_ahead,input$ftpye)
+  }
+  
   res <- ARMA_creator_for(list_dfs$df_forecast,list_dfs$df_train)
 
   #rename with columns from train
-  list_dfs$df_forecast<- res 
+  list_dfs$df_forecast <- res 
   
   list_dfs
 })
@@ -815,42 +820,29 @@ df_xgb_train <- reactive({
 
 
 df_xgb_train_for <- reactive({
-
-  req(input$var_1)
-  req(input$var_2)
-  req(input$var_3)
-  req(input$num_1)
-  req(input$num_2)
-  req(input$num_3)
-  req(input$num_4)
-  req(input$num_5)
-  req(input$num_6)
-  req(input$number_of_vars)
-  #req(input$split_at)
-  #req(input$n_ahead2)
-
-  res <- final_regression_df_var()
-  
-  res <- make_ts_stationary(res)
-  
-  list_dfs <- split_data_for_ahead(res,input$n_ahead2,input$ftpye2)
-
-  
-  res <- ARMA_creator(list_dfs$df_train,input$number_of_vars,input$var_1,input$var_2,
-                      input$var_3,input$num_1,input$num_2,input$num_3,input$num_4,
-                      input$num_5,input$num_6,input$lag_tabs,list_dfs$df_train,"no")
-  
-  res <- res %>% dplyr::select(-months_lag,-years_lag,-weeks_lag,-days_lag,quarter_lag,
-                               -semester_lag,-MA_quarter,-MA_semester
-                               ,-MA_months,-MA_years,-MA_weeks,-MA_days)
-  
-  list_dfs$df_train <- res 
+  if(input$lag_tabs == "default"){
+    res <- final_regression_df_var()
+    res <- make_ts_stationary(res)
+    list_dfs <- split_data_for_ahead(res,input$n_ahead2,input$ftpye2)
+    res <- ARMA_creator(res)
+    
+    res <- res %>% dplyr::select(-months_lag,-years_lag,-weeks_lag,-days_lag,-quarter_lag, 
+                                 -semester_lag,-MA_quarter,-MA_semester,-MA_months,-MA_years,-MA_weeks,-MA_days)
+    
+    list_dfs$df_train <- res 
+  }else{
+    res <- custom_df()
+    list_dfs <- split_data_for_ahead(res,input$n_ahead2,input$ftpye2)
+  }
   
   res <- ARMA_creator_for(list_dfs$df_forecast,list_dfs$df_train)
   
+  #rename with columns from train
   list_dfs$df_forecast<- res 
-    list_dfs
+  
+  list_dfs
 })
+
 
 # 
 # df_xgb_train_eval <- reactive({
@@ -1104,27 +1096,27 @@ output$plot_1_xgb_actual <- renderDygraph({
 # })
 
 
-# output$Feature_imp <- renderPlot({
-#   res_train <- df_xgb_train()
-#   model_xgboost <-  model_xgbi() %>%
-#     fit(formula = Close ~ .,data = res_train[,c(-1)])
-# 
-#   xgb.importance(model=model_xgboost$fit) %>% xgb.ggplot.importance(
-#     top_n=10, measure=NULL, rel_to_first = F)
-# })
+output$Feature_imp <- renderPlot({
+  res_train <- df_xgb_train()
+  model_xgboost <-  model_xgbi() %>%
+    fit(formula = Close ~ .,data = res_train[,c(-1)])
 
-# output$Residuals <- renderPlot({
-#   res_train <- df_xgb_train()
-#   model_xgboost <-  model_xgbi() %>%
-#     fit(formula = Close ~ .,data = res_train[,c(-1)])
-#   
-#   ggplot(house_prediction_residual, aes(x = .pred, y = residual_pct)) +
-#     geom_point() +
-#     xlab("Predicted Stock") +
-#     ylab("Residual")
-#   
-# })
-# 
+  xgb.importance(model=model_xgboost$fit) %>% xgb.ggplot.importance(
+    top_n=10, measure=NULL, rel_to_first = F)
+})
+
+output$Residuals <- renderPlot({
+  res_train <- df_xgb_train()
+  model_xgboost <-  model_xgbi() %>%
+    fit(formula = Close ~ .,data = res_train[,c(-1)])
+
+  ggplot(house_prediction_residual, aes(x = .pred, y = residual_pct)) +
+    geom_point() +
+    xlab("Predicted Stock") +
+    ylab("Residual")
+
+})
+
 
 
 # 

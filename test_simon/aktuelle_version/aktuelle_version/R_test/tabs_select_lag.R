@@ -7,7 +7,8 @@ numeric_features <- tabsetPanel(
            numericInput("num_1","Chose length of moving average",min=1,value = 1),
            numericInput("num_2","Chose Autoregressive lags for",min=1,value = 1),
            actionButton("addButton", "UPLOAD!"),
-           actionButton("finish", "Finish!")
+           actionButton("finish", "Finish!"),
+           actionButton("reset_cus", "Reset!")
            
            
    )
