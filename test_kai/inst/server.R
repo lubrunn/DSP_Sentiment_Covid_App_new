@@ -304,19 +304,58 @@ server <- function(input, output, session) {
   })
 
   output$info_granger <- renderUI({
-    str1 <- paste("In this section, the user is able to perform a Granger causality test, which is a statistical hypothesis test for determining whether one time series is useful in forecasting another.
-                  The term 'causality' in this context means nothing more than predictive causality and should not be mistaken for
-                  'true causality'. It rather measures the ability of past values of one time series to predict future values of another time series.
-                  ","<br/>")
-    str2 <- paste("The following steps are automatically performed after the user selects two time series : ","<br/>",
-                  "1. The optimal number of lags is calculated","<br/>",
-                  "2. Stationarity is repeatedly tested and the series are differenced until sationarity is achieved","<br/>",
-                  "3. A VAR model is estimated with the optimal number of lags and the (if necessary) transformed series","<br/>",
-                  "4. A granger causality test is performed.")
-    HTML(paste(str1,str2,sep = '<br/>'))
+    HTML(paste(h1(strong("Granger Causality Analysis"), align="center", style = "font-family: 'Times', serif;
+                  font-weight: 30px; font-size: 30px; line-height: 1;"),
+               p("In this section, the user is able to perform a Granger causality test, which is a statistical hypothesis test for determining whether one time series is useful in forecasting another.
+                  The term ", em("causality"), " in this context means nothing more than predictive causality and should not be mistaken for ",
+                 em("true causality"),". It rather measures the ability of past values of one time series to predict future values of another time series.",tags$br(),
+                 "To test the null hypothesis that time series ", em("x")," does not Granger cause", em("y"), ", one first finds the optimal lagged values of ", em("y")," to include in a autoregression of ", em("y:")
+                 ,style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+               withMathJax("$$y_t = \\alpha_0 + \\alpha_1y_{t-1} + \\alpha_2y_{t-1} + ... + \\alpha_my_{t-m} + error_t$$"),
+               p("In the next step, lagged values of ", em("x"),"are added to the regression: ",style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+               withMathJax("$$y_t = \\alpha_0 + \\alpha_1y_{t-1} + \\alpha_2y_{t-1} + ... + \\alpha_my_{t-m} + \\beta_1x_{t-1} + \\beta_qx_{t-q} + error_t$$"),
+               p("The lagged values of ", em("x")," are kept as long as they add explanatory power to the regression according to an F-test.
+          The null hypothesis that ", em("x")," does not Granger cause", em("y"), "is accepted if and only if no lagged values of ", em("x")," are included.",style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+               h2(strong("Instructions:") ,style = "font-family: 'Times', serif; font-weight: 20px; font-size: 20px; line-height: 1;"),
+               p("In order to perform the Granger causality Analysis, built the model using the panel on the left: ",tags$br(),
+                 div("- select the first variable",tags$br(),
+                     "- select the second variable",tags$br(),
+                     "- choose the direction of the causality test using the checkbox",tags$br(),
+                     "- the tab ",em("Background-steps")," contains all important steps required in the analysis",tags$br(),
+                     "- the results can be accessed on the tab ",em("Results"), style="margin-left: 1em;font-weight: 18px; font-size: 18px; line-height: 1;"),style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+               h2(strong("Analysis steps:") ,style = "font-family: 'Times', serif; font-weight: 20px; font-size: 20px; line-height: 1;"),
+               p("The following steps are automatically performed after the user selects two time series: ",tags$br(),
+                 div("1. The optimal number of lags is calculated",tags$br(),
+                     "2. Stationarity is repeatedly tested and the series are differenced until sationarity is achieved",tags$br(),
+                     "3. A VAR model is estimated with the optimal number of lags and the (if necessary) transformed series",tags$br(),
+                     "4. A granger causality test is performed.",style="margin-left: 1em;font-weight: 18px; font-size: 18px; line-height: 1;"),style = "font-weight: 18px; font-size: 18px; line-height: 1;")))
   })
 
   ################################################################################################### Regression
+
+  output$info_regression <- renderUI({
+    HTML(paste(h1(strong("Regression Analysis"), align="center", style = "font-family: 'Times', serif;
+                  font-weight: 30px; font-size: 30px; line-height: 1;"),
+               p("In this section, the user is able to perform a simple linear regression and a quantile regression.
+                 Blablablabalabalabalaballbabalaaballabaal  Motivation, intention, warum regression? dependent variable nur stocks möglich?
+                 möglichkeit sentiment rein und rauszunemehen"
+                 ,style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+
+               h2(strong("Instructions:") ,style = "font-family: 'Times', serif; font-weight: 20px; font-size: 20px; line-height: 1;"),
+               p("In order to perform the regression analysis, built the model using the panel on the left: ",tags$br(),
+                 div("- select the dependent variable",tags$br(),
+                     "- select the control variable(s)",tags$br(),
+                     "- choose whether sentiment variable should be included",tags$br(),
+                     "- if sentiment is added, switch to the tab ",em("Filter sentiment input")," on top of the sidebar and specify the sentiment",tags$br(),
+                     "- the tab ",em("Summary Statistics")," contains information on the selected variables",tags$br(),
+                     "- the results can be accessed on the tab ",em("Linear Regression")," and ",em("Quantile Regression")," respectively.",tags$br(),
+                     "- if the tab ",em("Quantile Regression")," specify the desired quantile for which to compute the regression", style="margin-left: 1em;font-weight: 18px; font-size: 18px; line-height: 1;"),
+                 style = "font-weight: 18px; font-size: 18px; line-height: 1;")))
+
+  })
+
+
+
 
   ###flexible input for stocks: show either german or us companies
   output$stock_regression <- renderUI({
@@ -504,8 +543,35 @@ server <- function(input, output, session) {
     res
   })
 
+  ####################################################Summary statistics  Regression #####################################################
+
+  df_need_reg <- reactive({
+    df_need <- round(describe(final_regression_df())[c(3, 4, 5, 8, 9)], 2)
+    test <- nrow(df_need)
+    test2 <- nrow(df_need)==1
+    if (nrow(df_need == 1)) {
+      row.names(df_need)[1] <- input$regression_outcome
+    } else{
+      df_need <- df_need
+    }
+    df_need
+
+  })
 
 
+  output$reg_summary <- function(){
+    #colnames(df_need)<- "value"
+    knitr::kable(df_need_reg(), caption = glue("Summary statistics"),colnames = NULL) %>%
+      kableExtra::kable_styling(c("striped","hover"), full_width = F,
+                                position = "center",
+                                font_size = 16)
+  }
+
+  output$correlation_reg <- renderPlot({
+    ggpairs(final_regression_df())
+  })
+
+###################################################################################
   #regression
   regression_result <- reactive({
     req(ncol(final_regression_df())>=2)
