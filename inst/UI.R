@@ -123,27 +123,9 @@ twitter_main_panel <- function(){
                                  color: white !important;
                                  }"
                                    )
-                                   )),
-                                   tags$h4("Summary Statistics"),
-                                   tableOutput("sum_stats_table")%>% shinycssloaders::withSpinner(type = 5),
+                                   ))
 
 
-                                   #########################################
-                                   ###########################################
-
-                                   ##### violin plot
-                                   tags$h4("Distrubtion of aggregated tweets"),
-                                   plotOutput("violin_sum")%>% shinycssloaders::withSpinner(type = 5),
-
-                                   #########################################
-                                   ###########################################
-
-                                   # histogram
-                                   tags$br(),
-                                   tags$br(),
-
-                                   tags$br(),
-                                   tags$br(),
 
 
 
@@ -185,6 +167,23 @@ twitter_main_panel <- function(){
 
                       conditionalPanel(
                         condition = "input.tabselected == 1",
+
+                        fluidRow(column(10, offset = 1,
+                                        tags$h4("Summary Statistics"),
+                                        tableOutput("sum_stats_table")%>% shinycssloaders::withSpinner(type = 5),
+                        )),
+
+                        #########################################
+                        ###########################################
+
+                        ##### violin plot
+                      fluidRow(column(10, offset = 1,
+                                      tags$h4("Distrubtion of aggregated tweets"),
+                                      plotOutput("violin_sum")%>% shinycssloaders::withSpinner(type = 5))),
+                        tags$br(),
+                      tags$hr(),
+                        #########################################
+                        ###########################################
                       histo_tab,
                       histo_output_tab
 
