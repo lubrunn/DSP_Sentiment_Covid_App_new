@@ -359,7 +359,7 @@ histo_tab <- sidebarPanel(
   # add switch whether to use logarithmic scale
   shinyWidgets::switchInput(inputId = "log_scale", label = "Logarithmic Scale",
                             value = F,
-                            size = "small",
+                            size = "mini",
                             handleWidth = 100)
 )
 
