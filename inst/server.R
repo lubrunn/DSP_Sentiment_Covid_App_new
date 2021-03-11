@@ -1259,21 +1259,8 @@ long <- long()
     }
 
 
-    ###### number of tweets display
-    output$number_tweets_info <- renderText({
-
-      df_need <- get_data_sum_stats_tables()
-
-      #convert to date
-      df_need$created_at <- as.Date(df_need$created_at)
 
 
-      df_need <- df_need %>%
-        filter(between(created_at, as.Date(dates_desc()[1]), as.Date(dates_desc()[2])))
-
-      glue("For current selection: {round(mean(df_need$N))} tweets on average per day with \n
-           {round(sum(df_need$N))} tweets in total")
-    })
 
 
 
@@ -1345,6 +1332,36 @@ long <- long()
 
   ##################################
   ################################################### output time series
+
+    ###### number of tweets display
+    ###### title for dygraphs
+    number_tweets_info_desc <- reactive({
+
+      df_need <- get_data_sum_stats_tables()
+
+      #convert to date
+      df_need$created_at <- as.Date(df_need$created_at)
+
+
+      df_need <- df_need %>%
+        filter(between(created_at, as.Date(dates_desc()[1]), as.Date(dates_desc()[2])))
+
+
+      ##### company name
+      if (input$comp == "NoFilter"){
+        comp_name <- names(flatten(company_terms))[flatten(company_terms) == input$comp]
+      } else {
+        comp_name <- glue("{names(flatten(company_terms))[flatten(company_terms) == input$comp]} Tweets")
+      }
+      glue("{comp_name} ({round(sum(df_need$N))} tweets total,
+           {round(mean(df_need$N))} average per day)")
+    })
+
+
+
+    #################################################
+    ############################## time series plot
+    ###################################################
   output$sum_stats_plot <- dygraphs::renderDygraph({
 
     message("renderDygraph")
@@ -1353,19 +1370,33 @@ long <- long()
     #validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
     validate(need(!is.null(input$dates_desc), "Please select a date."))
 
+    ##### get title
+
+    input_title <- number_tweets_info_desc()
+
+
     df <- get_data_sum_stats_tables()
 
     if (input$num_tweets_box == F){
-      time_series_plotter2(df, input$metric, input$value, num_tweets = F, input$dates_desc[1], input$dates_desc[2])
+      time_series_plotter2(df, input$metric, input$value, num_tweets = F,
+                           input$dates_desc[1], input$dates_desc[2],
+                           input_title = input_title )
     } else {
 
-      time_series_plotter2(df, input$metric, input$value, num_tweets = T, input$dates_desc[1], input$dates_desc[2])
+      time_series_plotter2(df, input$metric, input$value, num_tweets = T,
+                           input$dates_desc[1], input$dates_desc[2],
+                           input_title = input_title )
     }
     # dygraphs::dygraph(don) %>%
     #   dygraphs::dyRangeSelector( input$dates_desc + 1, retainDateWindow = T
     #   )
   })
 
+
+
+  #################################
+  ################ for saved plot
+  ##################################
   save_plot <- reactiveValues(data = NULL)
 
   ##### if button is clicked store time series plot in serperate part
@@ -1377,18 +1408,24 @@ long <- long()
     req(!is.null(input$value) | input$num_tweets_box == T)
     validate(need(length(input$dates_desc) > 1, "Cannot plot time series for single day"))
 
+    ##### get title
+    input_title <- number_tweets_info_desc()
 
+    # get df
     df <- get_data_sum_stats_tables()
 
     if (input$num_tweets_box == F){
       save_plot$plot <- time_series_plotter2(df, input$metric, input$value, num_tweets = F,
                                              input$dates_desc[1], input$dates_desc[2], r,
-                                              date_range = F)
+                                              date_range = F,
+                                             input_title = input_title)
     } else {
       save_plot$plot <- time_series_plotter2(df, input$metric, input$value, num_tweets = F,
                                              input$dates_desc[1], input$dates_desc[2], r,
-                                             date_range = F)
+                                             date_range = F,
+                                             input_title = input_title)
     }
+
 
 
 
@@ -1633,7 +1670,7 @@ long <- long()
 
 
 ####################################### number unique words
-  output$number_words <- renderUI({
+  output$number_words <- reactive({
 
     ###### number of total tweets
     df_need <- get_data_sum_stats_tables()
