@@ -228,8 +228,26 @@ twitter_main_panel <- function(){
                      tags$br(),
                      tags$br(),
                      tags$br(),
-                     tags$h4("Raw twitter data for current selection"),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+
                       fluidRow(column(12,
+                                      textOutput("number_tweets_net"),
+                                      tags$head(tags$style("#number_tweets_net{
+                                 font-size: 20px;
+                                 font-style: bold;
+                                 color: white;
+                                 }"
+                                      )
+                                      ),
+                                      tags$br(),
                                       tags$style(HTML("
                     .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
                     color: #ffffff;
@@ -298,6 +316,9 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                                                value = c("2018-11-30", "2021-02-19"),
                                                                maxDate = "2021-02-19", minDate = "2018-11-30",
                                                                clearButton = T, update_on = "close"),
+                              actionButton("reset_dates_desc", "Reset date range"),
+
+
 
 
                               radioButtons("rt", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
@@ -459,12 +480,18 @@ network_sidebar <- shinyWidgets::dropdown(
                       selected = "NoFilter"),
 
           # datepicker
-          shinyWidgets::airDatepickerInput("dates_net", "Date range:",
+          shinyWidgets::airDatepickerInput("dates_net", "Select a range of up to 5 days",
                                            range = TRUE,
-                                           value = "2020-03-01",
+                                           value = "2018-11-30",
                                            maxDate = "2021-02-19", minDate = "2018-11-30",
                                            clearButton = T, update_on = "close",
                                            multiple = 5),
+          textOutput("date_checker_net"),
+  tags$head(tags$style("#date_checker_net{color: red;
+
+                                 }"
+  )
+  ),
 
           ##### same but continous choices
           # retweets count
@@ -576,6 +603,7 @@ ui <- fluidPage(
                         });
                         ')),
   shinyjs::useShinyjs(),
+  shinyFeedback::useShinyFeedback(),
   theme = shinythemes::shinytheme("superhero"),
   #shinythemes::themeSelector(),
   #titlePanel("Sentiment_Covid_App"),
