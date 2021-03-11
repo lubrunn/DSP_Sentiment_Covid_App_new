@@ -67,7 +67,9 @@ network_plot_filterer <- function(df, input_rt, input_likes, input_tweet_length,
                                   input_username) {
 
 
-#### stem search terms
+#### convert search terms to lower
+  input_search_term <- tolower(input_search_term)
+  input_username <- tolower(input_username)
 
 
   # unneest the words
