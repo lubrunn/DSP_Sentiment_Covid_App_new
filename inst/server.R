@@ -1132,10 +1132,12 @@ server <- function(input, output, session) {
 
   ######## disconnect from database after exit
   cancel.onSessionEnded <- session$onSessionEnded(function() {
-    validate(need(correct_path() == T, "Please choose the correct path"))
-    req(database_connector())
+    #validate(need(correct_path() == T, "Please choose the correct path"))
+    #req(database_connector())
     con <- database_connector()
+    if (!is.null(con)){
     DBI::dbDisconnect(con)
+    }
   })
 
  long <- reactive({
