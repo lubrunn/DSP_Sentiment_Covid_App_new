@@ -31,7 +31,7 @@ word_freq_data_wrangler <- function(df, input_date1, input_date2,
 names(df) <- c("date", "language", "word", "N", "emo")
 
 ### stem the search term so it fits better to words we have
-search_term <- corpus::stem_snowball(search_term, algorithm = tolower(input_lang))
+search_term <- tolower(corpus::stem_snowball(search_term, algorithm = tolower(input_lang)))
 
 df <-  df %>%
   filter(between(date, as.Date(input_date1), as.Date(input_date2)) &
