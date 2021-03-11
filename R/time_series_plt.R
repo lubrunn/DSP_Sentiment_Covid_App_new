@@ -87,7 +87,8 @@ if (length(selected_metrics) == 1){
 #
 # filter_type = "mean"
 
-time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, input_dates1, input_dates2, dates = NA, date_range =T){
+time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, input_dates1, input_dates2, dates = NA, date_range =T,
+                                 input_title){
 
 
 
@@ -132,7 +133,8 @@ time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, 
 
 
     dygraphs::dygraph(don,
-                      ylab = "Scaled Values") %>%
+                      ylab = "Scaled Values",
+                      main = input_title) %>%
     dygraphs::dyOptions(axisLineWidth = 2, drawGrid = FALSE) %>%
     dygraphs::dyLegend() %>%
 
@@ -177,7 +179,8 @@ time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, 
     ribbonData[increasing] <- 1
 
     dygraphs::dygraph(dyData,
-                      ylab = selected_metrics_new) %>%
+                      ylab = selected_metrics_new,
+                      main = input_title) %>%
       dygraphs::dySeries(label = selected_metrics_new) %>%
       dygraphs::dyRibbon(data = ribbonData, top = 0.05, bottom = 0) %>%
       dygraphs::dyOptions(axisLineWidth = 2, drawGrid = FALSE) %>%
