@@ -29,14 +29,14 @@ network_plot_datagetter <- function(input_lang, input_date1, input_date2, input_
 
 
    # get list of alle files we need --> dates in date list and feather files
-   all_files <- list.files(path_source)[grepl(".feather", list.files(path_source)) &
+   all_files <- list.files(path_source)[grepl(".csv", list.files(path_source)) &
                                           grepl(paste(date_list, collapse = "|"), list.files(path_source))]
 
 
   # read in all the files
    for (file in all_files){
 
-     df <- arrow::read_feather(file.path(path_source, file))
+     df <- data.table::fread(file.path(path_source, file))
 
    # if its the first file set it up as df_all
    if (is.null(df)){
