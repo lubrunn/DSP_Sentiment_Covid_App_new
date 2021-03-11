@@ -397,6 +397,17 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                 tags$br(),
                                 tags$hr(),
                                 tags$h3("Histogram"),
+                                selectInput("histo_value", "Which value would you like to show",
+                                            choices = c(
+                                              "Sentiment" = "sentiment",
+                                              #"Retweets Weighted Sentiment" = "sentiment_rt",
+                                             # "Likes Weighted Sentiment" = "sentiment_likes",
+                                              #"Length Weighted Sentiment" = "sentiment_tweet_length",
+                                              "Retweets" = "rt",
+                                              "Likes"="likes",
+                                              "Tweet Length" = "tweet_length"
+                                            ),
+                                            selected = "sentiment"),
                                 sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 500, value = 50),
 
 
@@ -679,9 +690,10 @@ ui <- fluidPage(
 
 
                         selectize_corona(),
-                        checkboxGroupInput("CoronaCountry","Country",c("Germany","United States"),selected = "Germany"),
-                        sliderinput_dates_corona(),
-                        checkboxInput("hovering_corona","Enable hover",value = FALSE),
+                        selectInput("CoronaCountry","Country",c("Germany","USA" = "United States"),selected = "United States",
+                                    multiple = T),
+
+
 
 
                         tags$br(),
