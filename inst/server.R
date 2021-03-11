@@ -1184,7 +1184,7 @@ server <- function(input, output, session) {
     ### account for case where sentiment is selected
 
     # replace sentiment with senti because refernced with senti in file
-    value_var <- stringr::str_replace(input$value[1],"sentiment", "senti")
+    value_var <- stringr::str_replace(input$histo_value,"sentiment", "senti")
     # replace tweet_length with long becuase refernced with long in file
     value_var <- stringr::str_replace(value_var, "tweet_length", "long")
 
@@ -1446,7 +1446,7 @@ long <- long()
   output$histo_plot <- plotly::renderPlotly({
     validate(need(!is.null(input$dates_desc), "Please select a date."))
 
-   req(input$value)
+   req(input$histo_value)
 
 
   histogram_plotter(data_histo(), date_input1 = dates_desc()[1], date_input2 = dates_desc()[2],
@@ -1456,9 +1456,9 @@ long <- long()
 
 
   ##################### disable log scale option for sentiment because as negative values
-  observeEvent(input$value, {
+  observeEvent(input$histo_value, {
     #browser()
-    if (grepl("sentiment",input$value[1])) {
+    if (grepl("sentiment",input$histo_value)) {
       shinyWidgets::updateSwitchInput(session = session,
                                       "log_scale",
                                       disabled = T,
@@ -2006,11 +2006,22 @@ long <- long()
 
   ###### plot stocks
   output$stocks_comp <- dygraphs::renderDygraph({
-
+  req(input$stocks_comp)
 
     stock_plotter(get_stock_data_comp(), input$stocks_metric_comp, input$stocks_comp)
   })
 
+
+  output$covid_comp <- dygraphs::renderDygraph({
+    req(!is.null(input$CoronaCountry))
+    df <- data.table::fread("Corona/owid.csv")
+
+
+    covid_plotter(df, input$corona_measurement, input$CoronaCountry)
+
+
+
+  })
 
 
 
