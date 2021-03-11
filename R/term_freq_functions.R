@@ -41,7 +41,7 @@ df <-  df %>%
 
  {if (input_comp != "NoFilter") filter(.,!grepl(corpus::stem_snowball(input_comp), word)) else .} %>% #filter out company name if chosen
 
-  {if (search_term != "") filter(.,grepl(search_term, word)) else .} %>% # only keep what contain search term
+  {if (search_term != "") filter(.,grepl(corpus::stem_snowball(search_term), word)) else .} %>% # only keep what contain search term
   select(-emo)
 
 return(df)

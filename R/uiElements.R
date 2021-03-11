@@ -36,14 +36,23 @@ hover_info_DE <- function() {
 #' @rdname uiElements
 selectize_corona <- function() {
   selectizeInput("corona_measurement","Chose Corona measurement",
-                 c("total_cases","new_cases","total_deaths","new_deaths","total_cases_per_million",
-                   "new_cases_per_million","total_deaths_per_million","new_deaths_per_million","reproduction_rate",
-                   "icu_patients","icu_patients_per_million","hosp_patients","hosp_patients_per_million",
-                   "weekly_icu_admissions","weekly_icu_admissions_per_million","weekly_hosp_admissions",
-                   "weekly_hosp_admissions_per_million","new_tests","total_tests","total_tests_per_thousand",
-                   "new_tests_per_thousand","positive_rate","tests_per_case","total_vaccinations","people_vaccinated",
-                   "people_fully_vaccinated","new_vaccinations","total_vaccinations_per_hundred","people_vaccinated_per_hundred",
-                   "people_fully_vaccinated_per_hundred"),
+                 # c("total_cases","new_cases","total_deaths","new_deaths","total_cases_per_million",
+                 #   "new_cases_per_million","total_deaths_per_million","new_deaths_per_million","reproduction_rate",
+                 #   "icu_patients","icu_patients_per_million","hosp_patients","hosp_patients_per_million",
+                 #   "weekly_icu_admissions","weekly_icu_admissions_per_million","weekly_hosp_admissions",
+                 #   "weekly_hosp_admissions_per_million","new_tests","total_tests","total_tests_per_thousand",
+                 #   "new_tests_per_thousand","positive_rate","tests_per_case","total_vaccinations","people_vaccinated",
+                 #   "people_fully_vaccinated","new_vaccinations","total_vaccinations_per_hundred","people_vaccinated_per_hundred",
+                 #   "people_fully_vaccinated_per_hundred"),
+                 c(
+                  "New Cases per Million" = "new_cases_per_million",
+                  "New Deaths per Million" = "new_deaths_per_million",
+                  "Reproduction Rate" = "reproduction_rate",
+                  "ICU Patients per Million" = "icu_patients_per_million",
+                  "Hospital Patients per Million" = "hosp_patients_per_million",
+                  "Weekly ICU Admissions per Million" = "weekly_icu_admissions_per_million",
+                  "Weekly Hospital Admissions per Million" = "weekly_hosp_admissions_per_million"
+                  ),
                  multiple = FALSE,
                  selected = "total_deaths")
 }

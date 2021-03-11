@@ -228,8 +228,26 @@ twitter_main_panel <- function(){
                      tags$br(),
                      tags$br(),
                      tags$br(),
-                     tags$h4("Raw twitter data for current selection"),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+
                       fluidRow(column(12,
+                                      textOutput("number_tweets_net"),
+                                      tags$head(tags$style("#number_tweets_net{
+                                 font-size: 20px;
+                                 font-style: bold;
+                                 color: white;
+                                 }"
+                                      )
+                                      ),
+                                      tags$br(),
                                       tags$style(HTML("
                     .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
                     color: #ffffff;
@@ -288,7 +306,7 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
 
                               ####### all three
-                              radioButtons("lang", "Select Language", choices = c("EN", "DE")),
+                              radioButtons("lang", "Select Language", choices = c("EN", "DE"), inline = T),
 
                               selectInput("comp","Choose tweets",
                                              company_terms,
@@ -298,6 +316,9 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                                                value = c("2018-11-30", "2021-02-19"),
                                                                maxDate = "2021-02-19", minDate = "2018-11-30",
                                                                clearButton = T, update_on = "close"),
+                              actionButton("reset_dates_desc", "Reset date range"),
+
+
 
 
                               radioButtons("rt", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
@@ -376,6 +397,17 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                 tags$br(),
                                 tags$hr(),
                                 tags$h3("Histogram"),
+                                selectInput("histo_value", "Which value would you like to show",
+                                            choices = c(
+                                              "Sentiment" = "sentiment",
+                                              #"Retweets Weighted Sentiment" = "sentiment_rt",
+                                             # "Likes Weighted Sentiment" = "sentiment_likes",
+                                              #"Length Weighted Sentiment" = "sentiment_tweet_length",
+                                              "Retweets" = "rt",
+                                              "Likes"="likes",
+                                              "Tweet Length" = "tweet_length"
+                                            ),
+                                            selected = "sentiment"),
                                 sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 500, value = 50),
 
 
@@ -459,12 +491,18 @@ network_sidebar <- shinyWidgets::dropdown(
                       selected = "NoFilter"),
 
           # datepicker
-          shinyWidgets::airDatepickerInput("dates_net", "Date range:",
+          shinyWidgets::airDatepickerInput("dates_net", "Select a range of up to 5 days",
                                            range = TRUE,
-                                           value = "2020-03-01",
+                                           value = "2018-11-30",
                                            maxDate = "2021-02-19", minDate = "2018-11-30",
                                            clearButton = T, update_on = "close",
                                            multiple = 5),
+          textOutput("date_checker_net"),
+  tags$head(tags$style("#date_checker_net{color: red;
+
+                                 }"
+  )
+  ),
 
           ##### same but continous choices
           # retweets count
@@ -576,6 +614,7 @@ ui <- fluidPage(
                         });
                         ')),
   shinyjs::useShinyjs(),
+  shinyFeedback::useShinyFeedback(),
   theme = shinythemes::shinytheme("superhero"),
   #shinythemes::themeSelector(),
   #titlePanel("Sentiment_Covid_App"),
@@ -584,34 +623,129 @@ ui <- fluidPage(
              dir_setter_panel(),
              twitter_main_panel(),
              tabPanel("Sentiment"),
-             tabPanel("Stocks",
+             # tabPanel("Stocks",
+             #          sidebarPanel(
+             #            radioButtons("country_stocks","Which country?",c("Germany","USA"),selected = "Germany"),
+             #            #selectize_Stocks(COMPONENTS_DE()),
+             #            uiOutput("stock_choice"),
+             #            #selectizeInput("stock_choice", choices = "Platzhalter"),
+             #            radioButtons("stock_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
+             #            actionButton("reset", "clear selected"),
+             #            checkboxInput("hovering","Enable hover",value = FALSE),
+             #            sliderinput_dates()
+             #          ),
+             #          mainPanel(
+             #            plot_stocks_DE(),
+             #            hover_info_DE()
+             #          ),#close MainPanel
+             # ),#close tabPanel stock
+             # tabPanel("Corona",
+             #          sidebarPanel(
+             #            selectize_corona(),
+             #            checkboxGroupInput("CoronaCountry","Country",c("Germany","United States"),selected = "Germany"),
+             #            sliderinput_dates_corona(),
+             #            checkboxInput("hovering_corona","Enable hover",value = FALSE)
+             #          ),
+             #          mainPanel(
+             #            plot_corona(),
+             #            hover_info_corona()
+             #          )
+             # ),#close tabPanel Corona
+
+
+
+
+
+
+
+
+             tabPanel("Comparison",
                       sidebarPanel(
-                        radioButtons("country_stocks","Which country?",c("Germany","USA"),selected = "Germany"),
+                        tags$hr(),
+
+
+                        ######## stocks
+                        tags$h4("Stocks"),
+
                         #selectize_Stocks(COMPONENTS_DE()),
-                        uiOutput("stock_choice"),
+                        selectInput("stocks_comp", "Select a company or index",
+                                    company_terms_stock, multiple = T,
+                                    selected = "AAPL"),
                         #selectizeInput("stock_choice", choices = "Platzhalter"),
-                        radioButtons("stock_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
+                        radioButtons("stocks_metric_comp","Which variable?",c("Return","Adj.Close" = "Adj.Close"),
+                                     selected = "Return", inline = T),
                         actionButton("reset", "clear selected"),
-                        checkboxInput("hovering","Enable hover",value = FALSE),
-                        sliderinput_dates()
-                      ),
-                      mainPanel(
-                        plot_stocks_DE(),
-                        hover_info_DE()
-                      ),#close MainPanel
-             ),#close tabPanel stock
-             tabPanel("Corona",
-                      sidebarPanel(
+
+
+                        tags$br(),
+                        tags$br(),
+                        tags$hr(),
+
+
+
+                        ######## covid
+                        tags$h4("COVID-19"),
+                        tags$br(),
+
+
+
                         selectize_corona(),
-                        checkboxGroupInput("CoronaCountry","Country",c("Germany","United States"),selected = "Germany"),
-                        sliderinput_dates_corona(),
-                        checkboxInput("hovering_corona","Enable hover",value = FALSE)
+                        selectInput("CoronaCountry","Country",c("Germany","USA" = "United States"),selected = "United States",
+                                    multiple = T),
+
+
+
+
+                        tags$br(),
+                        tags$br(),
+                        tags$hr(),
+
+
+
+
+                        ####### twitter
+                        tags$h4("Twitter"),
+                        tags$br(),
+
+
+
+                        radioButtons("lang_twitter_comp", "Select Language", choices = c("EN", "DE"), inline = T),
+
+                        selectInput("comp_twitter_comp","Choose tweets",
+                                    company_terms,
+                                    selected = "NoFilter", multiple = T),
+
+
+
+                        radioButtons("rt_twitter_comp", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
+                                     inline = T),
+                        radioButtons("likes_twitter_comp", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
+                                     inline = T),
+                        #switchInput(inputId = "long", value = TRUE),
+                        shinyWidgets::materialSwitch(inputId = "long_twitter_comp", label = "Long Tweets only?", value = F),
+
                       ),
                       mainPanel(
-                        plot_corona(),
-                        hover_info_corona()
+                        dygraphs::dygraphOutput("stocks_comp"),
+                        tags$br(),
+                        tags$br(),
+                        tags$hr(),
+                        dygraphs::dygraphOutput("covid_comp"),
+                        tags$br(),
+                        tags$br(),
+                        tags$hr(),
+                        dygraphs::dygraphOutput("twitter_comp")
+
                       )
              ),#close tabPanel Corona
+
+
+
+
+
+
+
+
              navbarMenu("Model",
                         tabPanel("Granger",
                                  sidebarPanel(
@@ -698,3 +832,10 @@ ui <- fluidPage(
              )#close Navbarmenu
   )#close Navbarpage
 )#close fluidpage
+
+
+
+
+
+
+

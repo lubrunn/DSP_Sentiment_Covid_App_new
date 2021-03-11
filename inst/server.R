@@ -20,15 +20,14 @@ server <- function(input, output, session) {
   output$stock_choice <- renderUI({
     validate(need(correct_path() == T, "Please choose the correct path"))
 
-    if (input$country_stocks == "Germany"){
+
       input <- selectizeInput("Stock","Choose Companies:",
-                              c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
+                              c(COMPONENTS_DE()[["Company.Name"]],"DAX" = "GDAXI",
+                                COMPONENTS_US()[["Company.Name"]],"DJI" = "DOW"),
                               selected = "Bayer ",multiple = TRUE)
-    } else {
-      input <- selectizeInput("Stock","Choose Companies:",
-                              c(COMPONENTS_US()[["Company.Name"]],"DOW"),
-                              selected = "Apple ",multiple = TRUE)
-    }
+
+
+
   })
 
 
@@ -1120,7 +1119,14 @@ server <- function(input, output, session) {
   ###############################################################################
   ############################### twitter descriptive ###########################
   ###############################################################################
-  ### for histogram less choices
+  ### reset daterange
+  observeEvent(input$reset_dates_desc,{
+
+    shinyWidgets::updateAirDateInput(session, "dates_desc",
+                                     clear = T,
+                                     value = c("2018-11-30", "2021-02-19"))
+
+  })
 
 
 
@@ -1178,7 +1184,7 @@ server <- function(input, output, session) {
     ### account for case where sentiment is selected
 
     # replace sentiment with senti because refernced with senti in file
-    value_var <- stringr::str_replace(input$value[1],"sentiment", "senti")
+    value_var <- stringr::str_replace(input$histo_value,"sentiment", "senti")
     # replace tweet_length with long becuase refernced with long in file
     value_var <- stringr::str_replace(value_var, "tweet_length", "long")
 
@@ -1440,7 +1446,7 @@ long <- long()
   output$histo_plot <- plotly::renderPlotly({
     validate(need(!is.null(input$dates_desc), "Please select a date."))
 
-   req(input$value)
+   req(input$histo_value)
 
 
   histogram_plotter(data_histo(), date_input1 = dates_desc()[1], date_input2 = dates_desc()[2],
@@ -1450,9 +1456,9 @@ long <- long()
 
 
   ##################### disable log scale option for sentiment because as negative values
-  observeEvent(input$value, {
+  observeEvent(input$histo_value, {
     #browser()
-    if (grepl("sentiment",input$value[1])) {
+    if (grepl("sentiment",input$histo_value)) {
       shinyWidgets::updateSwitchInput(session = session,
                                       "log_scale",
                                       disabled = T,
@@ -1691,7 +1697,18 @@ long <- long()
 
 
   observe({
-    if (correct_path() == F){
+
+    ######### disable render plot button if incorrect path, no date or too many dates selected
+    if (length(input$dates_net) > 1){
+      if (difftime(as.Date(input$dates_net[2]) ,
+                   as.Date(input$dates_net[1]) , units = c("days")) > 4) {
+        removeUI("#network_plot")
+        shinyjs::disable("button_net")
+      } else {
+        shinyjs::enable("button_net")
+      }
+    } else if (correct_path() == F | is.null(input$dates_net)){
+
       removeUI("#network_plot")
       shinyjs::disable("button_net")
     } else {
@@ -1699,12 +1716,38 @@ long <- long()
     }
   })
 
+
+  ###### date checker
+  ##### validate that a maximum of 5 days have been selected
+
+    output$date_checker_net <- renderText({
+
+      if(length(input$dates_net) > 1){
+      days_inrange <- difftime(as.Date(input$dates_net[2]) ,as.Date(input$dates_net[1]) , units = c("days"))
+      if (days_inrange > 4){
+
+      validate("More than 5 days selected. Please choose fewer days.")
+
+      }
+      } else if (is.null(input$dates_net)){
+
+        validate("Need to select at least one day.")
+      }
+    })
+
+
   # if button is clicked compute correlations und plot the plot
   observeEvent(input$button_net,{
+
+    ##### need correct path
     validate(need(correct_path() == T, "Please choose the correct path"))
 
-    #validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+    ###### need at least one date selected
     validate(need(!is.null(input$dates_net), "Please select a date."))
+
+
+
+
 
 
     ##### disable render plot button so no mutliple firing possible
@@ -1920,17 +1963,67 @@ long <- long()
 
     dt <- data_filterer_net_react()
 
+    # change to nicer names
+    dt <- dt[, c("created_at", "tweet", "text", "username","sentiment", "retweets_count", "likes_count")]
+    names(dt) <- c("Date", "Orig.Tweet", "CleanTweet", "Username","Sentiment", "Retweets", "Likes")
+
+
     DT::datatable(dt, options = list(
       initComplete = JS(
         "function(settings, json) {",
         "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
-        "}"))
+        "}")
+      ), rownames = F
     )
+  })
+
+
+  ##### number tweets info network
+  output$number_tweets_net <- renderText({
+    req(correct_path() == T)
+    req(!is.null(input$dates_net))
+    glue("Found {dim(data_filterer_net_react())[1]} tweets for current selection")
   })
 
 
 
 
-######################################################################### add companies choice
+
+#########################################################################
+#########################################################################
+#############################comparison tab #############################
+#########################################################################
+#########################################################################
+
+
+  #### get stock data for comparison tab
+  get_stock_data_comp <- reactive({
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
+    data.table::fread("Yahoo/Full/all_full.csv")
+  })
+
+
+  ###### plot stocks
+  output$stocks_comp <- dygraphs::renderDygraph({
+  req(input$stocks_comp)
+
+    stock_plotter(get_stock_data_comp(), input$stocks_metric_comp, input$stocks_comp)
+  })
+
+
+  output$covid_comp <- dygraphs::renderDygraph({
+    req(!is.null(input$CoronaCountry))
+    df <- data.table::fread("Corona/owid.csv")
+
+
+    covid_plotter(df, input$corona_measurement, input$CoronaCountry)
+
+
+
+  })
+
+
+
 
 }
