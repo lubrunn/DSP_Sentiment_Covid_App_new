@@ -481,6 +481,7 @@ ui <- fluidPage(
                                    #                selected = "Bayer ",multiple = FALSE),
                                    radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
                                    uiOutput("ControlsGranger"),
+                                   selectize_corona_granger(),
                                    #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
                                    sliderInput("date_granger",label="Timeseries",
                                                value = c(as.Date("2020-02-12"),as.Date("2021-02-12")),
@@ -544,7 +545,9 @@ ui <- fluidPage(
                                  ),
                                  mainPanel(
                                    tabsetPanel(
-                                     tabPanel("Information VAR"),
+                                     tabPanel("Information VAR",
+                                              htmlOutput("info_var"),
+                                              withMathJax()),
                                      tabPanel("Summary Statistics",
                                               tableOutput("var_summary"),
                                               plotOutput("correlation_var")
@@ -559,8 +562,8 @@ ui <- fluidPage(
                                               #dygraphs::dygraphOutput("plot_forecast2")
                                      ),#close tabpanel validity
                                      tabPanel("Actual Forecast",
-                                              verbatimTextOutput("testins"),
-                                              dygraphs::dygraphOutput("plot_forecast_real"))#close tabpanel actual forecast
+                                              dygraphs::dygraphOutput("plot_forecast_real"),
+                                              verbatimTextOutput("serial_test_real"))#close tabpanel actual forecast
                                    )))#close tabpanel VAR forecasting
              )#close Navbarmenu
   )#close Navbarpage

@@ -144,6 +144,15 @@ server <- function(input, output, session) {
     }
   })
 
+  observeEvent(req(input$corona_measurement_granger != ""), {                         #Observe event from input (model choices)
+    updateSelectizeInput(session, "Controls_GRANGER", selected = "")
+  })
+  observeEvent(req(input$Controls_GRANGER!=""), {                         #Observe event from input (model choices)
+    updateSelectizeInput(session, "corona_measurement_granger", selected = "")
+  })
+
+
+
 
   granger_data <- reactive({
     req(path_setter()[[3]][1] == "correct_path")
@@ -160,6 +169,7 @@ server <- function(input, output, session) {
     }
 
     if (input$country_granger == "Germany"){
+      if(input$Controls_GRANGER!=""){
       global_controls <- global_controls_test_DE()   #load controls
       global_controls$Date <- as.Date(global_controls$Date) #transform date
       dax <- GDAXI()  #load dax
@@ -167,8 +177,13 @@ server <- function(input, output, session) {
       dax <- missing_date_imputer(dax,"Close.") #transform time series by imputing missing values
       colnames(dax)[2] <- "DAX"  #rename ->   !! is not renamed in final dataset !! -> dont know why
       global_controls <- left_join(dax,global_controls,by = c("Date")) #join final
+      }else{
+        global_controls <- CORONA_neu("Germany")[c("date",input$corona_measurement_granger)]
+        colnames(global_controls)[1]<-"Dates"
+      }
 
     }else {
+      if(input$Controls_GRANGER!=""){
       global_controls <- global_controls_test_US() #same procedure as above
       global_controls$Date <- as.Date(global_controls$Date)
       dow <- DOW()
@@ -176,12 +191,21 @@ server <- function(input, output, session) {
       dow <- missing_date_imputer(dow,"Close.")
       colnames(dow)[2] <- "DOW"
       global_controls <- left_join(dow,global_controls,by = c("Date"))
+      }else{
+        global_controls <- CORONA_neu("United States")[c("date",input$corona_measurement_granger)]
+        colnames(global_controls)[1]<-"Dates"
+      }
     }
     names(global_controls)[1] <- "Dates"
     granger <- left_join(granger1,global_controls,by = c("Dates"))
-    granger <- granger[c("Dates",input$Granger_outcome,input$Controls_GRANGER)]
+    ifelse(input$Controls_GRANGER!="",
+           granger <- granger[c("Dates",input$Granger_outcome,input$Controls_GRANGER)],
+           granger <- granger[c("Dates",input$Granger_outcome,input$corona_measurement_granger)])
+
+    granger[is.na(granger)]<-0
     granger
   })
+
 
   optlags <- reactive({
     #library(vars)
@@ -202,7 +226,11 @@ server <- function(input, output, session) {
   granger_result <- reactive({
     varobject <- VAR(dickey_fuller()[-1], p = optlags(), type = "const")
     cause <- NULL
-    ifelse(input$direction_granger == TRUE,cause <- input$Controls_GRANGER,cause <- input$Granger_outcome)
+    if(input$Controls_GRANGER!=""){
+      ifelse(input$direction_granger == TRUE,cause <- input$Controls_GRANGER,cause <- input$Granger_outcome)
+    }else{
+      ifelse(input$direction_granger == TRUE,cause <- input$corona_measurement_granger,cause <- input$Granger_outcome)
+    }
     granger <- causality(varobject, cause = cause)
     granger$Granger
   })
@@ -223,7 +251,10 @@ server <- function(input, output, session) {
 
 
   output$second_granger <- dygraphs::renderDygraph({
-    plotdata <- xts(granger_data()[input$Controls_GRANGER],order.by=granger_data()[["Dates"]])
+    ifelse(input$Controls_GRANGER!="",
+                          plotdata <- xts(granger_data()[input$Controls_GRANGER],order.by=granger_data()[["Dates"]]),
+                          plotdata <- xts(granger_data()[input$corona_measurement_granger],order.by=granger_data()[["Dates"]])
+                          )
     dygraphs::dygraph(plotdata)
   })
 
@@ -289,15 +320,15 @@ server <- function(input, output, session) {
   output$granger_satz <- renderUI({
     if(input$direction_granger == TRUE){
       if (granger_result()["p.value"] < 0.1){
-        str1 <- paste(input$Controls_GRANGER, " granger causes ",input$Granger_outcome,"of",input$Stock_Granger)
+        str1 <- paste(em(colnames(granger_data())[3]), " granger causes ",em(input$Granger_outcome),"of",input$Stock_Granger)
       } else {
-        str1 <- paste(input$Controls_GRANGER, " does not granger cause ",input$Granger_outcome,"of",input$Stock_Granger)
+        str1 <- paste(em(colnames(granger_data())[3]), " does not granger cause ",em(input$Granger_outcome),"of",input$Stock_Granger)
       }
     } else {
       if (granger_result()["p.value"] < 0.1){
-        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "granger causes ",input$Controls_GRANGER)
+        str1 <- paste(em(input$Granger_outcome),"of",input$Stock_Granger, "granger causes ",em(colnames(granger_data())[3]))
       } else {
-        str1 <- paste(input$Granger_outcome,"of",input$Stock_Granger, "does not granger cause ",input$Controls_GRANGER)
+        str1 <- paste(em(input$Granger_outcome),"of",input$Stock_Granger, "does not granger cause ",em(colnames(granger_data())[3]))
       }
     }
     HTML(paste(str1))
@@ -321,6 +352,7 @@ server <- function(input, output, session) {
                  div("- select the first variable",tags$br(),
                      "- select the second variable",tags$br(),
                      "- choose the direction of the causality test using the checkbox",tags$br(),
+                     "- the tab ",em("Visualize"),"contains plots of both series for comparison",
                      "- the tab ",em("Background-steps")," contains all important steps required in the analysis",tags$br(),
                      "- the results can be accessed on the tab ",em("Results"), style="margin-left: 1em;font-weight: 18px; font-size: 18px; line-height: 1;"),style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
                h2(strong("Analysis steps:") ,style = "font-family: 'Times', serif; font-weight: 20px; font-size: 20px; line-height: 1;"),
@@ -336,10 +368,21 @@ server <- function(input, output, session) {
   output$info_regression <- renderUI({
     HTML(paste(h1(strong("Regression Analysis"), align="center", style = "font-family: 'Times', serif;
                   font-weight: 30px; font-size: 30px; line-height: 1;"),
-               p("In this section, the user is able to perform a simple linear regression and a quantile regression.
-                 Blablablabalabalabalaballbabalaaballabaal  Motivation, intention, warum regression? dependent variable nur stocks möglich?
-                 möglichkeit sentiment rein und rauszunemehen"
-                 ,style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+               p("In this section, the user is able to perform a simple linear regression and a quantile regression. Here, one can test which variables
+                help to explain the stock prices of a specific company. By adding and dropping the variables, one can observe their potential of adding explanatory
+                power to the regression.
+                The linear regression estimates the conditional mean of the dependent variable and is of the form:",style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+               withMathJax("$$y_i = \\beta_0 + \\beta_1x_{i1} + ... + \\beta_px_{ip} + \\epsilon_i$$"),
+               p("Quantile regressions estimate the conditional median (or quantile) of the dependet variable. They allow to quantify the effect
+               of the independent variables at specified parts of the distribution. For example, in this application one can verify if companies
+               with lower (or higher) stock returns are significantly more (or less) affected by the explanatory variables. The regression is fitted, by minimizing the median
+               absolute deviation of the following equation: ",style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+               withMathJax("$$Q_{\\tau}(y_i) = \\beta_0(\\tau) + \\beta_1(\\tau)x_{i1} + ... + \\beta_p(\\tau)x_{ip} + \\epsilon_i$$"),
+
+
+               #Blablablabalabalabalaballbabalaaballabaal  Motivation, intention, warum regression? dependent variable nur stocks möglich?
+               #möglichkeit sentiment rein und rauszunemehen"
+               #,style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
 
                h2(strong("Instructions:") ,style = "font-family: 'Times', serif; font-weight: 20px; font-size: 20px; line-height: 1;"),
                p("In order to perform the regression analysis, built the model using the panel on the left: ",tags$br(),
@@ -349,7 +392,7 @@ server <- function(input, output, session) {
                      "- if sentiment is added, switch to the tab ",em("Filter sentiment input")," on top of the sidebar and specify the sentiment",tags$br(),
                      "- the tab ",em("Summary Statistics")," contains information on the selected variables",tags$br(),
                      "- the results can be accessed on the tab ",em("Linear Regression")," and ",em("Quantile Regression")," respectively.",tags$br(),
-                     "- if the tab ",em("Quantile Regression")," specify the desired quantile for which to compute the regression", style="margin-left: 1em;font-weight: 18px; font-size: 18px; line-height: 1;"),
+                     "- on the tab ",em("Quantile Regression")," specify the desired quantile for which to compute the regression", style="margin-left: 1em;font-weight: 18px; font-size: 18px; line-height: 1;"),
                  style = "font-weight: 18px; font-size: 18px; line-height: 1;")))
 
   })
@@ -584,7 +627,7 @@ server <- function(input, output, session) {
   regression_result_Qreg <- reactive({
     req(ncol(final_regression_df())>=2)
     model <- rq(reformulate(".",input$regression_outcome),tau = input$Quantiles,data = final_regression_df())
-    summary(model)
+    summary(model,se = "ker")
   })
 
 
@@ -620,7 +663,40 @@ server <- function(input, output, session) {
   ###############################################################################
   ########################   VAR    #############################################
   ###############################################################################
+  output$info_var <- renderUI({
+    HTML(paste(h1(strong("VAR-Forecasting"), align="center", style = "font-family: 'Times', serif;
+                  font-weight: 30px; font-size: 30px; line-height: 1;"),
+               p("In this section, the user is able to calculate forecasts of the stock variable using Vector-Autoregressions (VAR).
+             VAR models are especially usefull for forecasting a collection of related variables where no explicit interpretation is required.
+             Similar to the concept of Granger causality, it can be observed whether a timeseries is useful in forecasting another.
+               In a VAR model each variable has an equation including its own lagged values and the lagged values of the other variables.
+               For example, a VAR model with 2 variables and 1 lag is of the following form:",style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+               withMathJax("$$y_{1,t} = \\alpha_{1} +  \\beta_{11}y_{1,t-1} + \\beta_{12}y_{2,t-1}+ \\epsilon_{i,t}$$"),
+               withMathJax("$$y_{2,t} = \\alpha_{2} +  \\beta_{21}y_{1,t-1} + \\beta_{22}y_{2,t-1}+ \\epsilon_{2,t}$$"),
+               p("A VAR is able to understand and use the relationships of several variables, allowing better description of dynamic behavior
+               and better forecasting results. Here, different variable combinations can be assessed and used for forecasting.
+               If only one variable is chosen, a univariate autoregressive model (AR) is applied and the variable is explained by its own lags only.",style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
 
+               h2(strong("Analysis steps:") ,style = "font-family: 'Times', serif; font-weight: 20px; font-size: 20px; line-height: 1;"),
+               p("The analysis consists of the following steps, which are performed automatically: ",tags$br(),
+                 div("1. The optimal number of lags is calculated",tags$br(),
+                     "2. Stationarity is repeatedly tested and the series are differenced until sationarity is achieved",tags$br(),
+                     "3. A VAR model is estimated with the optimal number of lags and the (if necessary) transformed series",tags$br(),
+                     "4. The residuals of the model are tested for serial correlation",tags$br(),
+                     "5. The series is forcasted n-steps ahead",style="margin-left: 1em;font-weight: 18px; font-size: 18px; line-height: 1;"),style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+
+
+               h2(strong("Instructions:") ,style = "font-family: 'Times', serif; font-weight: 20px; font-size: 20px; line-height: 1;"),
+               p("In order to perform the regression analysis, built the model using the panel on the left: ",tags$br(),
+                 div("- select the dependent variable",tags$br(),
+                     "- select the control variables (optional)",tags$br(),
+                     "- choose whether sentiment variable should be included",tags$br(),
+                     "- if sentiment is added, switch to the tab ",em("Filter sentiment input")," on top of the sidebar and specify the sentiment",tags$br(),
+                     "- the tab ",em("Summary Statistics")," contains information on the selected variables",tags$br(),
+                     "- the tab ",em("Validity")," performs a robustness check, including performance measurements for the model",tags$br(),
+                     "- the tab ",em("Actual Forecast"),"displays the results for future-forecasts", style="margin-left: 1em;font-weight: 18px; font-size: 18px; line-height: 1;"),
+                 style = "font-weight: 18px; font-size: 18px; line-height: 1;")))
+  })
   ###################################################### dataset ###############################################################
   ###flexible input for stocks: show either german or us companies
   output$stock_regression_var <- renderUI({
@@ -1025,15 +1101,14 @@ server <- function(input, output, session) {
     model
   })
 
-  #test for autocorrelation: rejection = bad (means presence of correlated errors)
-  # serial_test <- reactive({
-  #   if (ncol(forecast_data()) == 1) {
-  #     test <- Box.test(var_model()$residuals,type= "Box-Pierce" )
-  #   } else {
-  #     test <- serial.test(var_model(), type="BG",lags.bg = optlags_var())
-  #   }
-  #   test
-  # })
+  serial_test_real <- reactive({
+    if (ncol(forecast_data()) == 1) {
+      test <- Box.test(var_model_real()$residuals,type= "Box-Pierce" )
+    } else {
+      test <- serial.test(var_model_real(), type="BG",lags.bg = optlags_var_real())
+    }
+    test
+  })
 
   #forecast
   forecast_var_real <- reactive({
@@ -1064,10 +1139,28 @@ server <- function(input, output, session) {
 
   })
 
-  # output$testins <- renderPrint({
-  #   c(final_regression_df_var()[["Dates"]],seq(as.Date(tail(final_regression_df_var()$Dates,1)),by = "day",length.out = input$ahead))
-  #   #seq(as.Date(tail(final_regression_df_var()[["Dates"]],1)),by = "day",length.out = input$ahead)
-  # })
+  output$serial_test_real <- renderPrint({
+    serial_test_real()
+  })
+
+  output$var_real <- renderUI({
+    if (ncol(forecast_data()) == 1) {
+      str1 <- paste("Box-Pierce test statistic to test for autocorrelation in the AR-residuals:")
+      if (serial_test_real()$p.value > 0.1){
+        str2 <- paste("The hypothesis of serially uncorrelated residuals cannot be rejected.")
+      } else{
+        str2 <- paste("The hypothesis of serially uncorrelated residuals can be rejected.")
+      }
+    } else {
+      str1 <- paste("Breusch-Godfrey LM-statistic to test for autocorrelation in the AR-residuals:")
+      if (serial_test_real()$serial$p.value > 0.1){
+        str2 <- paste("The hypothesis of serially uncorrelated residuals cannot be rejected.")
+      } else {
+        str2 <- paste("The hypothesis of serially uncorrelated residuals can be rejected.")
+      }
+    }
+    HTML(paste(str1,str2, sep = '<br/>'))
+  })
 
 #################################################################################################### twitter
 
