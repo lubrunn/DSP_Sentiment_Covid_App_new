@@ -33,52 +33,30 @@ AR_creator <- function(df,variable,lag){
   names(df)[1] <- "date"
   df$date <- as.Date(df$date)
   
-  # xts_object <- df %>%
-  #   tk_xts(silent = TRUE)
-  # 
-  # xts_object <- lag.xts(xts_object[,variable], k = 1:lag)
-  # df <- xts_object %>%
-  #   tk_tbl() %>% dplyr::select(-index)
-  # colnames(df)
+  if(lag > 0){
   df <- df[,c("date",variable)]
   df <- df %>%  tk_augment_lags(contains(variable), .lags = 1:lag)
   df <- df[,c(-1,-2)]
-  # xts_object <- lag.xts(xts_object[,variable], k = 1:nrow(df))
-  # 
-  # df <- xts_object %>%
-  #   tk_tbl() %>% dplyr::select(-index)
-  # names(df)[1] <- paste(variable,"_lag",sep = "") # just tray without
-  # df <- as.data.frame(df)
-  # n <-  lag - nrow(df)
-  # df <- cbind(df, replicate(n,df[,nrow(df)]))
-  # df[,nrow(df):nrow(df)+lag] <- NA
-  # 
-
-  
-
-
-    # df <- rep(NA,nrow(df))
-    # names(df)[0] <- paste(variable,"_lag",sep = "")
-    # df <- as.data.frame(df)
-  
-    
-
   return(df)
+  }else{
+    return(df)
+  }
 }
 
 #' @export
 #' @rdname xgboost_prep
 MA_creator <- function(df,variable,avg_len){
   
- 
+  if(avg_len > 0){
   avg_len <- as.numeric(avg_len)
   x <- zoo(df[,variable])
 
   df <- as.data.frame(zoo::rollmean(x, k = avg_len, fill = NA))
   names(df)[1] <- paste("MA_",variable,sep = "")
-
-  
   return(df)
+  }else{
+  return(df)
+  }
 
 }
 #' @export

@@ -426,8 +426,8 @@ tabsetPanel(
   tabPanel("1",
            #selectInput("var_1", "Chose variable to add AR and/or MA features", choices = ""),
            uiOutput("add_features"),
-           numericInput("num_1","Chose length of moving average",min=1,value = 1),
-           numericInput("num_2","Chose Autoregressive lags for",min=1,value = 1),
+           numericInput("num_1","Chose length of moving average",min=0,value = 1),
+           numericInput("num_2","Chose Autoregressive lags for",min=0,value = 1),
            actionButton("addButton", "Upload"),
            actionButton("finish", "Finish"),
            actionButton("reset_cus", "Reset")

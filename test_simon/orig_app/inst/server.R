@@ -2081,30 +2081,23 @@ final_regression_diff <- reactive({
 })
 
 
-observe({
-  if(input$addButton > 0) {
-    if((input$var_1 == "Close") | (input$var_1 == "Open")){ # here  OR statments for y 
-      Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
-      Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
-    
-      #isolate(xchange$df1 <- Ma_part)
-      isolate(xchange$df_full <-  cbind(final_regression_diff(),Ar_part,Ma_part))}
-      #isolate(xchange$df_full <- cbind(xchange$df2,xchange$df1))}
-    else if(input$var_1 == "VIX"){
-      Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
-      Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
-      isolate(xchange$df1 <- Ma_part)
-      isolate(xchange$df2 <-  cbind(final_regression_diff(),Ar_part))
-      isolate(xchange$df_full2 <- cbind(xchange$df2,xchange$df1))
-    }else if(input$var_1 == "coronavirus"){
-      Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
-      Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
-      isolate(xchange$df1 <- Ma_part)
-      isolate(xchange$df2 <-  cbind(final_regression_diff(),Ar_part))
-      isolate(xchange$df_full3 <- cbind(xchange$df2,xchange$df1))
-    }
-  }
-})
+# observe({
+#   if(input$addButton > 0) {
+#     if((input$var_1 == "Close") | (input$var_1 == "Open")){ # here  OR statments for y 
+#       Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
+#       Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
+#       isolate(xchange$df_full <-  cbind(final_regression_diff(),Ar_part,Ma_part))}
+#     else if(input$var_1 == "VIX"){
+#       Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
+#       Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
+#       isolate(xchange$df_full <-  cbind(final_regression_diff(),Ar_part,Ma_part))}
+#     }else if(input$var_1 == "coronavirus"){
+#       Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
+#       Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
+#       isolate(xchange$df_full <-  cbind(final_regression_diff(),Ar_part,Ma_part))}
+#     
+#   
+# })
 
  
 observe({
@@ -2229,7 +2222,7 @@ model_xgbi <- eventReactive(input$run,{#maybe rename y column to y
 })
 
 output$model_xgb <- renderPrint({
-  model_xgbi()
+  model_xgbi()[[1]]
 })
 
 
@@ -2238,18 +2231,37 @@ prediction_xgb <-  eventReactive(input$pred,{
   res <- df_xgb_train() 
   names(res$df_forecast)[2] <- "y"
   names(res$df_train)[2] <- "y"
-  
-  preds <- model_xgbi()  %>%# dynamic "Close" variable or just rename to y
+
+  model <- model_xgbi()[[1]]
+  browser()
+  preds <- model %>%# dynamic "Close" variable or just rename to y
     fit(formula = y ~ .,data = res$df_train[,c(-1)]) %>%
     predict(new_data = res$df_forecast[,c(-1)])
   
   df_orig <- final_regression_df_xgb()
-  browser()
-  a <- df_orig$Close[1]
-  abc <- diffinv(res$df_train$y, xi = a)
+  #a <- df_orig$Close[1]
+  #abc <- diffinv(res$df_train$y, xi = a)
   preds <- cumsum(preds) + df_orig[(nrow(res$df_train)),2]
   
 })
+
+
+output$model_fit <- renderTable({
+    each_fold_sum <- model_xgbi()[[2]]
+    each_fold_sum <- each_fold_sum %>%  dplyr::select(id,.metric,.estimate) %>% 
+                              filter(.metric == "rmse")
+    # for hyperparameter tuning it only makes sense to display the smaller part
+    # each_fold_sum <- model1[[3]]
+    # each_fold_sum <- dplyr::select(.metric,.mean,.estimate,n,std_err) %>% 
+                                          # filter(.metric == "rmse")
+    # 
+    knitr::kable(each_fold_sum, caption = glue("Performance metrics training"),colnames = NULL) %>%
+      kableExtra::kable_styling(c("striped","hover"), full_width = F,
+                                position = "center",
+                                font_size = 16)    
+})
+
+
 
 output$xgb_metrics <- function(){
   preds <- prediction_xgb()
@@ -2268,6 +2280,27 @@ output$xgb_metrics <- function(){
                               font_size = 16)
 }
 
+serial_test_xgb <- reactive({
+  res <- df_xgb_train()
+  names(res$df_train)[2] <- "y"
+  
+  model_xgboost <-  model_xgbi()[[1]] %>%
+    fit(formula = y ~ .,data = res$df_train[,c(-1)])
+  
+  fits <- predict(model_xgboost,res$df_train[,c(-1)])
+  
+  resids <- res$df_train$y - fits
+  
+  m <- Box.test(resids, lag = 12, type = "L")
+ 
+  m
+  
+  
+})
+
+output$serial_out_xgb <- renderPrint({
+  serial_test_xgb()
+})
 
 output$forecast_xgb <- renderDygraph({
   full_df <- final_regression_df_xgb()
@@ -2350,6 +2383,7 @@ output$plot_1_xgb_actual <- renderDygraph({
   
 })
 
-
+#  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 5  , assess_stop = 2,step = 2)
+#  graph before model
 
 }

@@ -1,21 +1,16 @@
 #' Plot Output Functions
 #' @export
 #' @rdname xgboost
-res <- res$df_train
-
 model_xgb <- function(res){
   
   names(res)[2] <- "y"
   
-  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 4 , assess_stop = 1,step = 1)
+  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 5  , assess_stop = 2,step = 2)
   
   res$date <- NULL
   
- 
-  
   preprocessing_recipe <-
     recipes::recipe(y ~ ., data = res) %>% prep()
-  
   
   model_xgboost <- boost_tree(
     mode = "regression",
@@ -32,22 +27,18 @@ model_xgb <- function(res){
     workflows::workflow() %>%
     add_model(model_xgboost) %>%
     add_formula(y ~ .)
-  #
-  #
-  #   rf_fit_rs <-
-  #     xgboost_wf %>%
-  #     fit_resamples(folds)
-  #
-  #   a <- collect_metrics(rf_fit_rs)
-  #
-  xgboost_tuned <- tune::tune_grid(
-    object = xgboost_wf,
-    resamples = slidng_eval_window,
-    metrics = yardstick::metric_set(yardstick::rmse, yardstick::mae)
-  )
+
+  
+  single_fits <-
+       xgboost_wf %>%
+          fit_resamples(slidng_eval_window)
+
+  l_metrics <- collect_metrics(single_fits)
+
+  df_metrics <- single_fits %>% dplyr::select(id, .metrics) %>%  unnest(.metrics) %>% group_by(.metric)
   
   
-  xgboost_best_params <- xgboost_tuned %>%
+  xgboost_best_params <- single_fits %>%
     tune::select_best("rmse")
   
   xgboost_model_final <- model_xgboost %>%
@@ -55,13 +46,14 @@ model_xgb <- function(res){
   
   train_processed <- bake(preprocessing_recipe,  new_data = res)
   
-  xgboost_model_final %>%
-    fit(
-      formula = y ~ .,
-      data    = train_processed
-    )
-  
-  return(xgboost_model_final)
+  model <- xgboost_model_final %>%
+                    fit(
+                      formula = y ~ .,
+                      data    = train_processed
+                    )
+  return_list <- list(xgboost_model_final,df_metrics,l_metrics)
+  return(return_list)
+
 }
 
 #' @export
@@ -71,7 +63,7 @@ model_xgb_custom <- function(res,mtry,trees,min_n,tree_depth,learn_rate,loss_red
   
   names(res)[2] <- "y"
   
-  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 4 , assess_stop = 1,step = 1)
+  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 5  , assess_stop = 2,step = 2)
   
   res$date <- NULL
   
@@ -94,22 +86,17 @@ model_xgb_custom <- function(res,mtry,trees,min_n,tree_depth,learn_rate,loss_red
     workflows::workflow() %>%
     add_model(model_xgboost) %>%
     add_formula(y ~ .)
-  #
-  #
-  #   rf_fit_rs <-
-  #     xgboost_wf %>%
-  #     fit_resamples(folds)
-  #
-  #   a <- collect_metrics(rf_fit_rs)
-  #
-  xgboost_tuned <- tune::tune_grid(
-    object = xgboost_wf,
-    resamples = slidng_eval_window,
-    metrics = yardstick::metric_set(yardstick::rmse, yardstick::mae)
-  )
+  
+  single_fits <-
+    xgboost_wf %>%
+    fit_resamples(slidng_eval_window)
+  
+  l_metrics <- collect_metrics(single_fits)
+  
+  df_metrics <- single_fits %>% dplyr::select(id, .metrics) %>%  unnest(.metrics) %>% group_by(.metric)
   
   
-  xgboost_best_params <- xgboost_tuned %>%
+  xgboost_best_params <- single_fits %>%
     tune::select_best("rmse")
   
   xgboost_model_final <- model_xgboost %>%
@@ -117,22 +104,22 @@ model_xgb_custom <- function(res,mtry,trees,min_n,tree_depth,learn_rate,loss_red
   
   train_processed <- bake(preprocessing_recipe,  new_data = res)
   
-  xgboost_model_final %>%
+  model <- xgboost_model_final %>%
     fit(
       formula = y ~ .,
       data    = train_processed
     )
-  
-  return(xgboost_model_final)
+  return_list <- list(xgboost_model_final,df_metrics,l_metrics)
+  return(return_list)
 }
 #' @export
 #' @rdname xgboost
-#'
+
 model_xgb_hyp <- function(res,trees_hyp,grid_size){
   
   names(res)[2] <- "y"
   
-  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 4 , assess_stop = 1,step = 1)
+  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 5  , assess_stop = 2,step = 2)
   
   res$date <- NULL
   
@@ -179,6 +166,9 @@ model_xgb_hyp <- function(res,trees_hyp,grid_size){
     control = tune::control_grid(verbose = TRUE)
   )
   
+  l_metrics <- collect_metrics(xgboost_tuned)
+  
+  df_metrics <- xgboost_tuned %>% dplyr::select(id, .metrics) %>%  unnest(.metrics) %>% group_by(.metric)
   
   xgboost_best_params <- xgboost_tuned %>%
     tune::select_best("rmse")
@@ -196,5 +186,6 @@ model_xgb_hyp <- function(res,trees_hyp,grid_size){
       data    = train_processed
     )
   
-  return(xgboost_model_final)
+  return_list <- list(xgboost_model_final,df_metrics,l_metrics)
+  return(return_list)
 }

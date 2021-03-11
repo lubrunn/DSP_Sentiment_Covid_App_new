@@ -621,6 +621,8 @@ ui <- fluidPage(
                                                 ),
                                                 tabPanel("Validity", value = "Validity",
                                                          verbatimTextOutput("model_xgb"),
+                                                         tableOutput("model_fit"),
+                                                         verbatimTextOutput("serial_out_xgb"),
                                                          dygraphs::dygraphOutput("forecast_xgb"),
                                                          tableOutput("xgb_metrics")
                                             ),
