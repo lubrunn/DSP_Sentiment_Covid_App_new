@@ -336,10 +336,21 @@ server <- function(input, output, session) {
   output$info_regression <- renderUI({
     HTML(paste(h1(strong("Regression Analysis"), align="center", style = "font-family: 'Times', serif;
                   font-weight: 30px; font-size: 30px; line-height: 1;"),
-               p("In this section, the user is able to perform a simple linear regression and a quantile regression.
-                 Blablablabalabalabalaballbabalaaballabaal  Motivation, intention, warum regression? dependent variable nur stocks möglich?
-                 möglichkeit sentiment rein und rauszunemehen"
-                 ,style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+               p("In this section, the user is able to perform a simple linear regression and a quantile regression. Here, one can test which variables
+                help to explain the stock prices of a specific company. By adding and dropping the variables, one can observe their potential of adding explanatory
+                power to the regression.
+                The linear regression estimates the conditional mean of the dependent variable and is of the form:",style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+               withMathJax("$$y_i = \\beta_0 + \\beta_1x_{i1} + ... + \\beta_px_{ip} + \\epsilon_i$$"),
+               p("Quantile regressions estimate the conditional median (or quantile) of the dependet variable. They allow to quantify the effect
+               of the independent variables at specified parts of the distribution. For example, in this application one can verify if companies
+               with lower (or higher) stock returns are significantly more (or less) affected by the explanatory variables. The regression is fitted, by minimizing the median
+               absolute deviation of the following equation: ",style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+               withMathJax("$$Q_{\\tau}(y_i) = \\beta_0(\\tau) + \\beta_1(\\tau)x_{i1} + ... + \\beta_p(\\tau)x_{ip} + \\epsilon_i$$"),
+
+
+               #Blablablabalabalabalaballbabalaaballabaal  Motivation, intention, warum regression? dependent variable nur stocks möglich?
+               #möglichkeit sentiment rein und rauszunemehen"
+               #,style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
 
                h2(strong("Instructions:") ,style = "font-family: 'Times', serif; font-weight: 20px; font-size: 20px; line-height: 1;"),
                p("In order to perform the regression analysis, built the model using the panel on the left: ",tags$br(),
@@ -349,7 +360,7 @@ server <- function(input, output, session) {
                      "- if sentiment is added, switch to the tab ",em("Filter sentiment input")," on top of the sidebar and specify the sentiment",tags$br(),
                      "- the tab ",em("Summary Statistics")," contains information on the selected variables",tags$br(),
                      "- the results can be accessed on the tab ",em("Linear Regression")," and ",em("Quantile Regression")," respectively.",tags$br(),
-                     "- if the tab ",em("Quantile Regression")," specify the desired quantile for which to compute the regression", style="margin-left: 1em;font-weight: 18px; font-size: 18px; line-height: 1;"),
+                     "- on the tab ",em("Quantile Regression")," specify the desired quantile for which to compute the regression", style="margin-left: 1em;font-weight: 18px; font-size: 18px; line-height: 1;"),
                  style = "font-weight: 18px; font-size: 18px; line-height: 1;")))
 
   })
@@ -620,7 +631,37 @@ server <- function(input, output, session) {
   ###############################################################################
   ########################   VAR    #############################################
   ###############################################################################
+  output$info_var <- renderUI({
+    HTML(paste(h1(strong("Regression Analysis"), align="center", style = "font-family: 'Times', serif;
+                  font-weight: 30px; font-size: 30px; line-height: 1;"),
+               p("In this section, the user is able to perform a simple linear regression and a quantile regression. Here, one can test which variables
+                help to explain the stock prices of a specific company. By adding and dropping the variables, one can observe their potential of adding explanatory
+                power to the regression.
+                The linear regression estimates the conditional mean of the dependent variable and is of the form:",style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+               withMathJax("$$y_i = \\beta_0 + \\beta_1x_{i1} + ... + \\beta_px_{ip} + \\epsilon_i$$"),
+               p("Quantile regressions estimate the conditional median (or quantile) of the dependet variable. They allow to quantify the effect
+               of the independent variables at specified parts of the distribution. For example, in this application one can verify if companies
+               with lower (or higher) stock returns are significantly more (or less) affected by the explanatory variables. The regression is fitted, by minimizing the median
+               absolute deviation of the following equation: ",style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+               withMathJax("$$Q_{\\tau}(y_i) = \\beta_0(\\tau) + \\beta_1(\\tau)x_{i1} + ... + \\beta_p(\\tau)x_{ip} + \\epsilon_i$$"),
 
+
+               #Blablablabalabalabalaballbabalaaballabaal  Motivation, intention, warum regression? dependent variable nur stocks möglich?
+               #möglichkeit sentiment rein und rauszunemehen"
+               #,style = "font-weight: 18px; font-size: 18px; line-height: 1;"),
+
+               h2(strong("Instructions:") ,style = "font-family: 'Times', serif; font-weight: 20px; font-size: 20px; line-height: 1;"),
+               p("In order to perform the regression analysis, built the model using the panel on the left: ",tags$br(),
+                 div("- select the dependent variable",tags$br(),
+                     "- select the control variable(s)",tags$br(),
+                     "- choose whether sentiment variable should be included",tags$br(),
+                     "- if sentiment is added, switch to the tab ",em("Filter sentiment input")," on top of the sidebar and specify the sentiment",tags$br(),
+                     "- the tab ",em("Summary Statistics")," contains information on the selected variables",tags$br(),
+                     "- the results can be accessed on the tab ",em("Linear Regression")," and ",em("Quantile Regression")," respectively.",tags$br(),
+                     "- on the tab ",em("Quantile Regression")," specify the desired quantile for which to compute the regression", style="margin-left: 1em;font-weight: 18px; font-size: 18px; line-height: 1;"),
+                 style = "font-weight: 18px; font-size: 18px; line-height: 1;")))
+
+  })
   ###################################################### dataset ###############################################################
   ###flexible input for stocks: show either german or us companies
   output$stock_regression_var <- renderUI({

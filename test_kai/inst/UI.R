@@ -544,7 +544,9 @@ ui <- fluidPage(
                                  ),
                                  mainPanel(
                                    tabsetPanel(
-                                     tabPanel("Information VAR"),
+                                     tabPanel("Information VAR",
+                                              htmlOutput("info_var"),
+                                              withMathJax()),
                                      tabPanel("Summary Statistics",
                                               tableOutput("var_summary"),
                                               plotOutput("correlation_var")
