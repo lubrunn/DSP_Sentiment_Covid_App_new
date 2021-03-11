@@ -294,10 +294,48 @@ twitter_desc_conditional_sum_stats <- conditionalPanel(
   #condition = "input.plot_type == 'Frequency Plot'",
   # keep for both because bigram also makes senese with wordcloud
   condition = "input.tabselected==1",
-  radioButtons("metric", "Select a metric",
-               choiceNames = c("Mean", "Standard deviation", "Median"),
-               choiceValues = c("mean", "std", "median")),
-  checkboxInput("num_tweets_box", label = "Show the average number of tweets per day", value = F),
+
+  tags$hr(),
+  tags$h4("Time Series"),
+
+  ##### select a value retweets/likes etc.
+ selectInput("value", "Select a value to show (multiple possible)",
+              choices = c(
+                "Sentiment" = "sentiment",
+                "Retweets Weighted Sentiment" = "sentiment_rt",
+                "Likes Weighted Sentiment" = "sentiment_likes",
+                "Length Weighted Sentiment" = "sentiment_tweet_length",
+                "Retweets" = "rt",
+                "Likes"="likes",
+                "Tweet Length" = "tweet_length"
+              ),
+              selected = "sentiment",
+              multiple = T),
+
+
+
+  #### select summary statistic
+  shinyWidgets::radioGroupButtons("metric", "Select a statistic to plot",
+               choiceNames = c("Mean", "SD", "Median"),
+               choiceValues = c("mean", "std", "median"),
+               status = "primary",
+               checkIcon = list(
+                 yes = icon("ok",
+                            lib = "glyphicon"),
+                 no = icon("remove",
+                           lib = "glyphicon")),
+               size = "xs"),
+
+
+  shinyWidgets::awesomeCheckbox("num_tweets_box", label = "Show average number of tweets", value = F),
+
+ #### style checkbox
+ tags$style(HTML('.checkbox-primary input[type="checkbox"]:checked+label::before, .checkbox-primary input[type="radio"]:checked+label::before {
+    background-color: #2b3e50;
+    border-color: #888888;
+}')),
+
+
   actionButton("plot_saver_button", "Save the plot")
 )
 
@@ -306,27 +344,99 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
 
                               ####### all three
-                              radioButtons("lang", "Select Language", choices = c("EN", "DE"), inline = T),
+                              ### instrucitons button
+                              actionButton("instrucitons_desc", "Instructions"),
 
+                              tags$hr(),
+                              tags$h4("Filter Tweets"),
+
+                              ###### langauge of tweets selector
+                              shinyWidgets::radioGroupButtons("lang", "Language of tweets",
+                                                              choices = c("English" = "EN",
+                                                                          "German" = "DE"),
+                                                              status = "primary",
+                                                              checkIcon = list(
+                                                                yes = icon("ok",
+                                                                           lib = "glyphicon"),
+                                                                no = icon("remove",
+                                                                          lib = "glyphicon")),
+                                                              size = "sm"),
+                              ###### choose tweet type (company or unfiltererd)
                               selectInput("comp","Choose tweets",
                                              company_terms,
                                              selected = "NoFilter"),
+
+                              ####### select date range
                               shinyWidgets::airDatepickerInput("dates_desc", "Date range:",
                                                                range = T,
                                                                value = c("2018-11-30", "2021-02-19"),
                                                                maxDate = "2021-02-19", minDate = "2018-11-30",
                                                                clearButton = T, update_on = "close"),
+
+                              ####### reset date range button
                               actionButton("reset_dates_desc", "Reset date range"),
+                              tags$br(),
+
+
+
+                              ####### filter min rt, likes, long tweets
+                              shinyWidgets::radioGroupButtons("rt", "Minimum tweets",
+                                           choices = c(0, 10, 50, 100, 200),
+                                           status = "primary",
+                                           checkIcon = list(
+                                             yes = icon("ok",
+                                                        lib = "glyphicon"),
+                                             no = icon("remove",
+                                                       lib = "glyphicon")),
+                                           size = "xs") %>%
+                                shinyhelper::helper(type = "inline",
+                                                    title = "",
+                                                    content = c("Choose the minimum number of retweets
+                                                    a tweet needs to have"),
+                                                    size = "s"),
+
+                              shinyWidgets::radioGroupButtons("likes", "Minimum Likes",
+                                           choices = c(0, 10, 50, 100, 200),
+                                           status = "primary",
+                                           checkIcon = list(
+                                             yes = icon("ok",
+                                                        lib = "glyphicon"),
+                                             no = icon("remove",
+                                                       lib = "glyphicon")),
+                                           size = "xs") %>%
+                                shinyhelper::helper(type = "inline",
+                                                    title = "",
+                                                    content = c("Choose the minimum number of likes
+                                                                a tweet needs to have"),
+                                                    size = "s"),
+
+
+                              ###### style radio buttons
+                              tags$style(HTML('.btn-primary {background-color: #4e5d6c;}')),
+                              tags$style(HTML('.btn-primary.active {background-color: #2b3e50;}')),
+                              tags$style(HTML('.btn-primary:active, .btn-primary.active, .open>.dropdown-toggle.btn-primary {
+                                              background-color: #2b3e50}')),
+                              tags$style(HTML('.btn-primary:focus, .btn-primary.focus.active, .open>.dropdown-toggle.btn-primary {
+                                              background-color: #2b3e50}')),
+                              tags$style(HTML('.btn-primary:hover, .btn-primary.hover, .open>.dropdown-toggle.btn-primary {
+                                              background-color: #2b3e50}')),
+                              tags$style(HTML('.btn-primary:active:hover, .btn-primary.active:hover {
+                                              background-color: #2b3e50}')),
 
 
 
 
-                              radioButtons("rt", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
-                                           inline = T),
-                              radioButtons("likes", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
-                                           inline = T),
+
+
+
                               #switchInput(inputId = "long", value = TRUE),
-                              shinyWidgets::materialSwitch(inputId = "long", label = "Long Tweets only?", value = F),
+                              shinyWidgets::materialSwitch(inputId = "long",
+                                                           label = "Long Tweets only?", value = F) %>%
+                                shinyhelper::helper(type = "inline",
+                                                    title = "",
+                                                    content = c("Long Tweets are tweets that contain more
+                                                                than 80 characters"),
+                                                    size = "s"),
 
 
 
@@ -337,17 +447,7 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
 
 
-                                selectInput("value", "Which value would you like to show",
-                                            choices = c(
-                                              "Sentiment" = "sentiment",
-                                              "Retweets Weighted Sentiment" = "sentiment_rt",
-                                              "Likes Weighted Sentiment" = "sentiment_likes",
-                                              "Length Weighted Sentiment" = "sentiment_tweet_length",
-                                              "Retweets" = "rt",
-                                              "Likes"="likes",
-                                              "Tweet Length" = "tweet_length"
-                                            ),
-                                            selected = "sentiment", multiple = T),
+
 
                                 # additional elemtns for time series analysis
                                 twitter_desc_conditional_sum_stats,
@@ -616,6 +716,11 @@ ui <- fluidPage(
   shinyjs::useShinyjs(),
   shinyFeedback::useShinyFeedback(),
   theme = shinythemes::shinytheme("superhero"),
+  ### change button colors
+  tags$style(HTML('.btn-default {
+  background-color: #2b3e50;
+  border-color: #888888;
+                                          }')),
   #shinythemes::themeSelector(),
   #titlePanel("Sentiment_Covid_App"),
   navbarPage("APP",
