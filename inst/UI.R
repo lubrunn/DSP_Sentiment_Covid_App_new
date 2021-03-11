@@ -79,16 +79,9 @@ twitter_main_panel <- function(){
                                    #########################################
                                    ###########################################
 
-                                    # first time series plot
-                                    textOutput("number_tweets_info"),
-                                   tags$head(tags$style("#number_tweets_info{color: black;
-                                 font-size: 20px;
-                                 font-style: bold;
-                                 color: white;
-                                 }"
-                                   )
-                                   ),
-                                     #plotOutput('sum_stats_plot'),
+
+                                   ##### style dygraphs
+                                   ### styling of dygraphs
                                    tags$head(
                                      # Note the wrapping of the string in HTML()
                                      tags$style(HTML("
@@ -100,18 +93,21 @@ twitter_main_panel <- function(){
                                         .dygraph-legend {
                                           color: black;
                                         }
+                                        .dygraph-title{
+                                        font-size: 16px;
+                                        }
 
 
                                                      "))
                                    ),
-                                   tags$h4("Time Series"),
+
+
+
+                                   ##### first time series
                                    dygraphs::dygraphOutput("sum_stats_plot")%>% shinycssloaders::withSpinner(type = 5),
+                                    tags$br(),
 
-                                   # seconds time series plot
-                                   tags$br(),
-
-                                   tags$br(),
-                                   tags$h4("Saved Time Series"),
+                                    # seconds time series plot
                                    dygraphs::dygraphOutput('sum_stats_plot2')%>% shinycssloaders::withSpinner(type = 5),
 
 
@@ -122,7 +118,7 @@ twitter_main_panel <- function(){
                                    #summary statistics table
                                    tags$head(tags$style(HTML("#sum_stats_table{
                                    color: black;
-                                 font-size: 20px;
+                                 font-size: 18px;
                                  font-style: bold;
                                  color: white !important;
                                  }"
@@ -148,16 +144,7 @@ twitter_main_panel <- function(){
 
                                    tags$br(),
                                    tags$br(),
-                                   textOutput("histo_plot_info"),
-                                   tags$head(tags$style("#histo_plot_info{
-                                 font-size: 20px;
-                                 font-style: bold;
-                                 color: white;
-                                 }"
-                                   )
-                                   ),
-                                  plotly::plotlyOutput("histo_plot") %>%
-                                     shinycssloaders::withSpinner(type = 5)
+
 
 
                                    ),
@@ -192,8 +179,19 @@ twitter_main_panel <- function(){
 
 
                                    )
-                                    ))
-                      ),
+                                    )),
+                      ##### histogram
+
+
+                      conditionalPanel(
+                        condition = "input.tabselected == 1",
+                      histo_tab,
+                      histo_output_tab
+
+
+                      )
+
+                    ),
              ################### tab panel descirptive end
 
 
@@ -339,6 +337,50 @@ twitter_desc_conditional_sum_stats <- conditionalPanel(
   actionButton("plot_saver_button", "Save the plot")
 )
 
+
+
+
+####### input panel for histogram
+histo_tab <- sidebarPanel(
+  tags$h3("Histogram"),
+  selectInput("histo_value", "Which value would you like to show",
+              choices = c(
+                "Sentiment" = "sentiment",
+                #"Retweets Weighted Sentiment" = "sentiment_rt",
+                # "Likes Weighted Sentiment" = "sentiment_likes",
+                #"Length Weighted Sentiment" = "sentiment_tweet_length",
+                "Retweets" = "rt",
+                "Likes"="likes",
+                "Tweet Length" = "tweet_length"
+              ),
+              selected = "sentiment"),
+  sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 500, value = 50),
+
+
+  # add switch whether to use logarithmic scale
+  shinyWidgets::switchInput(inputId = "log_scale", label = "Logarithmic Scale",
+                            value = F,
+                            size = "small",
+                            handleWidth = 100)
+)
+
+
+######## output panel for histogram
+histo_output_tab <- mainPanel(
+  textOutput("histo_plot_info"),
+  tags$head(tags$style("#histo_plot_info{
+                                 font-size: 20px;
+                                 font-style: bold;
+                                 color: white;
+                                 }"
+  )
+  ),
+  plotly::plotlyOutput("histo_plot") %>%
+    shinycssloaders::withSpinner(type = 5)
+)
+
+
+
 #### sidebar layout for descriptives
 twitter_tab_desc <- tabPanel( "Descriptives",
 
@@ -452,70 +494,8 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                                 # additional elemtns for time series analysis
                                 twitter_desc_conditional_sum_stats,
 
-                                ## additional elements for histogram
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$hr(),
-                                tags$h3("Histogram"),
-                                selectInput("histo_value", "Which value would you like to show",
-                                            choices = c(
-                                              "Sentiment" = "sentiment",
-                                              #"Retweets Weighted Sentiment" = "sentiment_rt",
-                                             # "Likes Weighted Sentiment" = "sentiment_likes",
-                                              #"Length Weighted Sentiment" = "sentiment_tweet_length",
-                                              "Retweets" = "rt",
-                                              "Likes"="likes",
-                                              "Tweet Length" = "tweet_length"
-                                            ),
-                                            selected = "sentiment"),
-                                sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 500, value = 50),
 
 
-                                # add switch whether to use logarithmic scale
-                                shinyWidgets::switchInput(inputId = "log_scale", label = "Logarithmic Scale",
-                                                          value = F,
-                                                          size = "small",
-                                                          handleWidth = 100)
 
 
 
