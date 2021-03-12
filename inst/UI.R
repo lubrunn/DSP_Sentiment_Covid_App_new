@@ -198,12 +198,12 @@ twitter_main_panel <- function(){
 
              # andere reiter
              tabPanel("Going Deeper",
-                      #sidebarPanel(
+                     # sidebarPanel(
                         network_sidebar,
                       tags$style(HTML('#sw-content-dropdown, .sw-dropdown-in {background-color: #4e5d6c;
                                       margin: 0 0;}'))
 
-                      #)
+                     # )
                       ,
                       #mainPanel(
                       # conditionalPanel(
@@ -212,6 +212,13 @@ twitter_main_panel <- function(){
                       #                       networkD3::forceNetworkOutput("network_plot_placeholder")
                       #
                       # ),
+                     # mainPanel(
+                        tabsetPanel(id = "network_analysis",
+                                    tabPanel("Description",
+                                             tags$br(),
+                                             htmlOutput("network_description")
+                                            ),
+                                    tabPanel("Network Analysis",
                       tags$br(),
                       tags$h4("Word Network Analysis", color = "white"),
                       tags$br(),
@@ -233,7 +240,8 @@ twitter_main_panel <- function(){
                      tags$br(),
                      tags$br(),
                      tags$br(),
-                     tags$br(),
+                     tags$br()
+                     )),
 
                       fluidRow(column(12,
                                       textOutput("number_tweets_net"),
@@ -276,9 +284,14 @@ twitter_main_panel <- function(){
 
 
                                       )),
-                                      DT::dataTableOutput("raw_tweets_net")))),
-             tabPanel("Daily Analysis"),
-             tabPanel("Going deeper"))
+                                      DT::dataTableOutput("raw_tweets_net")
+                                      )
+
+                               )
+
+                     )
+
+             )
 
 }
 
@@ -505,32 +518,53 @@ twitter_tab_desc <- tabPanel( "Descriptives",
                             #####################################################################################
                             conditionalPanel(
                               condition = "input.tabselected==3",
-                              shinyWidgets::materialSwitch(inputId = "emo", label = "Remove Emoji Words?", value = F),
+
+                              ##### remove emoji words
+                              shinyWidgets::materialSwitch(inputId = "emo", label = "Remove Emoji Words?", value = F) %>%
+                                shinyhelper::helper(type = "inline",
+                                                    title = "",
+                                                    content = c("During the cleaning process of the tweets we replace emojis and
+                                                                emoticons with text. For exmaple a lauging emoji becomes 'laughing face'.
+                                                                As many tweets contain emojis these substitution words dominate the
+                                                                frequency analysis. With this button you may remove these words from
+                                                                the analysis in order to focus on potentially more interesting words/bigrams."),
+                                                    size = "m"),
+
+                              ##### select plot type
                               selectInput("plot_type_expl", "What kind of plot would you like to see?", choices = c("Frequency Plot", "Word Cloud")
                                           ),
 
+                              ####### panel for wordcloud, adjust size of wordcloud
                               conditionalPanel(
                                 condition = "input.plot_type_expl == 'Word Cloud'",
                                 sliderInput("size_wordcloud", "Change the size of the wordcloud", min = 0.1, max = 10, value = 1, step = 0.1)
                               ),
+
+                              ###### panel for frequency plot, show different max value for slider input because becomes overcrowed otherwise
                               conditionalPanel(
                                 condition = "input.plot_type_expl == 'Frequency Plot'",
                                 sliderInput("n_freq", "Number of words to show", min = 5, max = 100, value = 20)
 
                               ),
+                              ####### slider input for wordcloud with larger max because wordcloud can handle more
                               conditionalPanel(
                                 condition = "input.plot_type_expl != 'Frequency Plot'",
                                 sliderInput("n_freq_wc", "Number of words to show", min = 5, max = 1000, value = 100)
                               ),
 
+                              ####### select single words or bigrams
+                              shinyWidgets::radioGroupButtons("ngram_sel", "Single words or bigrams?",
+                                             choices = c("Unigram", "Bigram"),
+                                             status = "primary",
+                                             checkIcon = list(
+                                               yes = icon("ok",
+                                                          lib = "glyphicon"),
+                                               no = icon("remove",
+                                                         lib = "glyphicon")),
+                                             size = "xs"),
 
-                              conditionalPanel(
 
-                                #condition = "input.plot_type == 'Frequency Plot'",
-                                # keep for both because bigram also makes senese with wordcloud
-                                condition = "true == true",
-                                radioButtons("ngram_sel", "Would like to to see single words or bigrams?", choices = c("Unigram", "Bigram"))
-                              ),
+
 
                               # word search bigrams
                               conditionalPanel(
@@ -562,8 +596,15 @@ network_sidebar <- shinyWidgets::dropdown(
 
 
           ###### language selector
-          radioButtons("lang_net", "Select Language", choiceNames = c("English Tweets", "German Tweets"),
-                       choiceValues = c("en", "de")),
+  shinyWidgets::radioGroupButtons("lang_net", "Select Language", choiceNames = c("English Tweets", "German Tweets"),
+                       choiceValues = c("en", "de"),
+                       status = "primary",
+                       checkIcon = list(
+                         yes = icon("ok",
+                                    lib = "glyphicon"),
+                         no = icon("remove",
+                                   lib = "glyphicon")),
+                       size = "s"),
           # company selector
           selectInput("comp_net","Choose tweets for",
                       company_terms,
@@ -612,8 +653,17 @@ network_sidebar <- shinyWidgets::dropdown(
 
 
           ####### type of plot bigram/word pairs
-          selectInput("word_type_net", "Select the type of word combination you would like to analyse", choices = c("Bigram" = "bigrams_net",
-                                                                                                                    "Word Pairs" = "word_pairs_net")),
+  shinyWidgets::radioGroupButtons("word_type_net",
+                                  "Select the type of word combination you would like to analyse",
+                                  choices = c("Bigram" = "bigrams_net",
+                                   "Word Pairs" = "word_pairs_net"),
+                                  status = "primary",
+                                  checkIcon = list(
+                                    yes = icon("ok",
+                                               lib = "glyphicon"),
+                                    no = icon("remove",
+                                              lib = "glyphicon")),
+                                  size = "xs"),
 
 
 
@@ -745,7 +795,7 @@ ui <- fluidPage(
 
              tabPanel("Comparison",
                       sidebarPanel(
-                        tags$hr(),
+
 
 
                         ######## stocks
@@ -756,68 +806,140 @@ ui <- fluidPage(
                                     company_terms_stock, multiple = T,
                                     selected = "AAPL"),
                         #selectizeInput("stock_choice", choices = "Platzhalter"),
-                        radioButtons("stocks_metric_comp","Which variable?",c("Return","Adj.Close" = "Adj.Close"),
-                                     selected = "Return", inline = T),
-                        actionButton("reset", "clear selected"),
+                        shinyWidgets::radioGroupButtons("stocks_metric_comp","Which variable?",c("Return","Adj.Close" = "Adj.Close"),
+                                     selected = "Return",
+                                     status = "primary",
+                                     checkIcon = list(
+                                       yes = icon("ok",
+                                                  lib = "glyphicon"),
+                                       no = icon("remove",
+                                                 lib = "glyphicon")),
+                                     size = "s"),
+
+                       # actionButton("reset", "clear selected"),
+                        shinyWidgets::materialSwitch(inputId = "roll_stock_comp", label = "7 day smoothing?", value = F)
+                       ),
+                      mainPanel(
+                        dygraphs::dygraphOutput("stocks_comp")
+                      ),
 
 
-                        tags$br(),
-                        tags$br(),
-                        tags$hr(),
+
+
 
 
 
                         ######## covid
+                      sidebarPanel(
                         tags$h4("COVID-19"),
-                        tags$br(),
+
 
 
 
                         selectize_corona(),
                         selectInput("CoronaCountry","Country",c("Germany","USA" = "United States"),selected = "United States",
                                     multiple = T),
+                        shinyWidgets::materialSwitch(inputId = "roll_covid_comp", label = "7 day smoothing?", value = F)
+                        ),
 
+                      mainPanel(
+                        dygraphs::dygraphOutput("covid_comp")
+                      ),
 
-
-
-                        tags$br(),
-                        tags$br(),
-                        tags$hr(),
-
-
-
-
+                      sidebarPanel(
                         ####### twitter
                         tags$h4("Twitter"),
-                        tags$br(),
 
 
 
-                        radioButtons("lang_twitter_comp", "Select Language", choices = c("EN", "DE"), inline = T),
 
-                        selectInput("comp_twitter_comp","Choose tweets",
+
+
+                        tags$hr(),
+                        tags$h4("Filter Tweets"),
+
+                        ###### langauge of tweets selector
+                        shinyWidgets::radioGroupButtons("lang", "Language of tweets",
+                                                        choices = c("English" = "EN",
+                                                                    "German" = "DE"),
+                                                        status = "primary",
+                                                        checkIcon = list(
+                                                          yes = icon("ok",
+                                                                     lib = "glyphicon"),
+                                                          no = icon("remove",
+                                                                    lib = "glyphicon")),
+                                                        size = "sm"),
+                        ###### choose tweet type (company or unfiltererd)
+                        selectInput("twitter_comp_comp","Choose tweets",
                                     company_terms,
-                                    selected = "NoFilter", multiple = T),
+                                    selected = "NoFilter"),
 
 
 
-                        radioButtons("rt_twitter_comp", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
-                                     inline = T),
-                        radioButtons("likes_twitter_comp", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
-                                     inline = T),
+
+
+
+
+                        ####### filter min rt, likes, long tweets
+                        shinyWidgets::radioGroupButtons("rt_comp", "Minimum tweets",
+                                                        choices = c(0, 10, 50, 100, 200),
+                                                        status = "primary",
+                                                        checkIcon = list(
+                                                          yes = icon("ok",
+                                                                     lib = "glyphicon"),
+                                                          no = icon("remove",
+                                                                    lib = "glyphicon")),
+                                                        size = "xs") %>%
+                          shinyhelper::helper(type = "inline",
+                                              title = "",
+                                              content = c("Choose the minimum number of retweets
+                                                    a tweet needs to have"),
+                                              size = "s"),
+
+
+
+                        shinyWidgets::radioGroupButtons("likes_comp", "Minimum Likes",
+                                                        choices = c(0, 10, 50, 100, 200),
+                                                        status = "primary",
+                                                        checkIcon = list(
+                                                          yes = icon("ok",
+                                                                     lib = "glyphicon"),
+                                                          no = icon("remove",
+                                                                    lib = "glyphicon")),
+                                                        size = "xs") %>%
+                          shinyhelper::helper(type = "inline",
+                                              title = "",
+                                              content = c("Choose the minimum number of likes
+                                                                a tweet needs to have"),
+                                              size = "s"),
+
+
+
+
+
+
+
+
+
                         #switchInput(inputId = "long", value = TRUE),
-                        shinyWidgets::materialSwitch(inputId = "long_twitter_comp", label = "Long Tweets only?", value = F),
-
+                        shinyWidgets::materialSwitch(inputId = "long_comp",
+                                                     label = "Long Tweets only?", value = F) %>%
+                          shinyhelper::helper(type = "inline",
+                                              title = "",
+                                              content = c("Long Tweets are tweets that contain more
+                                                                than 80 characters"),
+                                              size = "s"),
                       ),
+
+
+
+
+
+
+
                       mainPanel(
-                        dygraphs::dygraphOutput("stocks_comp"),
-                        tags$br(),
-                        tags$br(),
-                        tags$hr(),
-                        dygraphs::dygraphOutput("covid_comp"),
-                        tags$br(),
-                        tags$br(),
-                        tags$hr(),
+
+
                         dygraphs::dygraphOutput("twitter_comp")
 
                       )
@@ -916,6 +1038,7 @@ ui <- fluidPage(
              )#close Navbarmenu
   )#close Navbarpage
 )#close fluidpage
+
 
 
 
