@@ -414,10 +414,6 @@ server <- function(input, output, session) {
     }
   })
 
-  # dataset_rec <- reactive({
-  #   res <- dataset()
-  # })
-
   output$Controls <- renderUI({
     #res <- dataset()
     #res$name <- NULL
@@ -453,6 +449,12 @@ server <- function(input, output, session) {
       dax <- missing_date_imputer(dax,"Close.") #transform time series by imputing missing values
       colnames(dax)[2] <- "DAX"  #rename ->   !! is not renamed in final dataset !! -> dont know why
       global_controls <- left_join(dax,global_controls,by = c("Date")) #join final
+      if(input$corona_measurement_regression!=""){
+        help <- CORONA_neu("Germany")[c("date",input$corona_measurement_regression)]
+        colnames(help)[1]<-"Date"
+        global_controls <- left_join(global_controls,help,by=c("Date"))
+      } else {}
+
 
     }else {
       global_controls <- global_controls_test_US() #same procedure as above
@@ -462,20 +464,40 @@ server <- function(input, output, session) {
       dow <- missing_date_imputer(dow,"Close.")
       colnames(dow)[2] <- "DOW"
       global_controls <- left_join(dow,global_controls,by = c("Date"))
+      if(input$corona_measurement_regression!=""){
+        help <- CORONA_neu("United States")[c("date",input$corona_measurement_regression)]
+        colnames(help)[1]<-"Date"
+        global_controls <- left_join(global_controls,help,by=c("Date"))
+      } else {}
     }
-    names(global_controls)[1] <- "Dates"
-    data_reg2 <- left_join(data_reg,global_controls,by = c("Dates")) #hierdurch kommt die varible "global" in den datensatz
-    ##diesen datensatz filtern wir dann nochmal mit dem sliderinput für die kontrollvariablen(eine/keine/mehrere möglich)
-    data_reg2
-  })
 
+    names(global_controls)[1] <- "Dates"
+    datareg2 <- left_join(data_reg,global_controls,by = c("Dates"))
+
+    datareg2[is.na(datareg2)]<-0
+    datareg2
+  })
 
   df_selected_controls <- reactive({
-    #req(input$Controls)
+    #req(input$Controls_var | input$corona_measurement_var)
     res <- dataset()
-    res <- res[c("Dates",input$regression_outcome,input$Controls)]
+    if(is.null(input$Controls)==TRUE && input$corona_measurement_regression==""){
+      res <- res[c("Dates",input$regression_outcome)]
+    }else if (is.null(input$Controls)==FALSE && input$corona_measurement_regression!=""){
+      res <- res[c("Dates",input$regression_outcome,input$Controls,input$corona_measurement_regression)]
+    } else if (is.null(input$Controls)==FALSE && input$corona_measurement_regression==""){
+      res <- res[c("Dates",input$regression_outcome,input$Controls)]
+    } else if (is.null(input$Controls)==TRUE && input$corona_measurement_regression!=""){
+      res <- res[c("Dates",input$regression_outcome,input$corona_measurement_regression)]
+    }
     res
   })
+  # df_selected_controls <- reactive({
+  #   #req(input$Controls)
+  #   res <- dataset()
+  #   res <- res[c("Dates",input$regression_outcome,input$Controls,input$corona_measurement_regression)]
+  #   res
+  # })
 
   observeEvent(input$Sentiment_type, {                         #Observe event from input (model choices)
     req(input$Sentiment_type)
@@ -568,6 +590,7 @@ server <- function(input, output, session) {
 
   observeEvent(input$reset_regression,{
     updateSelectizeInput(session,"Controls",selected = "")
+    updateSelectizeInput(session,"corona_measurement_regression",selected = "")
   })
 
 
@@ -613,6 +636,7 @@ server <- function(input, output, session) {
   output$correlation_reg <- renderPlot({
     ggpairs(final_regression_df())
   })
+
 
 ###################################################################################
   #regression
@@ -717,11 +741,11 @@ server <- function(input, output, session) {
     req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression_var == "Germany"){
       input <- selectizeInput("Controls_var","Choose control variables:",
-                              c(colnames(global_controls_test_DE())[-1],"DAX"),multiple = TRUE)
+                              c("",colnames(global_controls_test_DE())[-1],"DAX"),selected = "",multiple = TRUE)
       #c(colnames(res[3:length(res)])),multiple = TRUE
     }else{
       input <- selectizeInput("Controls_var","Choose control variables:",
-                              c(colnames(global_controls_test_US())[-1],"DOW"),multiple = TRUE)
+                              c("",colnames(global_controls_test_US())[-1],"DOW"),selected = "", multiple = TRUE)
     }
 
   })
@@ -746,6 +770,11 @@ server <- function(input, output, session) {
       dax <- missing_date_imputer(dax,"Close.") #transform time series by imputing missing values
       colnames(dax)[2] <- "DAX"  #rename ->   !! is not renamed in final dataset !! -> dont know why
       global_controls <- left_join(dax,global_controls,by = c("Date")) #join final
+      if(input$corona_measurement_var!=""){
+        help <- CORONA_neu("Germany")[c("date",input$corona_measurement_var)]
+        colnames(help)[1]<-"Date"
+        global_controls <- left_join(global_controls,help,by=c("Date"))
+      } else {}
 
     }else {
       global_controls <- global_controls_test_US() #same procedure as above
@@ -755,18 +784,33 @@ server <- function(input, output, session) {
       dow <- missing_date_imputer(dow,"Close.")
       colnames(dow)[2] <- "DOW"
       global_controls <- left_join(dow,global_controls,by = c("Date"))
+      if(input$corona_measurement_var!=""){
+        help <- CORONA_neu("United States")[c("date",input$corona_measurement_var)]
+        colnames(help)[1]<-"Date"
+        global_controls <- left_join(global_controls,help,by=c("Date"))
+      } else {}
     }
     names(global_controls)[1] <- "Dates"
-    data_reg2 <- left_join(data_reg,global_controls,by = c("Dates")) #hierdurch kommt die varible "global" in den datensatz
-    ##diesen datensatz filtern wir dann nochmal mit dem sliderinput für die kontrollvariablen(eine/keine/mehrere möglich)
+    data_reg2 <- left_join(data_reg,global_controls,by = c("Dates"))
+    data_reg2[is.na(data_reg2)]<-0
     data_reg2
   })
 
 
   df_selected_controls_var <- reactive({
-    #req(input$Controls_var)
+    #req(input$Controls_var | input$corona_measurement_var)
     res <- dataset_var()
-    res <- res[c("Dates",input$regression_outcome_var,input$Controls_var)]
+     test <- input$corona_measurement_var
+     test2 <- input$Controls_var
+    if(is.null(input$Controls_var)==TRUE && input$corona_measurement_var==""){
+      res <- res[c("Dates",input$regression_outcome_var)]
+    }else if (is.null(input$Controls_var)==FALSE && input$corona_measurement_var!=""){
+        res <- res[c("Dates",input$regression_outcome_var,input$Controls_var,input$corona_measurement_var)]
+    } else if (is.null(input$Controls_var)==FALSE && input$corona_measurement_var==""){
+      res <- res[c("Dates",input$regression_outcome_var,input$Controls_var)]
+    } else if (is.null(input$Controls_var)==TRUE && input$corona_measurement_var!=""){
+      res <- res[c("Dates",input$regression_outcome_var,input$corona_measurement_var)]
+    }
     res
   })
 
@@ -861,6 +905,8 @@ server <- function(input, output, session) {
 
   observeEvent(input$reset_regression_var,{
     updateSelectizeInput(session,"Controls_var",selected = "")
+    updateSelectizeInput(session,"corona_measurement_var",selected = "")
+
   })
 
   #merge sentiment with control+dep vars

@@ -563,7 +563,8 @@ ui <- fluidPage(
                                      ),#close tabpanel validity
                                      tabPanel("Actual Forecast",
                                               dygraphs::dygraphOutput("plot_forecast_real"),
-                                              verbatimTextOutput("serial_test_real"))#close tabpanel actual forecast
+                                              verbatimTextOutput("serial_test_real"),
+                                              htmlOutput("var_real"))#close tabpanel actual forecast
                                    )))#close tabpanel VAR forecasting
              )#close Navbarmenu
   )#close Navbarpage
