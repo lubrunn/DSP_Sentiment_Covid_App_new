@@ -16,27 +16,27 @@ network_plot_datagetter <- function(input_lang, input_date1, input_date2, input_
    df_all <- NULL
 
    # source to files for no filter
-   if (is.null(input_company)){
+   if (input_company == "NoFilter"){
 
-   path_source <- glue("Twitter/cleaned_sentiment/{input_lang}_NoFilter")
+   path_source <- glue("Twitter/cleaned_raw_sentiment/{input_lang}_NoFilter")
 
 
 
    }
    else { # source to files for companies
-     path_source <- glue("Twitter/cleaned_sentiment/Companies2/{input_company}")
+     path_source <- glue("Twitter/cleaned_raw_sentiment/Companies2/{input_company}")
    }
 
 
    # get list of alle files we need --> dates in date list and feather files
-   all_files <- list.files(path_source)[grepl(".feather", list.files(path_source)) &
+   all_files <- list.files(path_source)[grepl(".csv", list.files(path_source)) &
                                           grepl(paste(date_list, collapse = "|"), list.files(path_source))]
 
 
   # read in all the files
    for (file in all_files){
 
-     df <- arrow::read_feather(file.path(path_source, file))
+     df <- data.table::fread(file.path(path_source, file))
 
    # if its the first file set it up as df_all
    if (is.null(df)){
@@ -67,12 +67,16 @@ network_plot_filterer <- function(df, input_rt, input_likes, input_tweet_length,
                                   input_username) {
 
 
+#### convert search terms to lower
+  input_search_term <- tolower(input_search_term)
+  input_username <- tolower(input_username)
+
 
   # unneest the words
   network <-  df %>%
 
     # if list provided to specify tweets to look at then extract only those tweets
-    { if (input_search_term != "") filter(., grepl(paste(input_search_term, collapse="|"), text)) else . } %>%
+    { if (input_search_term != "") filter(., grepl(paste(corpus::stem_snowball(input_search_term), collapse="|"), text)) else . } %>%
     { if (input_username != "") filter(., grepl(paste(input_username, collapse="|"), username)) else . } %>%
     #select(doc_id, text, created_at) %>%
 
@@ -195,6 +199,10 @@ network_bigrammer <- function(df, network, input_n, input_bigrams_n){
   network <- network[,.(.N), by = ngram]
 
   network <- network[N > input_bigrams_n]
+
+  if (dim(network)[1]== 0){
+    return(NULL)
+  }
 
   network[, c("item1", "item2") := tstrsplit(ngram, " ", fixed=TRUE)]
 

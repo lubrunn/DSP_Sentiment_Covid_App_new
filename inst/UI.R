@@ -17,8 +17,15 @@ dir_setter_panel <- function() {
              tags$p(),
              tags$p("Please choose the directory containing the folder containig \n
                the data called 'Data'."),
-             shinyFiles::shinyDirButton("directory", "Folder select", "Please select a folder"
+             shinyFiles::shinyDirButton("directory", "Select folder", "Please select a folder"
              ),
+             ## in case dir path chooser not working enter manually
+             tags$br(),
+             tags$br(),
+             tags$p("In the case that choosing a path through the 'Select Folder' button \
+             is not possible you can also enter your path manually"),
+             textInput("dir_path_man", ""),
+             actionButton("dir_path_man_btn", "Set path")
 
            ),
            column(8,
@@ -72,16 +79,9 @@ twitter_main_panel <- function(){
                                    #########################################
                                    ###########################################
 
-                                    # first time series plot
-                                    textOutput("number_tweets_info"),
-                                   tags$head(tags$style("#number_tweets_info{color: black;
-                                 font-size: 20px;
-                                 font-style: bold;
-                                 color: white;
-                                 }"
-                                   )
-                                   ),
-                                     #plotOutput('sum_stats_plot'),
+
+                                   ##### style dygraphs
+                                   ### styling of dygraphs
                                    tags$head(
                                      # Note the wrapping of the string in HTML()
                                      tags$style(HTML("
@@ -93,19 +93,22 @@ twitter_main_panel <- function(){
                                         .dygraph-legend {
                                           color: black;
                                         }
+                                        .dygraph-title{
+                                        font-size: 16px;
+                                        }
 
 
                                                      "))
                                    ),
-                                   tags$h4("Time Series"),
-                                   dygraphs::dygraphOutput("sum_stats_plot"),
 
-                                   # seconds time series plot
-                                   tags$br(),
 
-                                   tags$br(),
-                                   tags$h4("Saved Time Series"),
-                                   dygraphs::dygraphOutput('sum_stats_plot2'),
+
+                                   ##### first time series
+                                   dygraphs::dygraphOutput("sum_stats_plot")%>% shinycssloaders::withSpinner(type = 5),
+                                    tags$br(),
+
+                                    # seconds time series plot
+                                   dygraphs::dygraphOutput('sum_stats_plot2')%>% shinycssloaders::withSpinner(type = 5),
 
 
 
@@ -115,76 +118,79 @@ twitter_main_panel <- function(){
                                    #summary statistics table
                                    tags$head(tags$style(HTML("#sum_stats_table{
                                    color: black;
-                                 font-size: 20px;
+                                 font-size: 18px;
                                  font-style: bold;
-                                 color: green !important;
+                                 color: white !important;
                                  }"
                                    )
-                                   )),
-                                   tags$h4("Summary Statistics"),
-                                   tableOutput("sum_stats_table"),
+                                   ))
 
 
-                                   #########################################
-                                   ###########################################
 
-                                   ##### violin plot
-                                   tags$h4("Distrubtion of aggregated tweets"),
-                                   plotOutput("violin_sum"),
-
-                                   #########################################
-                                   ###########################################
-
-                                   # histogram
-                                   tags$br(),
-                                   tags$br(),
-
-                                   tags$br(),
-                                   tags$br(),
-                                   textOutput("histo_plot_info"),
-                                   tags$head(tags$style("#histo_plot_info{
-                                 font-size: 20px;
-                                 font-style: bold;
-                                 color: white;
-                                 }"
-                                   )
-                                   ),
-                                  plotly::plotlyOutput("histo_plot") %>%
-                                     shinycssloaders::withSpinner()
 
 
                                    ),
 
                           ##### main panel with wod frequency and raw tweets
                           tabPanel("Exploratory Output", value = 3,
-                                  # mainPanel(
+
+                                   tags$br(),
+                                   htmlOutput("number_words"),
                                      conditionalPanel(
                                        condition = "input.plot_type_expl == 'Frequency Plot'",
-                                        plotly::plotlyOutput("freq_plot", height = "1000px")
+                                        plotly::plotlyOutput("freq_plot", height = "1000px")%>% shinycssloaders::withSpinner(type = 5)
                                        #uiOutput("plot.ui")
                                      ),
                                      conditionalPanel(
                                        condition = "input.plot_type_expl == 'Word Cloud'",
                                        uiOutput("cloud"),
                                        #wordcloud2::wordcloud2Output('wordcloud', height = "1000px", width = "auto")
-                                     ),
-                                  tags$hr(),
-                                  tags$br(),
-                                  tags$br(),
-                                  tags$br(),
-                                  tags$br(),
-                                  tags$br(),
-                                  tags$hr(),
-                                  conditionalPanel(
-                                    condition = "input.ngram_sel == 'Bigram'",
-                                    tags$h4("Number of Bigrams containing the choosen word (if no word selected shows all tweets in current selection)"),
-                                  plotly::plotlyOutput("word_freq_time_series")
-                                  )
+                                     )
+                                  # tags$hr(),
+                                  # tags$br(),
+                                  # tags$br(),
+                                  # tags$br(),
+                                  # tags$br(),
+                                  # tags$br(),
+                                  # tags$hr(),
+                                  # conditionalPanel(
+                                  #   condition = "input.ngram_sel == 'Bigram'",
+                                  #   tags$h4("Number of Bigrams containing the choosen word (if no word selected shows all tweets in current selection)"),
+                                  # plotly::plotlyOutput("word_freq_time_series") %>% shinycssloaders::withSpinner(type = 5)
+                                  # )
 
 
                                    )
-                                    ))
-                      ),
+                                    )),
+                      ##### histogram
+
+
+                      conditionalPanel(
+                        condition = "input.tabselected == 1",
+
+                        fluidRow(column(10, offset = 1,
+                                        tags$h4("Summary Statistics"),
+                                        tableOutput("sum_stats_table")%>% shinycssloaders::withSpinner(type = 5),
+                        )),
+
+                        #########################################
+                        ###########################################
+
+                        ##### violin plot
+                      fluidRow(column(10, offset = 1,
+                                      tags$h4("Distrubtion of aggregated tweets"),
+                                      plotOutput("violin_sum")%>% shinycssloaders::withSpinner(type = 5))),
+                        tags$br(),
+                      tags$hr(),
+                        #########################################
+                        ###########################################
+                      histo_tab,
+                      histo_output_tab
+
+
+                      )
+
+                    ),
              ################### tab panel descirptive end
 
 
@@ -192,18 +198,53 @@ twitter_main_panel <- function(){
 
              # andere reiter
              tabPanel("Going Deeper",
-                      sidebarPanel(
-                        network_sidebar
-                      ),
-                      mainPanel(
-                      # shinyjs::hidden(div(id = "loading",
-                      #                     networkD3::forceNetworkOutput("network_plot") %>%
-                      #     shinycssloaders::withSpinner()))
-                      tags$div(id = "placeholder")
-                      ),
+                      #sidebarPanel(
+                        network_sidebar,
+                      tags$style(HTML('#sw-content-dropdown, .sw-dropdown-in {background-color: #4e5d6c;
+                                      margin: 0 0;}'))
 
+                      #)
+                      ,
+                      #mainPanel(
+                      # conditionalPanel(
+                      #   condition = "input.button_net == 0",
+                      #   shinyjs::hidden(div(id = "loading",
+                      #                       networkD3::forceNetworkOutput("network_plot_placeholder")
+                      #
+                      # ),
+                      tags$br(),
+                      tags$h4("Word Network Analysis", color = "white"),
+                      tags$br(),
+                      tags$div(id = "placeholder", style = "height: 800px; width: 90%;"),
+                      tags$br(),
+                      tags$br(),
+                     # ),
+
+                      ###### datatable
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
+                     tags$br(),
 
                       fluidRow(column(12,
+                                      textOutput("number_tweets_net"),
+                                      tags$head(tags$style("#number_tweets_net{
+                                 font-size: 20px;
+                                 font-style: bold;
+                                 color: white;
+                                 }"
+                                      )
+                                      ),
+                                      tags$br(),
                                       tags$style(HTML("
                     .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
                     color: #ffffff;
@@ -250,36 +291,193 @@ twitter_desc_conditional_sum_stats <- conditionalPanel(
   #condition = "input.plot_type == 'Frequency Plot'",
   # keep for both because bigram also makes senese with wordcloud
   condition = "input.tabselected==1",
-  radioButtons("metric", "Select a metric",
-               choiceNames = c("Mean", "Standard deviation", "Median"),
-               choiceValues = c("mean", "std", "median")),
-  checkboxInput("num_tweets_box", label = "Show the average number of tweets per day", value = F),
+
+  tags$hr(),
+  tags$h4("Time Series"),
+
+  ##### select a value retweets/likes etc.
+ selectInput("value", "Select a value to show (multiple possible)",
+              choices = c(
+                "Sentiment" = "sentiment",
+                "Retweets Weighted Sentiment" = "sentiment_rt",
+                "Likes Weighted Sentiment" = "sentiment_likes",
+                "Length Weighted Sentiment" = "sentiment_tweet_length",
+                "Retweets" = "rt",
+                "Likes"="likes",
+                "Tweet Length" = "tweet_length"
+              ),
+              selected = "sentiment",
+              multiple = T),
+
+
+
+  #### select summary statistic
+  shinyWidgets::radioGroupButtons("metric", "Select a statistic to plot",
+               choiceNames = c("Mean", "SD", "Median"),
+               choiceValues = c("mean", "std", "median"),
+               status = "primary",
+               checkIcon = list(
+                 yes = icon("ok",
+                            lib = "glyphicon"),
+                 no = icon("remove",
+                           lib = "glyphicon")),
+               size = "xs"),
+
+
+  shinyWidgets::awesomeCheckbox("num_tweets_box", label = "Show average number of tweets", value = F),
+
+ #### style checkbox
+ tags$style(HTML('.checkbox-primary input[type="checkbox"]:checked+label::before, .checkbox-primary input[type="radio"]:checked+label::before {
+    background-color: #2b3e50;
+    border-color: #888888;
+}')),
+
+
   actionButton("plot_saver_button", "Save the plot")
 )
+
+
+
+
+####### input panel for histogram
+histo_tab <- sidebarPanel(
+  tags$h3("Histogram"),
+  selectInput("histo_value", "Which value would you like to show",
+              choices = c(
+                "Sentiment" = "sentiment",
+                #"Retweets Weighted Sentiment" = "sentiment_rt",
+                # "Likes Weighted Sentiment" = "sentiment_likes",
+                #"Length Weighted Sentiment" = "sentiment_tweet_length",
+                "Retweets" = "rt",
+                "Likes"="likes",
+                "Tweet Length" = "tweet_length"
+              ),
+              selected = "sentiment"),
+  sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 500, value = 50),
+
+
+  # add switch whether to use logarithmic scale
+  shinyWidgets::switchInput(inputId = "log_scale", label = "Logarithmic Scale",
+                            value = F,
+                            size = "mini",
+                            handleWidth = 100)
+)
+
+
+######## output panel for histogram
+histo_output_tab <- mainPanel(
+  textOutput("histo_plot_info"),
+  tags$head(tags$style("#histo_plot_info{
+                                 font-size: 20px;
+                                 font-style: bold;
+                                 color: white;
+                                 }"
+  )
+  ),
+  plotly::plotlyOutput("histo_plot") %>%
+    shinycssloaders::withSpinner(type = 5)
+)
+
+
 
 #### sidebar layout for descriptives
 twitter_tab_desc <- tabPanel( "Descriptives",
 
 
                               ####### all three
-                              radioButtons("lang", "Select Language", choices = c("EN", "DE")),
+                              ### instrucitons button
+                              actionButton("instrucitons_desc", "Instructions"),
 
-                              selectInput("comp","Choose a company (optional)",
-                                             c("adidas", "NIKE"),
-                                             selected = "",multiple = TRUE),
+                              tags$hr(),
+                              tags$h4("Filter Tweets"),
+
+                              ###### langauge of tweets selector
+                              shinyWidgets::radioGroupButtons("lang", "Language of tweets",
+                                                              choices = c("English" = "EN",
+                                                                          "German" = "DE"),
+                                                              status = "primary",
+                                                              checkIcon = list(
+                                                                yes = icon("ok",
+                                                                           lib = "glyphicon"),
+                                                                no = icon("remove",
+                                                                          lib = "glyphicon")),
+                                                              size = "sm"),
+                              ###### choose tweet type (company or unfiltererd)
+                              selectInput("comp","Choose tweets",
+                                             company_terms,
+                                             selected = "NoFilter"),
+
+                              ####### select date range
                               shinyWidgets::airDatepickerInput("dates_desc", "Date range:",
-                                                               range = TRUE,
+                                                               range = T,
                                                                value = c("2018-11-30", "2021-02-19"),
                                                                maxDate = "2021-02-19", minDate = "2018-11-30",
                                                                clearButton = T, update_on = "close"),
 
+                              ####### reset date range button
+                              actionButton("reset_dates_desc", "Reset date range"),
+                              tags$br(),
 
-                              radioButtons("rt", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
-                                           inline = T),
-                              radioButtons("likes", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
-                                           inline = T),
+
+
+                              ####### filter min rt, likes, long tweets
+                              shinyWidgets::radioGroupButtons("rt", "Minimum tweets",
+                                           choices = c(0, 10, 50, 100, 200),
+                                           status = "primary",
+                                           checkIcon = list(
+                                             yes = icon("ok",
+                                                        lib = "glyphicon"),
+                                             no = icon("remove",
+                                                       lib = "glyphicon")),
+                                           size = "xs") %>%
+                                shinyhelper::helper(type = "inline",
+                                                    title = "",
+                                                    content = c("Choose the minimum number of retweets
+                                                    a tweet needs to have"),
+                                                    size = "s"),
+
+                              shinyWidgets::radioGroupButtons("likes", "Minimum Likes",
+                                           choices = c(0, 10, 50, 100, 200),
+                                           status = "primary",
+                                           checkIcon = list(
+                                             yes = icon("ok",
+                                                        lib = "glyphicon"),
+                                             no = icon("remove",
+                                                       lib = "glyphicon")),
+                                           size = "xs") %>%
+                                shinyhelper::helper(type = "inline",
+                                                    title = "",
+                                                    content = c("Choose the minimum number of likes
+                                                                a tweet needs to have"),
+                                                    size = "s"),
+
+
+                              ###### style radio buttons
+                              tags$style(HTML('.btn-primary {background-color: #4e5d6c;}')),
+                              tags$style(HTML('.btn-primary.active {background-color: #2b3e50;}')),
+                              tags$style(HTML('.btn-primary:active, .btn-primary.active, .open>.dropdown-toggle.btn-primary {
+                                              background-color: #2b3e50}')),
+                              tags$style(HTML('.btn-primary:focus, .btn-primary.focus.active, .open>.dropdown-toggle.btn-primary {
+                                              background-color: #2b3e50}')),
+                              tags$style(HTML('.btn-primary:hover, .btn-primary.hover, .open>.dropdown-toggle.btn-primary {
+                                              background-color: #2b3e50}')),
+                              tags$style(HTML('.btn-primary:active:hover, .btn-primary.active:hover {
+                                              background-color: #2b3e50}')),
+
+
+
+
+
+
+
                               #switchInput(inputId = "long", value = TRUE),
-                              shinyWidgets::materialSwitch(inputId = "long", label = "Long Tweets only?", value = F),
+                              shinyWidgets::materialSwitch(inputId = "long",
+                                                           label = "Long Tweets only?", value = F) %>%
+                                shinyhelper::helper(type = "inline",
+                                                    title = "",
+                                                    content = c("Long Tweets are tweets that contain more
+                                                                than 80 characters"),
+                                                    size = "s"),
 
 
 
@@ -290,90 +488,41 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
 
 
-                                selectInput("value", "Which value would you like to show",
-                                            choices = c(
-                                              "Sentiment" = "sentiment",
-                                              "Retweets Weighted Sentiment" = "sentiment_rt",
-                                              "Likes Weighted Sentiment" = "sentiment_likes",
-                                              "Length Weighted Sentiment" = "sentiment_tweet_length",
-                                              "Retweets" = "rt",
-                                              "Likes"="likes",
-                                              "Tweet Length" = "tweet_length"
-                                            ),
-                                            selected = "sentiment", multiple = T),
+
 
                                 # additional elemtns for time series analysis
                                 twitter_desc_conditional_sum_stats,
 
-                                ## additional elements for histogram
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$br(),
-                                tags$hr(),
-                                tags$h3("Histogram"),
-                                sliderInput("bins", "Adjust the number of bins for the histogram", min = 5, max = 500, value = 50),
 
 
-                                # add switch whether to use logarithmic scale
-                                shinyWidgets::switchInput(inputId = "log_scale", label = "Logarithmic Scale",
-                                                          value = F,
-                                                          size = "small",
-                                                          handleWidth = 100)
 
 
 
                               ),
-
+                            ######################################################################################
+                            #####################################################################################
+                            ############################### Word Frequencies ####################################
+                            #####################################################################################
                             conditionalPanel(
                               condition = "input.tabselected==3",
                               shinyWidgets::materialSwitch(inputId = "emo", label = "Remove Emoji Words?", value = F),
-                              selectInput("plot_type_expl", "What kind of plot would you like to see?", choices = c("Frequency Plot", "Word Cloud")),
+                              selectInput("plot_type_expl", "What kind of plot would you like to see?", choices = c("Frequency Plot", "Word Cloud")
+                                          ),
 
                               conditionalPanel(
                                 condition = "input.plot_type_expl == 'Word Cloud'",
                                 sliderInput("size_wordcloud", "Change the size of the wordcloud", min = 0.1, max = 10, value = 1, step = 0.1)
                               ),
+                              conditionalPanel(
+                                condition = "input.plot_type_expl == 'Frequency Plot'",
+                                sliderInput("n_freq", "Number of words to show", min = 5, max = 100, value = 20)
 
-                              sliderInput("n", "Number of words to show", min = 5, max = 200, value = 15),
+                              ),
+                              conditionalPanel(
+                                condition = "input.plot_type_expl != 'Frequency Plot'",
+                                sliderInput("n_freq_wc", "Number of words to show", min = 5, max = 1000, value = 100)
+                              ),
+
 
                               conditionalPanel(
 
@@ -401,9 +550,12 @@ twitter_tab_desc <- tabPanel( "Descriptives",
 
 
 #################################### going deeeper sidbarpanel
-network_sidebar <- tabPanel( "Network Analysis",
+#tabPanel( "Network Analysis",
+network_sidebar <- shinyWidgets::dropdown(
+  icon = icon("align-justify"),tooltip = tooltipOptions(title = "Set filters for network anylsis"),
+  circle = T,
 
-          waiter::use_waitress(color = "#375a7f"),
+          waiter::use_waitress(color = "#616f7d"),
           #waiter::use_waiter(),
           #waiter::use_hostess(),
           #waiter::hostess_loader("load", text_color = "white", center_page = TRUE),
@@ -413,17 +565,23 @@ network_sidebar <- tabPanel( "Network Analysis",
           radioButtons("lang_net", "Select Language", choiceNames = c("English Tweets", "German Tweets"),
                        choiceValues = c("en", "de")),
           # company selector
-          selectInput("comp_net","Choose a company (optional)",
-                      c("adidas", "NIKE"),
-                      selected = "",multiple = TRUE),
+          selectInput("comp_net","Choose tweets for",
+                      company_terms,
+                      selected = "NoFilter"),
 
           # datepicker
-          shinyWidgets::airDatepickerInput("dates_net", "Date range:",
+          shinyWidgets::airDatepickerInput("dates_net", "Select a range of up to 5 days",
                                            range = TRUE,
-                                           value = "2020-03-01",
+                                           value = "2018-11-30",
                                            maxDate = "2021-02-19", minDate = "2018-11-30",
                                            clearButton = T, update_on = "close",
                                            multiple = 5),
+          textOutput("date_checker_net"),
+  tags$head(tags$style("#date_checker_net{color: red;
+
+                                 }"
+  )
+  ),
 
           ##### same but continous choices
           # retweets count
@@ -496,7 +654,9 @@ network_sidebar <- tabPanel( "Network Analysis",
 
           ### canceling computation
           shinyjs::disabled(actionButton("cancel_net", "Cancel Rendering"))
-)
+
+          )
+#)
 
 
 #############################################################################
@@ -533,7 +693,13 @@ ui <- fluidPage(
                         });
                         ')),
   shinyjs::useShinyjs(),
+  shinyFeedback::useShinyFeedback(),
   theme = shinythemes::shinytheme("superhero"),
+  ### change button colors
+  tags$style(HTML('.btn-default {
+  background-color: #2b3e50;
+  border-color: #888888;
+                                          }')),
   #shinythemes::themeSelector(),
   #titlePanel("Sentiment_Covid_App"),
   navbarPage("APP",
@@ -541,34 +707,129 @@ ui <- fluidPage(
              dir_setter_panel(),
              twitter_main_panel(),
              tabPanel("Sentiment"),
-             tabPanel("Stocks",
+             # tabPanel("Stocks",
+             #          sidebarPanel(
+             #            radioButtons("country_stocks","Which country?",c("Germany","USA"),selected = "Germany"),
+             #            #selectize_Stocks(COMPONENTS_DE()),
+             #            uiOutput("stock_choice"),
+             #            #selectizeInput("stock_choice", choices = "Platzhalter"),
+             #            radioButtons("stock_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
+             #            actionButton("reset", "clear selected"),
+             #            checkboxInput("hovering","Enable hover",value = FALSE),
+             #            sliderinput_dates()
+             #          ),
+             #          mainPanel(
+             #            plot_stocks_DE(),
+             #            hover_info_DE()
+             #          ),#close MainPanel
+             # ),#close tabPanel stock
+             # tabPanel("Corona",
+             #          sidebarPanel(
+             #            selectize_corona(),
+             #            checkboxGroupInput("CoronaCountry","Country",c("Germany","United States"),selected = "Germany"),
+             #            sliderinput_dates_corona(),
+             #            checkboxInput("hovering_corona","Enable hover",value = FALSE)
+             #          ),
+             #          mainPanel(
+             #            plot_corona(),
+             #            hover_info_corona()
+             #          )
+             # ),#close tabPanel Corona
+
+
+
+
+
+
+
+
+             tabPanel("Comparison",
                       sidebarPanel(
-                        radioButtons("country_stocks","Which country?",c("Germany","USA"),selected = "Germany"),
+                        tags$hr(),
+
+
+                        ######## stocks
+                        tags$h4("Stocks"),
+
                         #selectize_Stocks(COMPONENTS_DE()),
-                        uiOutput("stock_choice"),
+                        selectInput("stocks_comp", "Select a company or index",
+                                    company_terms_stock, multiple = T,
+                                    selected = "AAPL"),
                         #selectizeInput("stock_choice", choices = "Platzhalter"),
-                        radioButtons("stock_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
+                        radioButtons("stocks_metric_comp","Which variable?",c("Return","Adj.Close" = "Adj.Close"),
+                                     selected = "Return", inline = T),
                         actionButton("reset", "clear selected"),
-                        checkboxInput("hovering","Enable hover",value = FALSE),
-                        sliderinput_dates()
-                      ),
-                      mainPanel(
-                        plot_stocks_DE(),
-                        hover_info_DE()
-                      ),#close MainPanel
-             ),#close tabPanel stock
-             tabPanel("Corona",
-                      sidebarPanel(
+
+
+                        tags$br(),
+                        tags$br(),
+                        tags$hr(),
+
+
+
+                        ######## covid
+                        tags$h4("COVID-19"),
+                        tags$br(),
+
+
+
                         selectize_corona(),
-                        checkboxGroupInput("CoronaCountry","Country",c("Germany","United States"),selected = "Germany"),
-                        sliderinput_dates_corona(),
-                        checkboxInput("hovering_corona","Enable hover",value = FALSE)
+                        selectInput("CoronaCountry","Country",c("Germany","USA" = "United States"),selected = "United States",
+                                    multiple = T),
+
+
+
+
+                        tags$br(),
+                        tags$br(),
+                        tags$hr(),
+
+
+
+
+                        ####### twitter
+                        tags$h4("Twitter"),
+                        tags$br(),
+
+
+
+                        radioButtons("lang_twitter_comp", "Select Language", choices = c("EN", "DE"), inline = T),
+
+                        selectInput("comp_twitter_comp","Choose tweets",
+                                    company_terms,
+                                    selected = "NoFilter", multiple = T),
+
+
+
+                        radioButtons("rt_twitter_comp", "minimum rt", choices = c(0, 10, 50, 100, 200), selected = 0,
+                                     inline = T),
+                        radioButtons("likes_twitter_comp", "minimum likes", choices = c(0, 10, 50, 100, 200), selected = 0,
+                                     inline = T),
+                        #switchInput(inputId = "long", value = TRUE),
+                        shinyWidgets::materialSwitch(inputId = "long_twitter_comp", label = "Long Tweets only?", value = F),
+
                       ),
                       mainPanel(
-                        plot_corona(),
-                        hover_info_corona()
+                        dygraphs::dygraphOutput("stocks_comp"),
+                        tags$br(),
+                        tags$br(),
+                        tags$hr(),
+                        dygraphs::dygraphOutput("covid_comp"),
+                        tags$br(),
+                        tags$br(),
+                        tags$hr(),
+                        dygraphs::dygraphOutput("twitter_comp")
+
                       )
              ),#close tabPanel Corona
+
+
+
+
+
+
+
+
              navbarMenu("Model",
                         tabPanel("Granger",
                                  sidebarPanel(
@@ -655,3 +916,10 @@ ui <- fluidPage(
              )#close Navbarmenu
   )#close Navbarpage
 )#close fluidpage
+
+
+
+
+
+
+

@@ -87,7 +87,8 @@ if (length(selected_metrics) == 1){
 #
 # filter_type = "mean"
 
-time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, input_dates1, input_dates2, dates = NA, date_range =T){
+time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, input_dates1, input_dates2, dates = NA, date_range =T,
+                                 input_title){
 
 
 
@@ -97,8 +98,9 @@ time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, 
 #}
   # replace tweet length with length
   selected_metrics_new <-   stringr::str_replace(selected_metrics, "tweet_length", "length")
+  if(!is.null(selected_metrics)){
   selected_metrics_new <- paste(filter_type, selected_metrics_new, sep = "_")
-
+}
   if (num_tweets == T){
     selected_metrics_new <- c(selected_metrics_new, "N")
     selected_metrics <- c(selected_metrics, "N")
@@ -131,7 +133,8 @@ time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, 
 
 
     dygraphs::dygraph(don,
-                      ylab = "Scaled Values") %>%
+                      ylab = "Scaled Values",
+                      main = input_title) %>%
     dygraphs::dyOptions(axisLineWidth = 2, drawGrid = FALSE) %>%
     dygraphs::dyLegend() %>%
 
@@ -151,8 +154,9 @@ time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, 
     #### change selected metrics name into nice name
     df <- df %>% select(created_at, selected_metrics_new)
 
+    if (selected_metrics != "N"){
     selected_metrics_new <- regmatches(selected_metrics_new, regexpr("_", selected_metrics_new), invert = TRUE)[[1]][2]
-
+    }
 
 
     selected_metrics_new <- stringr::str_replace(selected_metrics_new, "sentiment_rt", "Retweets weighted Sentiment")
@@ -175,7 +179,8 @@ time_series_plotter2 <- function(df, filter_type, selected_metrics, num_tweets, 
     ribbonData[increasing] <- 1
 
     dygraphs::dygraph(dyData,
-                      ylab = selected_metrics_new) %>%
+                      ylab = selected_metrics_new,
+                      main = input_title) %>%
       dygraphs::dySeries(label = selected_metrics_new) %>%
       dygraphs::dyRibbon(data = ribbonData, top = 0.05, bottom = 0) %>%
       dygraphs::dyOptions(axisLineWidth = 2, drawGrid = FALSE) %>%

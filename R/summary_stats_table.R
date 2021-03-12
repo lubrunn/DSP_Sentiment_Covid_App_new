@@ -53,6 +53,8 @@ df_need <-   df_need %>%
       summarise(std_N = sd(N),
                 mean_N = mean(N),
                 median_N = median(N),
+                q25_N = quantile(N, 0.25),
+                q75_N = quantile(N, 0.75),
                 min_N = min(N),
                 max_N = max(N))
   ) %>%
