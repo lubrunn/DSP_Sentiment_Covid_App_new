@@ -34,4 +34,5 @@
 #' @import lmtest
 #' @import sandwich
 #' @import plotly
+#' @import purrr
 NULL
