@@ -36,7 +36,8 @@ network_plot_datagetter <- function(input_lang, input_date1, input_date2, input_
   # read in all the files
    for (file in all_files){
 
-     df <- data.table::fread(file.path(path_source, file))
+     df <- data.table::fread(file.path(path_source, file),
+                             encoding = 'UTF-8')
 
    # if its the first file set it up as df_all
    if (is.null(df)){
