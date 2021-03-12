@@ -1029,21 +1029,18 @@ server <- function(input, output, session) {
   volumes <- c(Home = fs::path_home(), "R Installation" = R.home(), shinyFiles::getVolumes()())
   # allow for searching directories
   shinyFiles::shinyDirChoose(input, "directory", roots = volumes, session = session, restrictions = system.file(package = "base"), allowDirCreate = FALSE)
-  observe({
 
-    cat("\ninput$directory value:\n\n")
-    print(input$directory)
-  })
 
   ##### set wd with shinyfiles
  observeEvent(input$directory,{
+   ##### when directory button hasnt been pressed set wd to home directory and tell user
     if (is.integer(input$directory)) {
       setwd(volumes)
 
       cat(glue("No directory has been selected. Current directory {getwd()})"))
 
     } else {
-
+      ##### when button is pressed set wd to choosen dir
       path <- shinyFiles::parseDirPath(volumes, input$directory)
 
       setwd(path)
@@ -1057,24 +1054,28 @@ server <- function(input, output, session) {
  ####### manually entered path
  observeEvent(input$dir_path_man_btn, {
 
-
+  ### when manual path button is pressed set wd to enterd path
    setwd(input$dir_path_man)
  })
 
+ #### checks if sqlitstudio dir exists, if yes then wd is set correctly
  correct_path <- reactive({
    input$dir_path_man_btn
    input$directory
    dir.exists("SQLiteStudio")
  })
 
-  ####### output text as feedback for user
+  ####### output text as feedback for user whether directory seems corrct
   output$directorypath <- renderText({
     input$directory
     input$dir_path_man_btn
+
+    #### when sqlitestudio dir exists everything correct
     if(dir.exists("SQLiteStudio")) {
       glue("Current path is set to: {getwd()} ")
 
     } else {
+      #### if sqlitstudio does not exist something wrong probably
       glue("Current path is set to: {getwd()}. Data could not be found in this  \n
       directory. Are you sure it is set correctly?")
     }
@@ -1102,13 +1103,13 @@ server <- function(input, output, session) {
   ###############################################################################
 
   output$twitter_logo <- renderImage({
-
+    ###### correct path needs to be chosen
     req( correct_path()== T)
-
+    ##### path to png
     filename <- "shiny/images/twitter_logo_wordcloud2.png"
 
 
-
+    ##### image output
     list(src = filename,
          alt = "This is the Twitter Logo",
          contentType = "Images/png",
@@ -1121,7 +1122,7 @@ server <- function(input, output, session) {
   ###############################################################################
   ### reset daterange
   observeEvent(input$reset_dates_desc,{
-
+    #### when reset button is pressed, reset date range to entire date range available
     shinyWidgets::updateAirDateInput(session, "dates_desc",
                                      clear = T,
                                      value = c("2018-11-30", "2021-02-19"))
@@ -1140,6 +1141,8 @@ server <- function(input, output, session) {
     }
   })
 
+
+  ###### create reactive long variable for filtering from user input
  long <- reactive({
    if (input$long == T){
      long <- 81
@@ -1154,14 +1157,17 @@ server <- function(input, output, session) {
 
  ################################## date_variable that accounts for single dates
  dates_desc <- reactive({
-
+    ###### need correct path
    validate(need(correct_path() == T, "Please choose the correct path"))
+   ######## need at least one date
    validate(need(!is.null(input$dates_desc), "Please select a date."))
 
-
+    ##### if date range selected, used date range
    if (length(input$dates_desc) > 1){
      input$dates_desc
    } else {
+     ##### if single date selceted, create daterange with same date twice --> for easier computing
+     # otherwise need to control for cases where input is single date vs. list of dates
      c(input$dates_desc, input$dates_desc)
    }
  })
@@ -1169,17 +1175,19 @@ server <- function(input, output, session) {
 
  ################################### path finder for histo files
   querry_histo <- reactive({
+    ##### need correct wd
     validate(need(correct_path() == T, "Please choose the correct path"))
+    ##### need at least one date selected
     validate(need(!is.null(input$dates_desc), "Please select a date."))
 
 
-
+    #### convert long input to name addon in file
     if (input$long == T){
       long_name <- "long_only"
     } else{
       long_name <- "all"
     }
-
+    #### get langauge addon
     lang <- lang_converter()
 
 
@@ -1191,21 +1199,13 @@ server <- function(input, output, session) {
     value_var <- stringr::str_replace(value_var, "tweet_length", "long")
 
 
-
-
-
-
-
-    # for no filter
+  # for no filter
     if (input$comp == "NoFilter"){
+    #### filename for nofilter data
     glue("histo_{value_var}_{lang}_NoFilter_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
     } else { #for chosen company
       req(!is.null(input$comp))
-
-
-
-
-
+      #### filename for companies
       glue("histo_{value_var}_{input$comp}_rt_{input$rt}_li_{input$likes}_lo_{long_name}.csv")
 
     }
@@ -1216,9 +1216,11 @@ server <- function(input, output, session) {
 
   ##################### summary statistics table data and time series data
     querry_sum_stats_table <- reactive({
+      ##### set up querry string for sql
 
-long <- long()
-#browser()
+      #### get tweet_length filter, 81 for long==T, 0 for long==F
+      long <- long()
+      ##### for unfitlered tweets
       if (input$comp == "NoFilter"){
       table_name <- glue("sum_stats_{tolower(input$lang)}")
 
@@ -1240,23 +1242,32 @@ long <- long()
     #########################################################################
     ############################# get data for sum stats table
     get_data_sum_stats_tables <- reactive({
+      ###### need correct path
       validate(need(correct_path() == T, "Please choose the correct path"))
+      ###### need database connection
       validate(need(database_connector(), "Could not connect to database"))
+      ###### need at least one date selected
       validate(need(!is.null(input$dates_desc), "Please select a date."))
 
-
+      ####### store database connection
       con <- database_connector()
-
+      ##### check if connection is null
       string_value <- is.null(con)
       req(!string_value)
-      df_need <- DBI::dbGetQuery(con,  querry_sum_stats_table())
 
+      ###### querry data from sql
+      df_need <- DBI::dbGetQuery(con,  querry_sum_stats_table())
+      #### return df
       df_need
     })
-    #########################
+
+
+     #########################
     ################################# sum stats table
     output$sum_stats_table <- function(){
+      ###### use data from sql from previous step
       df_need <- get_data_sum_stats_tables()
+      ##### create summary stats table with function
       sum_stats_table_creator(df_need, dates_desc()[1], dates_desc()[2])
     }
 
@@ -1335,26 +1346,28 @@ long <- long()
   ##################################
   ################################################### output time series
 
-    ###### number of tweets display
+
     ###### title for dygraphs
     number_tweets_info_desc <- reactive({
-
+      ##### get data from sql
       df_need <- get_data_sum_stats_tables()
 
       #convert to date
       df_need$created_at <- as.Date(df_need$created_at)
 
-
+      ###### filter for dates input from user
       df_need <- df_need %>%
         filter(between(created_at, as.Date(dates_desc()[1]), as.Date(dates_desc()[2])))
 
 
-      ##### company name
+      ##### for tweet type input get nice company name accroding to named list
       if (input$comp == "NoFilter"){
-        comp_name <- names(flatten(company_terms))[flatten(company_terms) == input$comp]
+        comp_name <- names(purrr::flatten(company_terms))[purrr::flatten(company_terms) == input$comp]
       } else {
-        comp_name <- glue("{names(flatten(company_terms))[flatten(company_terms) == input$comp]} Tweets")
+        comp_name <- glue("{names(purrr::flatten(company_terms))[purrr::flatten(company_terms) == input$comp]} Tweets")
       }
+
+      ##### set up string for header of time series graphs
       glue("{comp_name} ({round(sum(df_need$N))} tweets total,
            {round(mean(df_need$N))} average per day)")
     })
@@ -1366,74 +1379,75 @@ long <- long()
     ###################################################
   output$sum_stats_plot <- dygraphs::renderDygraph({
 
-    message("renderDygraph")
+    #### need at least one inputalue(likes/retweets etc.)
     req(!is.null(input$value) | input$num_tweets_box == T)
+
+    ###### need at least two days selected for time series plot
     validate(need(length(input$dates_desc) != 1, "Cannot plot time series for single day"))
-    #validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+
+    ##### need date input to not be null
     validate(need(!is.null(input$dates_desc), "Please select a date."))
 
-    ##### get title
-
+    ##### header for plots
     input_title <- number_tweets_info_desc()
 
-
+    ### get data for plots
     df <- get_data_sum_stats_tables()
 
+
+    #### when number of tweets should not be plotted
     if (input$num_tweets_box == F){
       time_series_plotter2(df, input$metric, input$value, num_tweets = F,
                            input$dates_desc[1], input$dates_desc[2],
                            input_title = input_title )
-    } else {
+    } else { ##### when number of tweets should be plotted
 
       time_series_plotter2(df, input$metric, input$value, num_tweets = T,
                            input$dates_desc[1], input$dates_desc[2],
                            input_title = input_title )
     }
-    # dygraphs::dygraph(don) %>%
-    #   dygraphs::dyRangeSelector( input$dates_desc + 1, retainDateWindow = T
-    #   )
+
   })
 
 
 
-  #################################
-  ################ for saved plot
+  #####################################################################
+  ################ for second time series plot from saving plot button
   ##################################
   save_plot <- reactiveValues(data = NULL)
 
   ##### if button is clicked store time series plot in serperate part
   observeEvent(input$plot_saver_button, {
-
-    #validate(need(path_setter()[[3]] == "correct_path", "Please select the correct path"))
+    #### date input cannot be null
     validate(need(!is.null(input$dates_desc), "Please select a date."))
-
+    ###### need at leat ne value selected
     req(!is.null(input$value) | input$num_tweets_box == T)
+    ####### need at least dates selceted for time series plot
     validate(need(length(input$dates_desc) > 1, "Cannot plot time series for single day"))
 
-    ##### get title
+    ##### get plot header
     input_title <- number_tweets_info_desc()
 
     # get df
     df <- get_data_sum_stats_tables()
 
+
+    ###### in case where number of tweets should not be included in plot
     if (input$num_tweets_box == F){
       save_plot$plot <- time_series_plotter2(df, input$metric, input$value, num_tweets = F,
                                              input$dates_desc[1], input$dates_desc[2], r,
                                               date_range = F,
                                              input_title = input_title)
-    } else {
+    } else { ## in case where number of tweets should be included in plot
       save_plot$plot <- time_series_plotter2(df, input$metric, input$value, num_tweets = F,
                                              input$dates_desc[1], input$dates_desc[2], r,
                                              date_range = F,
                                              input_title = input_title)
     }
 
-
-
-
   })
 
-
+  ######## time series plot when pressing save plot button
   output$sum_stats_plot2 <-dygraphs::renderDygraph({
    save_plot$plot
     # dygraphs::dygraph(don) %>%
@@ -1954,6 +1968,8 @@ long <- long()
 
     #hostess$set(2 * 10)
     #waitress$inc(1)
+
+    ###### plot the network plot
     network_plot_plotter_bigrams(df)
 
 
@@ -1964,19 +1980,16 @@ long <- long()
 
 
   }
-    # Hide loading element when done
-    # shinyjs::hideElement(id = 'loading')
+    ##### when process has run successfully enable render plot button again
+      # and disable cancel button again
     enable("button_net")
     disable("cancel_net")
 
   })
 
-
+    ########## when button is pressed remove ui element (network plot)
   observeEvent(input$reset_net,{
-     # shinyjs::hide(id = "loading",
-     #                     "network_plot",
-     #               animType = T,
-     #               time = 0)
+
     removeUI("#network_plot")
   })
 
@@ -1988,7 +2001,7 @@ long <- long()
 
   ######## message for aborting process
   observeEvent(input$cancel_net, {
-
+    ### when button is pressed show error and abort process
     showNotification("Computation has been aborted", type = "error")
   })
 
@@ -1996,24 +2009,28 @@ long <- long()
 
 
   output$raw_tweets_net <- DT::renderDataTable({
+
+    ##### only work when correct path is choosen
     validate(need(correct_path() == T, "Please choose the correct path"))
+
+    #### need at least one date selected
     validate(need(!is.null(input$dates_net), "Please select a date."))
 
-
+    #### get filtered data
     dt <- data_filterer_net_react()
 
     # change to nicer names
     dt <- dt[, c("created_at", "tweet", "text", "username","sentiment", "retweets_count", "likes_count")]
     names(dt) <- c("Date", "Orig.Tweet", "CleanTweet", "Username","Sentiment", "Retweets", "Likes")
 
-
+    ### set up shiny datatable with custom style
     DT::datatable(dt, options = list(
       initComplete = JS(
         "function(settings, json) {",
         "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
         "}")
       ), rownames = F
-    )
+    ) %>% DT::formatStyle(columns = c(1), width='75px')
   })
 
 
@@ -2025,7 +2042,12 @@ long <- long()
   })
 
 
+####### description of network analysis
+  output$network_description <- renderUI({
+    HTML(network_description_text)
 
+
+  })
 
 
 #########################################################################
@@ -2047,16 +2069,19 @@ long <- long()
   output$stocks_comp <- dygraphs::renderDygraph({
   req(input$stocks_comp)
 
-    stock_plotter(get_stock_data_comp(), input$stocks_metric_comp, input$stocks_comp)
+    stock_plotter(get_stock_data_comp(), input$stocks_metric_comp, input$stocks_comp, input$roll_stock_comp)
   })
 
 
   output$covid_comp <- dygraphs::renderDygraph({
     req(!is.null(input$CoronaCountry))
+    validate(need(correct_path() == T, "Please choose the correct path"))
+
+
     df <- data.table::fread("Corona/owid.csv")
 
 
-    covid_plotter(df, input$corona_measurement, input$CoronaCountry)
+    covid_plotter(df, input$corona_measurement, input$CoronaCountry, input$roll_covid_comp)
 
 
 
