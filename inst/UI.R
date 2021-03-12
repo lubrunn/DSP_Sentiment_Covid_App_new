@@ -1034,8 +1034,100 @@ ui <- fluidPage(
                                      tabPanel("Actual Forecast",
                                               verbatimTextOutput("testins"),
                                               dygraphs::dygraphOutput("plot_forecast_real"))#close tabpanel actual forecast
-                                   )))#close tabpanel VAR forecasting
-             )#close Navbarmenu
+                                   ))),#close tabpanel VAR forecasting
+                        tabPanel("XGboost-forecasting",
+                                 sidebarPanel(
+                                   conditionalPanel(condition="input.tabs == 'Summary statistics'",       
+                                                    tabs_custom_xgb()),
+                                   conditionalPanel(condition="input.tabs == 'AR & MA structure'",
+                                                    radioButtons("lag_tabs","How do you want to proceed?",choices = c("default","custom"),
+                                                                 selected = "default")  %>% shinyhelper::helper(type = "markdown",
+                                                                                                                title = "Inline Help",
+                                                                                                                content = "default_lag_selection",
+                                                                                                                buttonLabel = "Got it!",
+                                                                                                                easyClose = FALSE,
+                                                                                                                fade = TRUE,
+                                                                                                                size = "s"),
+                                                    custom_lag_tab()
+                                                    
+                                                    
+                                   ),
+                                   conditionalPanel(condition="input.tabs == 'Validity'",       
+                                                    #  numericInput("split_at","select training/test split",min = 0.1, value=0.7,max = 1,
+                                                    #              step = 0.1),
+                                                    radioButtons("model_spec","Choose model specification",choices = c("default","custom","hyperparameter_tuning"),
+                                                                 selected = "default") %>% shinyhelper::helper(type = "markdown",
+                                                                                                               title = "Inline Help",
+                                                                                                               content = "model_selection",
+                                                                                                               buttonLabel = "Got it!",
+                                                                                                               easyClose = FALSE,
+                                                                                                               fade = TRUE,
+                                                                                                               size = "s"),
+                                                    model_specification(),
+                                                    numericInput("n_ahead","select forecast",min = 1, value=5,max = 20,
+                                                                 step = 1),
+                                                    radioButtons("ftpye","Select usage of features",choices = c("no_features","past_features","forecasted_features"),
+                                                                 selected = "no_features") %>% shinyhelper::helper(type = "markdown",
+                                                                                                                   title = "Inline Help",
+                                                                                                                   content = "features",
+                                                                                                                   buttonLabel = "Got it!",
+                                                                                                                   easyClose = FALSE,
+                                                                                                                   fade = TRUE,
+                                                                                                                   size = "s"),
+                                                    actionButton("run", "Run Model"),
+                                                    actionButton("pred", "Predict"),
+                                                    selectInput("forecast_plot_choice","Select plot to show:",
+                                                                c("Forecasted","Full"),selected="Full")
+                                                    
+                                                    
+                                   ),
+                                   conditionalPanel(condition="input.tabs == 'Actual forecast'", 
+                                                    radioButtons("model_spec_for","Choose model specification",choices = c("default","custom","hyperparameter_tuning"),
+                                                                 selected = "default"),
+                                                    model_specification_for(),
+                                                    numericInput("n_ahead2","select forecast window (days):",min = 1, value=5,max = 20,
+                                                                 step = 1),
+                                                    radioButtons("ftpye2","Select covariates for forecast",choices = c("no_features","past_features","forecasted_features"),
+                                                                 selected = "forecasted_features"),
+                                                    actionButton("run2", "Run Model on the full dataset"),
+                                                    actionButton("pred2", "Predict"))
+                                   
+                                 ),
+                                 mainPanel(
+                                   tabsetPanel(type = "tabs", id = "tabs",
+                                               tabPanel("Summary statistics",value="Summary statistics",
+                                                        tableOutput("xgb_summary"),
+                                                        tableOutput("correlation_xgb")
+                                                        # plotOutput("correlation_plot")
+                                               ),
+                                               tabPanel("AR & MA structure", value = "AR & MA structure",
+                                                        conditionalPanel(
+                                                          condition = "input.correlation_type == 'ACF' && input.lag_tabs == 'custom'",
+                                                          plotOutput("acf_plot_xgb")),
+                                                        conditionalPanel(
+                                                          condition = "input.correlation_type == 'PACF'  && input.lag_tabs == 'custom'",
+                                                          plotOutput("pacf_plot_xgb")),
+                                                        conditionalPanel("input.lag_tabs == 'custom'",
+                                                                         DT::dataTableOutput("tableCustom")),
+                                                        conditionalPanel("input.lag_tabs == 'default'",
+                                                                         DT::dataTableOutput("df_xgb_default"))
+                                               ),
+                                               tabPanel("Validity", value = "Validity",
+                                                        verbatimTextOutput("model_xgb"),
+                                                        tableOutput("model_fit"),
+                                                        verbatimTextOutput("serial_out_xgb"),
+                                                        dygraphs::dygraphOutput("forecast_xgb"),
+                                                        tableOutput("xgb_metrics")
+                                               ),
+                                               tabPanel("Actual forecast", value = "Actual forecast",
+                                                        verbatimTextOutput("model_xgb2"),
+                                                        verbatimTextOutput("serial_out_xgb_for"),
+                                                        dygraphs::dygraphOutput("plot_1_xgb_actual")
+                                               )    
+                                   )    
+                                 )
+                        )
+              )#close Navbarmenu
   )#close Navbarpage
 )#close fluidpage
 
