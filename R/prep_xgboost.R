@@ -35,7 +35,7 @@ AR_creator <- function(df,variable,lag){
 
   if(lag > 0){
   df <- df[,c("date",variable)]
-  df <- df %>%  tk_augment_lags(contains(variable), .lags = 1:lag)
+  df <- df %>%  timetk::tk_augment_lags(contains(variable), .lags = 1:lag)
   df <- df[,c(-1,-2)]
   return(df)
   }else{
