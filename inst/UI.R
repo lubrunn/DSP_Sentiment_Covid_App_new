@@ -328,6 +328,7 @@ twitter_desc_conditional_sum_stats <- conditionalPanel(
   shinyWidgets::radioGroupButtons("metric", "Select a statistic to plot",
                choiceNames = c("Mean", "SD", "Median"),
                choiceValues = c("mean", "std", "median"),
+
                status = "primary",
                checkIcon = list(
                  yes = icon("ok",
@@ -1037,7 +1038,7 @@ ui <- fluidPage(
                                    ))),#close tabpanel VAR forecasting
                         tabPanel("XGboost-forecasting",
                                  sidebarPanel(
-                                   conditionalPanel(condition="input.tabs == 'Summary statistics'",       
+                                   conditionalPanel(condition="input.tabs == 'Summary statistics'",
                                                     tabs_custom_xgb()),
                                    conditionalPanel(condition="input.tabs == 'AR & MA structure'",
                                                     radioButtons("lag_tabs","How do you want to proceed?",choices = c("default","custom"),
@@ -1049,10 +1050,10 @@ ui <- fluidPage(
                                                                                                                 fade = TRUE,
                                                                                                                 size = "s"),
                                                     custom_lag_tab()
-                                                    
-                                                    
+
+
                                    ),
-                                   conditionalPanel(condition="input.tabs == 'Validity'",       
+                                   conditionalPanel(condition="input.tabs == 'Validity'",
                                                     #  numericInput("split_at","select training/test split",min = 0.1, value=0.7,max = 1,
                                                     #              step = 0.1),
                                                     radioButtons("model_spec","Choose model specification",choices = c("default","custom","hyperparameter_tuning"),
@@ -1078,10 +1079,10 @@ ui <- fluidPage(
                                                     actionButton("pred", "Predict"),
                                                     selectInput("forecast_plot_choice","Select plot to show:",
                                                                 c("Forecasted","Full"),selected="Full")
-                                                    
-                                                    
+
+
                                    ),
-                                   conditionalPanel(condition="input.tabs == 'Actual forecast'", 
+                                   conditionalPanel(condition="input.tabs == 'Actual forecast'",
                                                     radioButtons("model_spec_for","Choose model specification",choices = c("default","custom","hyperparameter_tuning"),
                                                                  selected = "default"),
                                                     model_specification_for(),
@@ -1091,7 +1092,7 @@ ui <- fluidPage(
                                                                  selected = "forecasted_features"),
                                                     actionButton("run2", "Run Model on the full dataset"),
                                                     actionButton("pred2", "Predict"))
-                                   
+
                                  ),
                                  mainPanel(
                                    tabsetPanel(type = "tabs", id = "tabs",
@@ -1123,8 +1124,8 @@ ui <- fluidPage(
                                                         verbatimTextOutput("model_xgb2"),
                                                         verbatimTextOutput("serial_out_xgb_for"),
                                                         dygraphs::dygraphOutput("plot_1_xgb_actual")
-                                               )    
-                                   )    
+                                               )
+                                   )
                                  )
                         )
               )#close Navbarmenu
