@@ -119,11 +119,11 @@ ARMA_creator_for <- function(res,res_pre){
 
 #' @export
 #' @rdname xgboost_prep
-lag_cols <- function(res){    #input variable for "Close"
+lag_cols <- function(res,variable){    #input variable for "Close"
                               #insert here
-  b <- res %>% dplyr::select(-date,-Close) %>%  lag(1)
+  b <- res %>% dplyr::select(-Dates,-variable) %>%  lag(1)
                               #insert here
-  res <- res %>% dplyr::select(date,Close) %>%  cbind(b)
+  res <- res %>% dplyr::select(Dates,variable) %>%  cbind(b)
   
   res <- res[-1,]
   
@@ -132,14 +132,13 @@ lag_cols <- function(res){    #input variable for "Close"
 
 #' @export
 #' @rdname xgboost_prep
-
 make_ts_stationary <- function(res){
     
  for(i in 2:ncol(res)){ 
- optlags <- VARselect(res[,i],lag.max = 10, 
-                      type = "const")$selection[["AIC(n)"]]
-   
-  if(adf.test(res[,i],k=optlags)$p.value > 0.1){
+ # optlags <- VARselect(res[,i],lag.max = 10, 
+ #                      type = "const")$selection[["AIC(n)"]]
+ #   
+  if(adf.test(res[,i],k=2)$p.value > 0.1){
     res[,i] <- c(diff(res[,i],1),NA)
     
     }
@@ -150,7 +149,10 @@ make_ts_stationary <- function(res){
   return(res)
 }
 #' @export
-#' @rdname xgboost_prep           # insert variable for "Close"
+#' @rdname xgboost_prep   
+sample <- res 
+n_ahead <- 5
+variable <- "Close"
 split_data_for <- function(sample,n_ahead,ftype,variable){
   names(sample)[1] <- "date"
   sample <- sample %>%
@@ -225,6 +227,8 @@ split_data_for <- function(sample,n_ahead,ftype,variable){
 
 #' @export
 #' @rdname xgboost_prep
+sample <- aa
+n_ahead2 <- 5
 split_data_for_ahead <- function(sample,n_ahead2,ftype2){
   names(sample)[1] <- "date"
   sample <- sample %>%

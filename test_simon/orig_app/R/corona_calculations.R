@@ -6,11 +6,11 @@
 
 #' @export
 #' @rdname corona_calculations
-CORONA <- function(country,datestart,dateend){
+CORONA <- function(country){
   filename <- "Corona/owid.csv"
   help <- filter(read.csv(filename),location %in% c(country))
   help$date <- as.Date(help$date)
-  help <- filter(help,date >= datestart & date <= dateend)
+  #help <- filter(help,date >= datestart & date <= dateend)
   help
 }
 

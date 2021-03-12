@@ -2,10 +2,11 @@
 #' @export
 #' @rdname xgboost
 model_xgb <- function(res){
+  set.seed(123) # should i do it dynamic
   
   names(res)[2] <- "y"
   
-  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 5  , assess_stop = 2,step = 2)
+  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 4  , assess_stop = 1,step = 1)
   
   res$date <- NULL
   
@@ -61,9 +62,11 @@ model_xgb <- function(res){
 model_xgb_custom <- function(res,mtry,trees,min_n,tree_depth,learn_rate,loss_reduction,
                              sample_size){
   
+  set.seed(123) # should i do it dynamic
+  
   names(res)[2] <- "y"
   
-  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 5  , assess_stop = 2,step = 2)
+  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 5  , assess_stop = 1,step = 2)
   
   res$date <- NULL
   
@@ -116,10 +119,11 @@ model_xgb_custom <- function(res,mtry,trees,min_n,tree_depth,learn_rate,loss_red
 #' @rdname xgboost
 
 model_xgb_hyp <- function(res,trees_hyp,grid_size){
+  set.seed(123) # should i do it dynamic
   
   names(res)[2] <- "y"
   
-  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 5  , assess_stop = 2,step = 2)
+  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 5  , assess_stop = 1,step = 2)
   
   res$date <- NULL
   

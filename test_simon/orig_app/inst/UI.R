@@ -575,16 +575,28 @@ ui <- fluidPage(
                                                       #  numericInput("split_at","select training/test split",min = 0.1, value=0.7,max = 1,
                                                       #              step = 0.1),
                                                       radioButtons("model_spec","Choose model specification",choices = c("default","custom","hyperparameter_tuning"),
-                                                                   selected = "default"),
+                                                                   selected = "default") %>% shinyhelper::helper(type = "markdown",
+                                                                                                                title = "Inline Help",
+                                                                                                                content = "model_selection",
+                                                                                                                buttonLabel = "Got it!",
+                                                                                                                easyClose = FALSE,
+                                                                                                                fade = TRUE,
+                                                                                                                size = "s"),
                                                       model_specification(),
                                                       numericInput("n_ahead","select forecast",min = 1, value=5,max = 20,
                                                                    step = 1),
                                                       radioButtons("ftpye","Select usage of features",choices = c("no_features","past_features","forecasted_features"),
-                                                                   selected = "no_features"),
+                                                                   selected = "no_features") %>% shinyhelper::helper(type = "markdown",
+                                                                                                                     title = "Inline Help",
+                                                                                                                     content = "features",
+                                                                                                                     buttonLabel = "Got it!",
+                                                                                                                     easyClose = FALSE,
+                                                                                                                     fade = TRUE,
+                                                                                                                     size = "s"),
                                                       actionButton("run", "Run Model"),
                                                       actionButton("pred", "Predict"),
                                                       selectInput("forecast_plot_choice","Select plot to show:",
-                                                                  c("Forecasted period only","Full time series"),selected="Full time series")
+                                                                  c("Forecasted","Full"),selected="Full")
                                                       
                                                       
                                      ),
@@ -628,6 +640,7 @@ ui <- fluidPage(
                                             ),
                                                 tabPanel("Actual forecast", value = "Actual forecast",
                                                      verbatimTextOutput("model_xgb2"),
+                                                     verbatimTextOutput("serial_out_xgb_for"),
                                                      dygraphs::dygraphOutput("plot_1_xgb_actual")
                                     )    
                                   )    

@@ -400,8 +400,9 @@ tabsetPanel(
                        value = c(as.Date("2020-02-12"),as.Date("2021-02-12")),
                        min = as.Date("2020-01-02"),
                        max = as.Date("2021-02-12"),
-                       step = 1,timeFormat = "%F")
-           
+                       step = 1,timeFormat = "%F"),
+           radioButtons("country_corona_xgb","Which country ?",c("Germany","United States"),selected = "Germany"),
+           uiOutput("corona_vars_xgb")
            
            
   ),
@@ -426,7 +427,8 @@ tabsetPanel(
   tabPanel("1",
            #selectInput("var_1", "Chose variable to add AR and/or MA features", choices = ""),
            uiOutput("add_features"),
-           numericInput("num_1","Chose length of moving average",min=0,value = 1),
+           # corona variablen auch in add_features
+           numericInput("num_1","Chose length of moving average",min=0,value = 2),
            numericInput("num_2","Chose Autoregressive lags for",min=0,value = 1),
            actionButton("addButton", "Upload"),
            actionButton("finish", "Finish"),

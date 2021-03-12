@@ -1790,7 +1790,9 @@ long <- long()
 ########################   XGboost    #########################################
 ###############################################################################
 ###flexible input for stocks: show either german or us companies
-
+observe_helpers(withMathJax = TRUE, help_dir = "C:/Users/simon/Desktop/WS_20_21/Git_tracked_Sentiment_App/DSP_Sentiment_Covid_App/test_simon/SimonApp/helpers")
+  
+  
 output$stock_regression_xgb <- renderUI({
     req(path_setter()[[3]][1] == "correct_path")
     if (input$country_regression_xgb == "Germany"){
@@ -1973,16 +1975,38 @@ final_regression_df_xgb <- reactive ({
   res$date <- as.Date(res$date)
   res_c <- df_selected_controls_xgb()
   res <- left_join(res_c,res, by=c("Dates" = "date"))
-  #res <- res[-1]
+  res_corona <- df_selected_corona_xgb()
+  res_corona$date <- as.Date(res_corona$date)
+  res <- left_join(res,res_corona,by=c("Dates" = "date"))
+  
   res
 })
 
-# output$dataset_start <- DT::renderDataTable ({
-#   DT::datatable(final_regression_df_xgb()) %>% DT::formatStyle(names(final_regression_df_xgb()),
-#                                                                lineHeight='80%',lineWidth='80%') %>% DT::formatRound(columns= final_regression_df_xgb()
-#                                                                                                                      %>% dplyr::select(-Dates)
-#                                                                                                                      %>% names() ,                                                                                                                  digits=2)
-# })
+
+df_selected_corona_xgb <- reactive({
+  #req(input$Controls_var)
+  res <- corona_data_xgb()
+  res <- res %>% dplyr::select(-X,-location)
+  res <- res[c("date",input$corona_xgb)]
+  res
+})
+
+corona_data_xgb <- reactive({
+  req(path_setter()[[3]][1] == "correct_path")
+  req(input$country_corona_xgb)
+  CORONA(input$country_corona_xgb)
+})
+
+output$corona_vars_xgb <- renderUI({
+  req(path_setter()[[3]][1] == "correct_path")
+  res <- corona_data_xgb()
+  res <- res %>% dplyr::select(-X,-location,-date)
+  input <- selectizeInput("corona_xgb","Choose a corona related variable:",
+                          names(res),multiple = FALSE)
+  
+})
+
+
 output$xgb_summary <- function(){
   knitr::kable(df_need_xgb(), caption = glue("Summary statistics"),colnames = NULL) %>%
     kableExtra::kable_styling(c("striped","hover"), full_width = F,
@@ -2076,28 +2100,37 @@ xchange$df2 <- NULL
 
 final_regression_diff <- reactive({
   res <- final_regression_df_xgb()
+  res <- lag_cols(res,input$regression_outcome_xgb)
   res <- make_ts_stationary(res)
   res
 })
+v <- reactive({
+  validate(validate_MA(input$num_1))
+})
+# validate that MA cannot be 1
+observe({
+  if(input$addButton > 0) {
+   
+    if((input$var_1 == "Close") | (input$var_1 == "Open")){
+      Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
+      Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
+      isolate(xchange$df_full <-  cbind(final_regression_diff(),Ar_part,Ma_part))}
+    else if(input$var_1 == "VIX"){
+      Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
+      Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
+      isolate(xchange$df_full2 <-  cbind(final_regression_diff(),Ar_part,Ma_part))}
+    else if(input$var_1 == "coronavirus"){
+      Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
+      Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
+      isolate(xchange$df_full3 <-  cbind(final_regression_diff(),Ar_part,Ma_part))}
+    else{
+      Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
+      Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
+      isolate(xchange$df_full4 <-  cbind(final_regression_diff(),Ar_part,Ma_part))
+    }
+  }
 
-
-# observe({
-#   if(input$addButton > 0) {
-#     if((input$var_1 == "Close") | (input$var_1 == "Open")){ # here  OR statments for y 
-#       Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
-#       Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
-#       isolate(xchange$df_full <-  cbind(final_regression_diff(),Ar_part,Ma_part))}
-#     else if(input$var_1 == "VIX"){
-#       Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
-#       Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
-#       isolate(xchange$df_full <-  cbind(final_regression_diff(),Ar_part,Ma_part))}
-#     }else if(input$var_1 == "coronavirus"){
-#       Ma_part <- MA_creator(final_regression_diff() ,input$var_1,input$num_1)
-#       Ar_part <- AR_creator(final_regression_diff() ,input$var_1,input$num_2)
-#       isolate(xchange$df_full <-  cbind(final_regression_diff(),Ar_part,Ma_part))}
-#     
-#   
-# })
+})
 
  
 observe({
@@ -2110,7 +2143,7 @@ observe({
 })
 
 custom_df <- eventReactive(input$finish, { 
-      list_dfs <- c(xchange$df_full,xchange$df_full2,xchange$df_full3)
+      list_dfs <- c(xchange$df_full,xchange$df_full2,xchange$df_full3,xchange$df_full4)
       df <- data.frame((sapply(list_dfs,c)))
       df <- df %>% dplyr::select(-contains("."))
       df$Dates <- as.Date(df$Dates)
@@ -2161,13 +2194,17 @@ output$df_xgb_default <- DT::renderDataTable({
 df_xgb_train <- reactive({
   if(input$lag_tabs == "default"){
     res <- final_regression_df_xgb()
+    res <- lag_cols(res,input$regression_outcome_xgb)
     res <- make_ts_stationary(res)
     list_dfs <- split_data_for(res,input$n_ahead,input$ftpye,input$regression_outcome_xgb)
     res <- ARMA_creator(res,input$regression_outcome_xgb)
-  
-    list_dfs$df_train <- res
+    
+    cols <- setdiff(colnames(res),colnames(list_dfs$df_train))
+    res <- res[,c("date",cols)]
+    list_dfs$df_train <- left_join(list_dfs$df_train,res)
   }else{
     res <- custom_df()
+    
     list_dfs <- split_data_for(res,input$n_ahead,input$ftpye,input$regression_outcome_xgb)
   }
 
@@ -2184,31 +2221,48 @@ df_xgb_train <- reactive({
 df_xgb_train_for <- reactive({
   if(input$lag_tabs == "default"){
     res <- final_regression_df_xgb()
+    res <- lag_cols(res,input$regression_outcome_xgb)
     res <- make_ts_stationary(res)
     list_dfs <- split_data_for_ahead(res,input$n_ahead2,input$ftpye2)
     res <- ARMA_creator(res,input$regression_outcome_xgb)
-
-    list_dfs$df_train <- res
+    
+    cols <- setdiff(colnames(res),colnames(list_dfs$df_train))
+    res <- res[,c("date",cols)]
+    list_dfs$df_train <- left_join(list_dfs$df_train,res)
   }else{
     res <- custom_df()
     list_dfs <- split_data_for_ahead(res,input$n_ahead2,input$ftpye2)
   }
-
+  
   res <- ARMA_creator_for(list_dfs$df_forecast,list_dfs$df_train)
-
+  
   #rename with columns from train
-  list_dfs$df_forecast<- res
-
+  list_dfs$df_forecast <- res
+  
   list_dfs
 })
 
+# df_xgb_ahead_df <- reactive({
+# #   
+# 
+# })
+# 
 
-model_xgbi <- eventReactive(input$run,{#maybe rename y column to y
+model_xgbi <- eventReactive(input$run,{
+  #waitress <- waiter::Waitress$new("model", max = 4,  theme = "overlay")
+  #Automatically close it when done
+  #on.exit(waitress$close())
+
+  #waitress$notify()
+  
   req(input$model_spec)
   if(input$model_spec == "default"){
     res <- df_xgb_train()
     model1 <- model_xgb(res$df_train)
     model1
+    
+    
+    waitress$close()
   }else if(input$model_spec == "custom"){
     res <- df_xgb_train()
     model2 <- model_xgb_custom(res$df_train,input$mtry,input$trees,input$min_n,input$tree_depth,
@@ -2219,6 +2273,9 @@ model_xgbi <- eventReactive(input$run,{#maybe rename y column to y
     model3 <- model_xgb_hyp(res$df_train,input$trees_hyp,input$grid_size)
     model3
   }
+  
+ 
+  
 })
 
 output$model_xgb <- renderPrint({
@@ -2226,15 +2283,25 @@ output$model_xgb <- renderPrint({
 })
 
 
+observeEvent(input$model_spec, {                         #Observe event from input (model choices)
+  req(input$model_spec)
+  updateTabsetPanel(session, "mod_spec", selected = input$model_spec)
+})
+
+observeEvent(input$model_spec_for, {                         #Observe event from input (model choices)
+  req(input$model_spec_for)
+  updateTabsetPanel(session, "mod_spec_for", selected = input$model_spec_for)
+})
+
 prediction_xgb <-  eventReactive(input$pred,{
   
   res <- df_xgb_train() 
-  names(res$df_forecast)[2] <- "y"
-  names(res$df_train)[2] <- "y"
+  colnames(res$df_forecast)[which(names(res$df_forecast) == input$regression_outcome_xgb)] <- "y"
+  
+  colnames(res$df_train)[which(names(res$df_train) == input$regression_outcome_xgb)] <- "y"
 
   model <- model_xgbi()[[1]]
-  browser()
-  preds <- model %>%# dynamic "Close" variable or just rename to y
+  preds <- model %>%
     fit(formula = y ~ .,data = res$df_train[,c(-1)]) %>%
     predict(new_data = res$df_forecast[,c(-1)])
   
@@ -2246,7 +2313,7 @@ prediction_xgb <-  eventReactive(input$pred,{
 })
 
 
-output$model_fit <- renderTable({
+output$model_fit <- function(){
     each_fold_sum <- model_xgbi()[[2]]
     each_fold_sum <- each_fold_sum %>%  dplyr::select(id,.metric,.estimate) %>% 
                               filter(.metric == "rmse")
@@ -2254,12 +2321,11 @@ output$model_fit <- renderTable({
     # each_fold_sum <- model1[[3]]
     # each_fold_sum <- dplyr::select(.metric,.mean,.estimate,n,std_err) %>% 
                                           # filter(.metric == "rmse")
-    # 
     knitr::kable(each_fold_sum, caption = glue("Performance metrics training"),colnames = NULL) %>%
       kableExtra::kable_styling(c("striped","hover"), full_width = F,
                                 position = "center",
                                 font_size = 16)    
-})
+}
 
 
 
@@ -2272,7 +2338,6 @@ output$xgb_metrics <- function(){
                           mean(abs(preds[,1]-y[,2])),
                           mean(abs((y[,2]-preds[,1])/y[,2]) * 100)),
                         row.names = c("RMSE","MAE","MAPE"))
-  
   colnames(df_need)<- "value"
   knitr::kable(df_need, caption = glue("Performance metrics"),colnames = NULL) %>%
     kableExtra::kable_styling(c("striped","hover"), full_width = F,
@@ -2282,7 +2347,8 @@ output$xgb_metrics <- function(){
 
 serial_test_xgb <- reactive({
   res <- df_xgb_train()
-  names(res$df_train)[2] <- "y"
+  colnames(res$df_train)[which(names(res$df_train) == input$regression_outcome_xgb)] <- "y"
+  
   
   model_xgboost <-  model_xgbi()[[1]] %>%
     fit(formula = y ~ .,data = res$df_train[,c(-1)])
@@ -2309,19 +2375,19 @@ output$forecast_xgb <- renderDygraph({
   preds <- preds %>%
     zoo(seq(from = as.Date(min(res$f_dates) + 1), to = as.Date(max(res$f_dates) + 1), by = "day"))
   
-  if(input$forecast_plot_choice == "Full time series"){
+  if(input$forecast_plot_choice == "Full"){
 
     ts <- full_df %>% pull(Close) %>%
       zoo(seq(from = as.Date(min(full_df$Dates)), to = as.Date(max(full_df$Dates)), by = "day"))
     
     {cbind(actuals=ts, predicted=preds)} %>% dygraph() %>%
-      dyEvent(as.Date(min(res$f_dates)), "Start of prediction", labelLoc = "bottom")
+      dyEvent(as.Date(min(res$f_dates)), "Start of prediction", labelLoc = "bottom",color = "red") %>%  dyOptions(colors = c("white","green"))
     
   }else{
     ts <- full_df %>% pull(Close) %>%
       zoo(seq(from = as.Date(min(full_df$Dates)), to = as.Date(max(full_df$Dates)), by = "day"))
     
-    {cbind(actuals=ts, predicted=preds)} %>% dygraph()
+    {cbind(actuals=ts, predicted=preds)} %>% dygraph() %>%  dyOptions(colors = c("white","green"))
     
     
   }
@@ -2348,16 +2414,15 @@ model_xgbi2 <- eventReactive(input$run2,{#maybe rename y column to y
 })
 
 output$model_xgb2 <- renderPrint({
-  model_xgbi2()
+  model_xgbi2()[[1]]
 })
 
 prediction_xgb_actual <-  eventReactive(input$pred2,{
   res <- df_xgb_train_for()
+  colnames(res$df_forecast)[which(names(res$df_forecast) == input$regression_outcome_xgb)] <- "y"
+  colnames(res$df_train)[which(names(res$df_train) == input$regression_outcome_xgb)] <- "y"
   
-  names(res$df_forecast)[2] <- "y"
-  names(res$df_train)[2] <- "y"
-  
-  preds <-  model_xgbi2() %>%
+  preds <- model_xgbi2()[[1]]  %>%
     fit(formula = y ~ .,data = res$df_train[,c(-1)]) %>%
     predict(new_data = res$df_forecast[,c(-1)])
   df_orig <- final_regression_df_xgb()
@@ -2367,9 +2432,9 @@ prediction_xgb_actual <-  eventReactive(input$pred2,{
 
 output$plot_1_xgb_actual <- renderDygraph({
   full_df <- final_regression_df_xgb()
-  res <- df_xgb_train()
+  res <- df_xgb_train_for()
   preds <- prediction_xgb_actual()
-  
+
   preds <- preds %>%
     zoo(seq(from = as.Date(max(full_df$Dates)) +1,
             to = as.Date(max(full_df$Dates)) + input$n_ahead2, by = "day"))
@@ -2378,10 +2443,37 @@ output$plot_1_xgb_actual <- renderDygraph({
     zoo(seq(from = as.Date(min(full_df$Dates)), to = as.Date(max(full_df$Dates)), by = "day"))
   
   {cbind(actuals=ts, predicted=preds)} %>% dygraph() %>%
-    dyEvent(as.Date(max(full_df$Dates)), "Start forecast", labelLoc = "bottom")
+    dyEvent(as.Date(max(full_df$Dates)), "Start forecast", labelLoc = "bottom",color = "red") %>%  dyOptions(colors = c("white","green"))
+  #%>% dyCSS("C:/Users/simon/Desktop/WS_20_21/Git_tracked_Sentiment_App/DSP_Sentiment_Covid_App/test_simon/SimonApp/css/dygraph.css")
   
   
 })
+
+
+serial_test_xgb_for <- reactive({
+  res <- df_xgb_train_for()
+  colnames(res$df_train)[which(names(res$df_train) == input$regression_outcome_xgb)] <- "y"
+  
+  model_xgboost <-  model_xgbi2()[[1]]  %>%
+    fit(formula = y ~ .,data = res$df_train[,c(-1)])
+  
+  fits <- predict(model_xgboost,res$df_train[,c(-1)])
+  
+  resids <- res$df_train$y - fits
+
+  m <- Box.test(resids, lag = 12)
+  
+  m
+  
+  
+})
+
+output$serial_out_xgb_for <- renderPrint({
+  serial_test_xgb_for()
+})
+
+
+
 
 #  slidng_eval_window <- sliding_period(res,index = date,"month",lookback = 5  , assess_stop = 2,step = 2)
 #  graph before model
