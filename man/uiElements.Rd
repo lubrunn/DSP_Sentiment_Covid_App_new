@@ -15,6 +15,10 @@
 \alias{parameter_tabsi_var}
 \alias{parameter_tabs_var}
 \alias{tabs_custom_var}
+\alias{parameter_tabsi_xgb}
+\alias{parameter_tabs_xgb}
+\alias{tabs_custom_xgb}
+\alias{numeric_features}
 \title{UI Elements}
 \usage{
 sliderinput_dates()
@@ -44,6 +48,14 @@ parameter_tabsi_var()
 parameter_tabs_var()
 
 tabs_custom_var()
+
+parameter_tabsi_xgb()
+
+parameter_tabs_xgb()
+
+tabs_custom_xgb()
+
+numeric_features()
 }
 \description{
 UI Elements

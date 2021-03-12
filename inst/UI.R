@@ -958,12 +958,9 @@ ui <- fluidPage(
                                  sidebarPanel(
                                    radioButtons("country_granger","Which country?",c("Germany","USA"),selected = "Germany"),
                                    uiOutput("Stock_Granger"),
-                                   # selectizeInput("Stock_Granger","Choose first argument: Company or Index",
-                                   #                c(COMPONENTS_DE()[["Company.Name"]],"GDAXI"),
-                                   #                selected = "Bayer ",multiple = FALSE),
                                    radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
                                    uiOutput("ControlsGranger"),
-                                   #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
+                                   selectize_corona_granger(),
                                    sliderInput("date_granger",label="Timeseries",
                                                value = c(as.Date("2020-02-12"),as.Date("2021-02-12")),
                                                min = as.Date("2020-01-02"),
@@ -974,7 +971,8 @@ ui <- fluidPage(
                                  mainPanel(
                                    tabsetPanel(
                                      tabPanel("Information Granger",
-                                              htmlOutput("info_granger")),
+                                              htmlOutput("info_granger"),
+                                              withMathJax()),
                                      tabPanel("Visualize",
                                               dygraphs::dygraphOutput("stocks_granger"),
                                               dygraphs::dygraphOutput("second_granger")),
@@ -996,14 +994,17 @@ ui <- fluidPage(
                                  ),
                                  mainPanel(
                                    tabsetPanel(id = "regressiontabs",
-                                               tabPanel("regression",
-                                                        #verbatimTextOutput("testi_table"),
-                                                        #verbatimTextOutput("senti"),
-                                                        #verbatimTextOutput("senti_agg"),
+                                               tabPanel("Information Regression",
+                                                        htmlOutput("info_regression"),
+                                                        withMathJax()),
+                                               tabPanel("Summary Statistics",
+                                                        tableOutput("reg_summary"),
+                                                        plotOutput("correlation_reg")
+                                               ),
+                                               tabPanel("Linear Regression",
                                                         htmlOutput("regression_equation"),
                                                         verbatimTextOutput("regression_result")),
                                                tabPanel("Quantile Regression",value=1,
-                                                        #plotOutput("plot_dens_Qreg"),
                                                         verbatimTextOutput("regression_result_Qreg")
 
                                                )
@@ -1018,23 +1019,23 @@ ui <- fluidPage(
                                  ),
                                  mainPanel(
                                    tabsetPanel(
-                                     tabPanel("Information VAR"),
-                                     tabPanel("Summary statistics",
+                                     tabPanel("Information VAR",
+                                              htmlOutput("info_var"),
+                                              withMathJax()),
+                                     tabPanel("Summary Statistics",
                                               tableOutput("var_summary"),
                                               plotOutput("correlation_var")
                                      ),
                                      tabPanel("Validity",
-                                              #verbatimTextOutput("datensatz_var"),
                                               dygraphs::dygraphOutput("plot_forecast"),
-                                              #htmlOutput("accuracy_var"),
                                               tableOutput("var_metrics"),
                                               verbatimTextOutput("serial_test"),
                                               htmlOutput("var"),
-                                              #dygraphs::dygraphOutput("plot_forecast2")
-                                     ),#close tabpanel validity
+                                     ),
                                      tabPanel("Actual Forecast",
-                                              verbatimTextOutput("testins"),
-                                              dygraphs::dygraphOutput("plot_forecast_real"))#close tabpanel actual forecast
+                                              dygraphs::dygraphOutput("plot_forecast_real"),
+                                              verbatimTextOutput("serial_test_real"),
+                                              htmlOutput("var_real"))
                                    ))),#close tabpanel VAR forecasting
                         tabPanel("XGboost-forecasting",
                                  sidebarPanel(

@@ -2,10 +2,25 @@
 % Please edit documentation in R/corona_calculations.R
 \name{CORONA}
 \alias{CORONA}
+\alias{CORONA_xgb}
+\alias{CORONA_neu}
+\alias{selectize_corona_granger}
+\alias{selectize_corona_regression}
+\alias{selectize_corona_var}
 \alias{create_hover_info_corona}
 \title{Stock Calculations}
 \usage{
 CORONA(country, datestart, dateend)
+
+CORONA_xgb(country)
+
+CORONA_neu(country)
+
+selectize_corona_granger()
+
+selectize_corona_regression()
+
+selectize_corona_var()
 
 create_hover_info_corona(hovercorona, coronadata, selectedmeasure)
 }

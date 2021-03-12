@@ -192,6 +192,7 @@ tabs_custom <- function(){
                condition = "input.regressiontabs==1",
                numericInput("Quantiles","Choose quantile",value=0.5,min=0.05,max=0.95,step = 0.05)),
              uiOutput("Controls"),
+             selectize_corona_regression(),
              actionButton("reset_regression", "clear selected"),
              #radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
              #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
@@ -295,9 +296,8 @@ tabs_custom_var <- function(){
              radioButtons("regression_outcome_var","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume","Return"),selected = "Close"),
              switchInput("senti_yesno","Include Sentiment?",onLabel="Yes",offLabel="No"),
              uiOutput("Controls_var"),
+             selectize_corona_var(),
              actionButton("reset_regression_var", "clear selected"),
-             #radioButtons("Granger_outcome","Which variable?",c("Open","High","Low","Close","Adj.Close","Volume"),selected = "Close"),
-             #selectizeInput("Sentiment_Granger","Choose second argument: Sentiment",choices="under construction"),
              sliderInput("date_regression_var",label = "Timeseries",
                          value = c(as.Date("2020-02-12"),as.Date("2021-02-12")),
                          min = as.Date("2020-01-02"),
@@ -336,15 +336,15 @@ parameter_tabsi_xgb <- function(){
              radioButtons("minRetweet_stocks1_xgb", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
              radioButtons("tweet_length_stock1_xgb","Tweet larger than median length:",
                           choices = c("yes","no"),selected = "no",inline=T)
-             
-             
+
+
     ),
     tabPanel("yes",
              selectInput("industry_xgb", "Industry", choices = c("Consumer Cyclical","Financial Services")),
-             
+
              radioButtons("language2_xgb","Language of tweets ?",
                           choices = c("en","de"),inline=T),
-             
+
              selectizeInput("aggregation2_xgb", "Aggregation", choices = c("Mean","Mean weighted by retweets",
                                                                            "Mean weighted by likes", "Mean weighted by length"),
                             select = "Mean"),
@@ -352,11 +352,11 @@ parameter_tabsi_xgb <- function(){
              radioButtons("minRetweet_stocks2_xgb", "Select minimum number of retweets:", choices = c("0","10","50","100","200"),inline=T),
              radioButtons("tweet_length_stock2_xgb","Tweet larger than median length:",
                           choices = c("yes","no"),selected = "no",inline=T)
-             
+
     )
-    
+
   )
-  
+
 }
 
 
@@ -376,18 +376,18 @@ parameter_tabs_xgb <- function(){
              radioButtons("minLikes_xgb", "Select minimum number of likes", choices = c("0","10","50","100","200"),selected = "0",inline=T),
              radioButtons("tweet_length_xgb","Tweet larger than median length:",
                           choices = c("yes","no"),inline=T)
-             
-             
+
+
     ),
     tabPanel("Stocks",
              radioButtons("industry_sentiment_xgb","Sentiment by industry ?",
                           choices = c("yes","no"),selected = "no",inline=T),
              parameter_tabsi_xgb()
-             
+
     )
-    
+
   )
-  
+
 }
 
 
@@ -412,18 +412,18 @@ tabs_custom_xgb <- function(){
                          step = 1,timeFormat = "%F"),
              radioButtons("country_corona_xgb","Which country ?",c("Germany","United States"),selected = "Germany"),
              uiOutput("corona_vars_xgb")
-             
-             
+
+
     ),
     tabPanel("Filter sentiment input",
              selectInput("Sentiment_type_xgb", "Type of Sentiment:", choices = c("NoFilter","Stocks"),
                          selected = "NoFilter"),
              parameter_tabs_xgb()
-             
+
     )
-    
+
   )
-  
+
 }
 
 
@@ -442,8 +442,8 @@ numeric_features <- function(){
              actionButton("addButton", "Upload"),
              actionButton("finish", "Finish"),
              actionButton("reset_cus", "Reset")
-             
-             
+
+
     )
     # tabPanel("2",
     #          selectInput("var_2", "Select varaible", choices = ""), #could I use var_1 here?
@@ -453,9 +453,9 @@ numeric_features <- function(){
     #          numericInput("num_5","Chose length of moving average",min=1,value = 1),
     #          numericInput("num_6","Chose Autoregressive lags for",min=1,value = 1)
     # )
-    
+
   )
-  
+
 }
 model_specification <- function(){
   tabsetPanel(
@@ -470,21 +470,21 @@ model_specification <- function(){
              numericInput("learn_rate","rate at which the boosting algorithm adapts",min = 0.005,max=0.1,step = 0.001,value = 0.01),
              numericInput("loss_reduction","reduction in the loss function required to split further",min = 0.005,max=0.1,step = 0.001,value = 0.01),
              numericInput("sample_size","amount of data exposed to the fitting routine",min = 0.1,max=1,step = 0.1,value = 0.7)
-             
+
     ),
     tabPanel("hyperparameter_tuning",
              numericInput("trees_hyp","number of predictors that will be randomly sampled",min = 50,max=1000,step = 10,value = 200),
              numericInput("grid_size","size of tuning grid",min = 10,max=100,step = 5,value = 30)
-             
-             
+
+
     )
-    
+
   )
-  
+
 }
 
 model_specification_for <- function(){
-  
+
   tabsetPanel(
     id = "mod_spec_for",
     type = "hidden",
@@ -497,15 +497,15 @@ model_specification_for <- function(){
              numericInput("learn_rate1","rate at which the boosting algorithm adapts",min = 0.005,max=0.1,step = 0.001,value = 0.01),
              numericInput("loss_reduction1","reduction in the loss function required to split further",min = 0.005,max=0.1,step = 0.001,value = 0.01),
              numericInput("sample_size1","amount of data exposed to the fitting routine",min = 0.1,max=1,step = 0.1,value = 0.7)
-             
+
     ),
     tabPanel("hyperparameter_tuning",
              numericInput("trees_hyp1","number of predictors that will be randomly sampled",min = 50,max=1000,step = 10,value = 200),
              numericInput("grid_size1","size of tuning grid",min = 10,max=100,step = 5,value = 30)
-             
-             
+
+
     )
-    
+
   )
 }
 
@@ -519,10 +519,10 @@ custom_lag_tab <- function(){
              uiOutput("correlation_plot_choice"),
              numeric_features()
              # actionButton("reset_arma", "clear selected")
-             
+
     )
-    
+
   )
-  
+
 }
 

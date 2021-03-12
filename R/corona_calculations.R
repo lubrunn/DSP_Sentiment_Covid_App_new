@@ -8,20 +8,75 @@
 #' @rdname corona_calculations
 CORONA <- function(country,datestart,dateend){
   filename <- "Corona/owid.csv"
-  help <- filter(read.csv(filename),location %in% c(country))
+  help <- dplyr::filter(read.csv(filename),location %in% c(country))
   help$date <- as.Date(help$date)
-  help <- filter(help,date >= datestart & date <= dateend)
+  help <- dplyr::filter(help,date >= datestart & date <= dateend)
   help
 }
 #' @export
 #' @rdname corona_calculations
 CORONA_xgb <- function(country){
   filename <- "Corona/owid.csv"
-  help <- filter(read.csv(filename),location %in% c(country))
+  help <- dplyr::filter(read.csv(filename),location %in% c(country))
   help$date <- as.Date(help$date)
   #help <- filter(help,date >= datestart & date <= dateend)
   help
 }
+
+
+#' @export
+#' @rdname corona_calculations
+CORONA_neu <- function(country){
+  filename <- "Corona/owid.csv"
+  help <- dplyr::filter(read.csv(filename),location %in% c(country))
+  help$date <- as.Date(help$date)
+  help
+}
+
+
+#' @export
+#' @rdname corona_calculations
+selectize_corona_granger <- function() {
+  selectizeInput("corona_measurement_granger","Choose Corona control",
+                 c("total_cases","new_cases","total_deaths","new_deaths","total_cases_per_million",
+                   "new_cases_per_million","total_deaths_per_million","new_deaths_per_million","reproduction_rate",
+                   "icu_patients","icu_patients_per_million","hosp_patients","hosp_patients_per_million",
+                   "weekly_icu_admissions","weekly_icu_admissions_per_million","weekly_hosp_admissions",
+                   "weekly_hosp_admissions_per_million","new_tests","total_tests","total_tests_per_thousand",
+                   "new_tests_per_thousand","positive_rate","tests_per_case","total_vaccinations","people_vaccinated",
+                   "people_fully_vaccinated","new_vaccinations","total_vaccinations_per_hundred","people_vaccinated_per_hundred",
+                   "people_fully_vaccinated_per_hundred"),selected = "",
+                 multiple = FALSE)
+}
+
+#' @export
+#' @rdname corona_calculations
+selectize_corona_regression <- function() {
+  selectizeInput("corona_measurement_regression","Choose Corona control",
+                 c("","total_cases","new_cases","total_deaths","new_deaths","total_cases_per_million",
+                   "new_cases_per_million","total_deaths_per_million","new_deaths_per_million","reproduction_rate",
+                   "icu_patients","icu_patients_per_million","hosp_patients","hosp_patients_per_million",
+                   "weekly_icu_admissions","weekly_icu_admissions_per_million","weekly_hosp_admissions",
+                   "weekly_hosp_admissions_per_million","new_tests","total_tests","total_tests_per_thousand",
+                   "new_tests_per_thousand","positive_rate","tests_per_case","total_vaccinations","people_vaccinated",
+                   "people_fully_vaccinated","new_vaccinations","total_vaccinations_per_hundred","people_vaccinated_per_hundred",
+                   "people_fully_vaccinated_per_hundred"),selected = "",multiple = FALSE)
+}
+
+#' @export
+#' @rdname corona_calculations
+selectize_corona_var <- function() {
+  selectizeInput("corona_measurement_var","Choose Corona control",
+                 c("","total_cases","new_cases","total_deaths","new_deaths","total_cases_per_million",
+                   "new_cases_per_million","total_deaths_per_million","new_deaths_per_million","reproduction_rate",
+                   "icu_patients","icu_patients_per_million","hosp_patients","hosp_patients_per_million",
+                   "weekly_icu_admissions","weekly_icu_admissions_per_million","weekly_hosp_admissions",
+                   "weekly_hosp_admissions_per_million","new_tests","total_tests","total_tests_per_thousand",
+                   "new_tests_per_thousand","positive_rate","tests_per_case","total_vaccinations","people_vaccinated",
+                   "people_fully_vaccinated","new_vaccinations","total_vaccinations_per_hundred","people_vaccinated_per_hundred",
+                   "people_fully_vaccinated_per_hundred"),selected = "",multiple = FALSE)
+}
+
 
 #' @export
 #' @rdname corona_calculations
@@ -48,7 +103,7 @@ create_hover_info_corona <- function(hovercorona,coronadata,selectedmeasure){
   # actual tooltip created as wellPanel
   wellPanel(
     style = style,
-    p(HTML(paste0("<b> Company: </b>", point$location, "<br/>",
+    p(htmltools::HTML(paste0("<b> Company: </b>", point$location, "<br/>",
                   "<b> Date: </b>", point$date, "<br/>",
                   "<b>" ,selectedmeasure,": </b>", point[selectedmeasure], "<br/>")))
   )
