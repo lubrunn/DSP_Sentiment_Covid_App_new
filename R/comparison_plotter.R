@@ -1,6 +1,6 @@
 
 
-stock_plotter <- function(df, input_metric, input_comp){
+stock_plotter <- function(df, input_metric, input_comp, input_roll){
 
 
 
@@ -25,7 +25,8 @@ stock_plotter <- function(df, input_metric, input_comp){
       {if (!grepl("return", input_metric)) dygraphs::dyRebase(.,value = 100) else . } %>%
       dygraphs::dyOptions(axisLineWidth = 2) %>%
       dygraphs::dyLegend() %>%
-      dygraphs::dyShading(from = min(df_dates), to = max(df_dates), color = "white")
+      dygraphs::dyShading(from = min(df_dates), to = max(df_dates), color = "white") %>%
+      {if (input_roll == T) dygraphs::dyRoller(., rollPeriod = 7, showRoller = F) else .}
 
 
 
@@ -36,7 +37,7 @@ stock_plotter <- function(df, input_metric, input_comp){
 
 
 
-covid_plotter <- function(df, selected_metric, input_country){
+covid_plotter <- function(df, selected_metric, input_country, input_roll = F){
 
   ## select relevant variables
   df <- df %>% select(date, selected_metric, location)
@@ -60,7 +61,8 @@ covid_plotter <- function(df, selected_metric, input_country){
    {if (length(input_country) > 1)dygraphs::dySeries(.) else dygraphs::dySeries(.,label = input_country)}  %>%
     dygraphs::dyOptions(axisLineWidth = 2) %>%
     dygraphs::dyLegend() %>%
-    dygraphs::dyShading(from = min(df$date), to = max(df$date), color = "white")
+    dygraphs::dyShading(from = min(df$date), to = max(df$date), color = "white") %>%
+    {if (input_roll == T) dygraphs::dyRoller(., rollPeriod = 7, showRoller = F) else .}
 
 
 
