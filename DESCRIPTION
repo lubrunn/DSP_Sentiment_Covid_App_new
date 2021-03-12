@@ -29,4 +29,6 @@ Imports:
     tidyr,
     tseries,
     vars,
-    data.table
+    data.table,
+    devtools
+
