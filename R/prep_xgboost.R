@@ -31,7 +31,7 @@ split_data <- function(sample,spliti){
 #' @rdname xgboost_prep
 AR_creator <- function(df,variable,lag){
   names(df)[1] <- "date"
-  df$date <- as.Date(df$date)
+  df$date <- as.Date(df$date,origin = "1970-01-01")
 
   if(lag > 0){
   df <- df[,c("date",variable)]
@@ -49,7 +49,7 @@ MA_creator <- function(df,variable,avg_len){
 
   if(avg_len > 0){
   avg_len <- as.numeric(avg_len)
-  x <- zoo(df[,variable])
+  x <- zoo::zoo(df[,variable])
 
   df <- as.data.frame(zoo::rollmean(x, k = avg_len, fill = NA))
   names(df)[1] <- paste("MA_",variable,sep = "")
@@ -73,11 +73,11 @@ ARMA_creator <- function(res,variable){
    optlags <- NULL
                                   #or just rename to y
    for(i in list_var[-1]){      #insert here
-     lag <- VARselect(help_df[,c(variable,i)],lag.max = 10, type = "const")$selection[["AIC(n)"]]
+     lag <- vars::VARselect(help_df[,c(variable,i)],lag.max = 10, type = "const")$selection[["AIC(n)"]]
      optlags <- c(optlags,lag)
    }
                             # insert here
-   lag <- VARselect(help_df[,variable],lag.max = 10, type = "const")$selection[["AIC(n)"]]
+   lag <- vars::VARselect(help_df[,variable],lag.max = 10, type = "const")$selection[["AIC(n)"]]
 
    optlags <- c(optlags,lag)
 
@@ -193,10 +193,10 @@ split_data_for <- function(sample,n_ahead,ftype,variable){
 
   for(i in covariates){
 
-  Lambda <- BoxCox.lambda(out$df_train[,i])
-  arima_fit <-  auto.arima(out$df_train[,i],D=1,approximation = F,allowdrift = T,
+  Lambda <- forecast::BoxCox.lambda(out$df_train[,i])
+  arima_fit <-  forecast::auto.arima(out$df_train[,i],D=1,approximation = F,allowdrift = T,
                            allowmean = T,seasonal = T,lambda = Lambda)
-  preds_cov <- forecast(arima_fit,h = n_ahead)
+  preds_cov <- forecast::forecast(arima_fit,h = n_ahead)
 
   out$df_forecast <- cbind(out$df_forecast,fcast = preds_cov$mean)
   names(out$df_forecast)[ncol(out$df_forecast)] <- paste0(i)
@@ -240,8 +240,8 @@ split_data_for_ahead <- function(sample,n_ahead2,ftype2){
   out <- NULL
   out$df_train <- sample
 
-  dats_seq <- seq(from = as.Date(max(sample$date))+1,
-                  to = as.Date(max(sample$date)) + n_ahead2, by = "day")
+  dats_seq <- seq(from = as.Date(max(sample$date),origin = "1970-01-01")+1,
+                  to = as.Date(max(sample$date),origin = "1970-01-01") + n_ahead2, by = "day")
 
   out$df_forecast <- data.frame(matrix(ncol = 1 , nrow = n_ahead2 ))
   x <- c("date")
@@ -279,10 +279,10 @@ split_data_for_ahead <- function(sample,n_ahead2,ftype2){
 
     for(i in covariates){
 
-      Lambda <- BoxCox.lambda(out$df_train[,i])
-      arima_fit <-  auto.arima(out$df_train[,i],D=1,approximation = F,allowdrift = T,
+      Lambda <- forecast::BoxCox.lambda(out$df_train[,i])
+      arima_fit <-  forecast::auto.arima(out$df_train[,i],D=1,approximation = F,allowdrift = T,
                                allowmean = T,seasonal = T,lambda = Lambda)
-      preds_cov <- forecast(arima_fit,h = n_ahead2)
+      preds_cov <- forecast::forecast(arima_fit,h = n_ahead2)
 
       out$df_forecast <- cbind(out$df_forecast,fcast = preds_cov$mean)
       names(out$df_forecast)[ncol(out$df_forecast)] <- paste0(i)

@@ -2620,7 +2620,7 @@ server <- function(input, output, session) {
     list_dfs <- c(xchange$df_full,xchange$df_full2,xchange$df_full3,xchange$df_full4)
     df <- data.frame((sapply(list_dfs,c)))
     df <- df %>% dplyr::select(-contains("."))
-    df$Dates <- as.Date(df$Dates)
+    df$Dates <- as.Date(df$Dates,origin = "1970-01-01")
     cols <- setdiff(colnames(df), "date")
     df <- df[,cols]
     df
@@ -2770,8 +2770,8 @@ server <- function(input, output, session) {
 
     model <- model_xgbi()[[1]]
     preds <- model %>%
-      fit(formula = y ~ .,data = res$df_train[,c(-1)]) %>%
-      predict(new_data = res$df_forecast[,c(-1)])
+      parsnip::fit(formula = y ~ .,data = res$df_train[,c(-1)]) %>%
+      stats::predict(new_data = res$df_forecast[,c(-1)])
 
     df_orig <- final_regression_df_xgb()
     #a <- df_orig$Close[1]
@@ -2819,9 +2819,9 @@ server <- function(input, output, session) {
 
 
     model_xgboost <-  model_xgbi()[[1]] %>%
-      fit(formula = y ~ .,data = res$df_train[,c(-1)])
+      parsnip::fit(formula = y ~ .,data = res$df_train[,c(-1)])
 
-    fits <- predict(model_xgboost,res$df_train[,c(-1)])
+    fits <- stats::predict(model_xgboost,res$df_train[,c(-1)])
 
     resids <- res$df_train$y - fits
 
@@ -2841,21 +2841,21 @@ server <- function(input, output, session) {
     res <- df_xgb_train()
     preds <- prediction_xgb()
     preds <- preds %>%
-      zoo(seq(from = as.Date(min(res$f_dates) + 1), to = as.Date(max(res$f_dates) + 1), by = "day"))
+      zoo::zoo(seq(from = as.Date(min(res$f_dates) + 1), to = as.Date(max(res$f_dates) + 1), by = "day"))
 
     if(input$forecast_plot_choice == "Full"){
 
       ts <- full_df %>% pull(Close) %>%
-        zoo(seq(from = as.Date(min(full_df$Dates)), to = as.Date(max(full_df$Dates)), by = "day"))
+        zoo::zoo(seq(from = as.Date(min(full_df$Dates)), to = as.Date(max(full_df$Dates)), by = "day"))
 
-      {cbind(actuals=ts, predicted=preds)} %>% dygraph() %>%
+      {cbind(actuals=ts, predicted=preds)} %>% dygraphs::dygraph() %>%
         dyEvent(as.Date(min(res$f_dates)), "Start of prediction", labelLoc = "bottom",color = "red") %>%  dyOptions(colors = c("white","green"))
 
     }else{
       ts <- full_df %>% pull(Close) %>%
-        zoo(seq(from = as.Date(min(full_df$Dates)), to = as.Date(max(full_df$Dates)), by = "day"))
+        zoo::zoo(seq(from = as.Date(min(full_df$Dates)), to = as.Date(max(full_df$Dates)), by = "day"))
 
-      {cbind(actuals=ts, predicted=preds)} %>% dygraph() %>%  dyOptions(colors = c("white","green"))
+      {cbind(actuals=ts, predicted=preds)} %>% dygraphs::dygraph() %>%  dyOptions(colors = c("white","green"))
 
 
     }
@@ -2891,8 +2891,8 @@ server <- function(input, output, session) {
     colnames(res$df_train)[which(names(res$df_train) == input$regression_outcome_xgb)] <- "y"
 
     preds <- model_xgbi2()[[1]]  %>%
-      fit(formula = y ~ .,data = res$df_train[,c(-1)]) %>%
-      predict(new_data = res$df_forecast[,c(-1)])
+      parsnip::fit(formula = y ~ .,data = res$df_train[,c(-1)]) %>%
+      stats::predict(new_data = res$df_forecast[,c(-1)])
     df_orig <- final_regression_df_xgb()
     preds <- cumsum(preds) + df_orig[(nrow(res$df_train)),2]
   })
@@ -2904,13 +2904,13 @@ server <- function(input, output, session) {
     preds <- prediction_xgb_actual()
 
     preds <- preds %>%
-      zoo(seq(from = as.Date(max(full_df$Dates)) +1,
+      zoo::zoo(seq(from = as.Date(max(full_df$Dates)) +1,
               to = as.Date(max(full_df$Dates)) + input$n_ahead2, by = "day"))
 
     ts <- full_df %>% pull(Close) %>%
-      zoo(seq(from = as.Date(min(full_df$Dates)), to = as.Date(max(full_df$Dates)), by = "day"))
+      zoo::zoo(seq(from = as.Date(min(full_df$Dates)), to = as.Date(max(full_df$Dates)), by = "day"))
 
-    {cbind(actuals=ts, predicted=preds)} %>% dygraph() %>%
+    {cbind(actuals=ts, predicted=preds)} %>% dygraphs::dygraph() %>%
       dyEvent(as.Date(max(full_df$Dates)), "Start forecast", labelLoc = "bottom",color = "red") %>%  dyOptions(colors = c("white","green"))
     #%>% dyCSS("C:/Users/simon/Desktop/WS_20_21/Git_tracked_Sentiment_App/DSP_Sentiment_Covid_App/test_simon/SimonApp/css/dygraph.css")
 
@@ -2923,7 +2923,7 @@ server <- function(input, output, session) {
     colnames(res$df_train)[which(names(res$df_train) == input$regression_outcome_xgb)] <- "y"
 
     model_xgboost <-  model_xgbi2()[[1]]  %>%
-      fit(formula = y ~ .,data = res$df_train[,c(-1)])
+      parsnip::fit(formula = y ~ .,data = res$df_train[,c(-1)])
 
     fits <- predict(model_xgboost,res$df_train[,c(-1)])
 
